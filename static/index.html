@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Permisos Ambientales — Acceso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #eceee2;
+    --surface: #ffffff;
+    --ink: #1f2a22;
+    --ink-soft: #4d5b4f;
+    --accent: #3f6b4c;
+    --accent-dark: #2c4b34;
+    --border: #d6ddc9;
+    --error: #9a4530;
+    --error-bg: #f6e9e4;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Public Sans', -apple-system, sans-serif;
+  }
+  .layout {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+  }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+    .context { min-height: 220px; }
+  }
+  .context {
+    position: relative;
+    overflow: hidden;
+    background:
+      linear-gradient(160deg, rgba(44,75,52,.88), rgba(31,42,34,.92)),
+      url('nature.jpg') center/cover no-repeat,
+      var(--accent-dark);
+    color: #eef3ea;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 48px;
+  }
+  .collage {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .collage svg {
+    position: absolute;
+    stroke: #eef3ea;
+    fill: none;
+  }
+  .mark, .context > div, .context .foot {
+    position: relative;
+    z-index: 1;
+  }
+  .mark {
+    width: 46px;
+    height: 46px;
+    border: 1.5px solid #eef3ea;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .mark svg { width: 22px; height: 22px; }
+  .context {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(160deg, rgba(44,75,52,.88), rgba(31,42,34,.92)),
+    url('nature.jpg') center/cover no-repeat,
+    var(--accent-dark);
+  color: #eef3ea;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 48px;
+}
+.textblock {
+  margin-top: 150px;
+}
+.context h1 {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: clamp(28px, 4vw, 40px);
+  line-height: 1.15;
+  margin: 0 0 12px;
+  max-width: 11ch;
+}
+.context p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #cfdac9;
+  max-width: 34ch;
+  margin: 0;
+}
+.context .foot {
+  font-size: 13px;
+  color: #a9bfa2;
+  margin-top: auto;
+}
+  .form-side {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 32px;
+  }
+  .card { width: 100%; max-width: 380px; }
+  .card h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 26px;
+    margin: 0 0 6px;
+  }
+  .card .sub {
+    color: var(--ink-soft);
+    font-size: 14px;
+    margin: 0 0 32px;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .field { margin-bottom: 18px; }
+  input[type="email"], input[type="password"] {
+    width: 100%;
+    padding: 11px 13px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 15px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color .15s ease;
+  }
+  input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(63, 107, 76, 0.15);
+  }
+  button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 6px;
+    border: none;
+    border-radius: 6px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .15s ease;
+  }
+  button:hover { background: var(--accent-dark); }
+  button:disabled { background: #a9bfa2; cursor: not-allowed; }
+  .message {
+    margin-top: 18px;
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.5;
+    display: none;
+  }
+  .message.show { display: block; }
+  .message.ok {
+    background: #e7f0e3;
+    color: var(--accent-dark);
+    border: 1px solid #c9dcc0;
+  }
+  .message.error {
+    background: var(--error-bg);
+    color: var(--error);
+    border: 1px solid #e3c6ba;
+  }
+  .hint {
+    margin-top: 22px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+  .hint code {
+    background: var(--bg);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+  <div class="layout">
+    <div class="context">
+  <div class="textblock">
+    <h1>Permisos Ambientales</h1>
+    <p>Acceso para consultoras ambientales y empresas promotoras. Cada usuario ve únicamente los expedientes asociados a su perfil.</p>
+  </div>
+</div>
+
+    <div class="form-side">
+      <div class="card">
+        <h2>Iniciar sesión</h2>
+        <p class="sub">Ingresa con tu correo registrado.</p>
+
+        <form id="loginForm">
+          <div class="field">
+            <label for="email">Correo electrónico</label>
+            <input type="email" id="email" placeholder="nombre@ejemplo.com" required autocomplete="email">
+          </div>
+          <div class="field">
+            <label for="password">Contraseña</label>
+            <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+          </div>
+          <button type="submit" id="submitBtn">Iniciar sesión</button>
+        </form>
+
+        <div id="message" class="message"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const form = document.getElementById('loginForm');
+  const btn = document.getElementById('submitBtn');
+  const msg = document.getElementById('message');
+
+  function showMessage(text, ok) {
+    msg.textContent = text;
+    msg.className = 'message show ' + (ok ? 'ok' : 'error');
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    btn.disabled = true;
+    btn.textContent = 'Verificando...';
+    msg.className = 'message';
+
+    try {
+      const response = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await response.json();
+      showMessage(data.mensaje, data.acceso === true);
+    } catch (err) {
+      showMessage('No se pudo conectar con el servidor. Verifica que app.py esté corriendo en localhost:5000.', false);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Iniciar sesión';
+    }
+  });
+</script>
+</body>
+</html>
