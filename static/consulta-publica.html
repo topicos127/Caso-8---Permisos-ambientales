@@ -1,50 +1,79 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Consulta Pública</title>
-    <link rel="stylesheet" href="css/estilos.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consulta pública — Permisos Ambientales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilos.css">
 </head>
 <body>
-<div class="app">
-    <header class="app-header">
-        <h1>Permisos Ambientales</h1>
-        <div class="user">Consultor Uno · <a href="index.html" style="color:#fff">Salir</a></div>
-    </header>
-    <aside class="app-sidebar">
-        <a href="dashboard.html">Panel</a>
-        <a href="expedientes.html">Mis expedientes</a>
-        <a href="expediente-nuevo.html">Nuevo expediente</a>
-        <a href="consulta-publica.html" class="active">Consulta pública</a>
-    </aside>
-    <main class="app-main">
-        <h2>Consulta pública de proyectos</h2>
-        <p style="font-size:0.9rem; color:#666; margin-bottom:16px;">
-            Busca un proyecto por su código de expediente para consultar su estado e impacto ambiental.
-            Solo se muestra información pública (sin datos personales).
-        </p>
+<div class="shell">
+  <aside class="rail">
+    <div class="rail-brand">
+      <div class="seal">
+        <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.1">
+          <circle cx="20" cy="20" r="17"/>
+          <path d="M6 24c4-4 8 4 12 0s8-6 12 0" opacity="0.6"/>
+          <path d="M7 16c4-3 8 3 12 0s8-5 12 0" opacity="0.45"/>
+          <circle cx="20" cy="20" r="2.2" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+      <div><b>Permisos<br>Ambientales</b><span>Caso 8 · MiAmbiente</span></div>
+    </div>
+    <nav>
+      <a href="dashboard.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="7" height="7"/><rect x="13.5" y="3.5" width="7" height="7"/><rect x="3.5" y="13.5" width="7" height="7"/><rect x="13.5" y="13.5" width="7" height="7"/></svg>
+        Panel
+      </a>
+      <a href="expedientes.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6.5a1.5 1.5 0 0 1 1.5-1.5H10l2 2.5h6.5A1.5 1.5 0 0 1 20 9v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18z"/></svg>
+        Mis expedientes
+      </a>
+      <a href="expediente-nuevo.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3.5h9l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z"/><path d="M12 11v6M9 14h6"/></svg>
+        Nuevo expediente
+      </a>
+      <a href="consulta-publica.html" class="active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M19.5 19.5 15 15"/></svg>
+        Consulta pública
+      </a>
+    </nav>
+    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 3</div>
+  </aside>
 
-        <div class="card">
-            <div class="flex gap-2">
-                <input type="text" placeholder="Ej. EXP-2026-001" style="flex:1; padding:10px; border:1px solid #ccc; border-radius:6px;">
-                <button class="btn btn-primary">Buscar</button>
-            </div>
-        </div>
+  <div class="main">
+    <div class="topbar">
+      <span class="crumb">CONSULTA PÚBLICA</span>
+      <div class="who"><span class="tag">Consultor</span> Consultor Uno <a href="index.html">Salir</a></div>
+    </div>
 
-        <div class="card">
-            <h3>Resultado</h3>
-            <table class="tabla">
-                <tbody>
-                    <tr><th>Código</th><td>EXP-2026-001</td></tr>
-                    <tr><th>Proyecto</th><td>Planta Solar Azuero</td></tr>
-                    <tr><th>Promotor</th><td>Energía Verde S.A.</td></tr>
-                    <tr><th>Categoría</th><td>II — Impacto moderado</td></tr>
-                    <tr><th>Estado</th><td><span class="badge badge-evaluacion">En evaluación</span></td></tr>
-                </tbody>
-            </table>
-            <a href="#" class="btn btn-secondary mt-2">Descargar resumen ejecutivo (PDF)</a>
+    <div class="content">
+      <div class="content-head"><h2>Consulta pública de proyectos</h2></div>
+      <p class="content-lede">Busca un proyecto por su código de expediente. Solo se muestra información pública — nombre, promotor, categoría y estado — sin datos personales, conforme a la Ley 81 de 2019.</p>
+
+      <div class="panel">
+        <div class="search-row">
+          <input type="text" placeholder="Ej. SP-A8-2026-001">
+          <button class="btn btn-brass">Buscar</button>
         </div>
-    </main>
+      </div>
+
+      <div class="panel">
+        <h3>Resultado</h3>
+        <div class="fact-row mt-3">
+          <div class="fact"><span class="k">CÓDIGO</span><span class="v"><span class="case-tag">SP-A8-2026-001</span></span></div>
+          <div class="fact"><span class="k">PROYECTO</span><span class="v">Planta Solar Azuero</span></div>
+          <div class="fact"><span class="k">PROMOTOR</span><span class="v">Energía Verde S.A.</span></div>
+          <div class="fact"><span class="k">CATEGORÍA</span><span class="tier"><b>II</b> Impacto moderado</span></div>
+          <div class="fact"><span class="k">ESTADO</span><span class="status status-warn">En evaluación</span></div>
+        </div>
+        <a href="#" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line);">Descargar resumen ejecutivo (PDF)</a>
+      </div>
+    </div>
+  </div>
 </div>
 </body>
 </html>

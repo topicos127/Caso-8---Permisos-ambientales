@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mis expedientes — Permisos Ambientales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="shell">
+  <aside class="rail">
+    <div class="rail-brand">
+      <div class="seal">
+        <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.1">
+          <circle cx="20" cy="20" r="17"/>
+          <path d="M6 24c4-4 8 4 12 0s8-6 12 0" opacity="0.6"/>
+          <path d="M7 16c4-3 8 3 12 0s8-5 12 0" opacity="0.45"/>
+          <circle cx="20" cy="20" r="2.2" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+      <div><b>Permisos<br>Ambientales</b><span>Caso 8 · MiAmbiente</span></div>
+    </div>
+    <nav>
+      <a href="dashboard.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="7" height="7"/><rect x="13.5" y="3.5" width="7" height="7"/><rect x="3.5" y="13.5" width="7" height="7"/><rect x="13.5" y="13.5" width="7" height="7"/></svg>
+        Panel
+      </a>
+      <a href="expedientes.html" class="active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6.5a1.5 1.5 0 0 1 1.5-1.5H10l2 2.5h6.5A1.5 1.5 0 0 1 20 9v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18z"/></svg>
+        Mis expedientes
+      </a>
+      <a href="expediente-nuevo.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3.5h9l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z"/><path d="M12 11v6M9 14h6"/></svg>
+        Nuevo expediente
+      </a>
+      <a href="consulta-publica.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M19.5 19.5 15 15"/></svg>
+        Consulta pública
+      </a>
+    </nav>
+    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 3</div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="crumb">MIS EXPEDIENTES</span>
+      <div class="who"><span class="tag">Consultor</span> Consultor Uno <a href="index.html">Salir</a></div>
+    </div>
+
+    <div class="content">
+      <div class="content-head">
+        <h2>Mis expedientes</h2>
+        <a href="expediente-nuevo.html" class="btn btn-brass">+ Nuevo expediente</a>
+      </div>
+      <p class="content-lede">Expedientes que gestionas actualmente, con su categoría de impacto y estado de trámite.</p>
+
+      <div class="panel" style="padding:0; overflow-x:auto;">
+        <table class="ledger" style="margin:0;">
+          <thead>
+            <tr>
+              <th style="padding-left:24px;">Código</th>
+              <th>Proyecto</th>
+              <th>Promotor</th>
+              <th>Categoría</th>
+              <th>Estado</th>
+              <th>Fecha</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tabla-expedientes"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/mock.js"></script>
+<script>
+  const tbody = document.getElementById('tabla-expedientes');
+  MOCK_EXPEDIENTES.forEach(e => {
+    tbody.innerHTML += `
+      <tr>
+        <td style="padding-left:24px;"><span class="case-tag">${e.codigo}</span></td>
+        <td>${e.proyecto}</td>
+        <td>${e.promotor}</td>
+        <td>${fichaTier(e.categoria)}</td>
+        <td><span class="${claseEstado(e.estado)}">${textoEstado(e.estado)}</span></td>
+        <td>${e.fecha}</td>
+        <td><a href="expediente-detalle.html">Ver detalle →</a></td>
+      </tr>
+    `;
+  });
+</script>
+</body>
+</html>

@@ -1,74 +1,119 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Nuevo Expediente</title>
-    <link rel="stylesheet" href="css/estilos.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nuevo expediente — Permisos Ambientales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilos.css">
 </head>
 <body>
-<div class="app">
-    <header class="app-header">
-        <h1>Permisos Ambientales</h1>
-        <div class="user">Consultor Uno · <a href="index.html" style="color:#fff">Salir</a></div>
-    </header>
-    <aside class="app-sidebar">
-        <a href="dashboard.html">Panel</a>
-        <a href="expedientes.html">Mis expedientes</a>
-        <a href="expediente-nuevo.html" class="active">Nuevo expediente</a>
-        <a href="consulta-publica.html">Consulta pública</a>
-    </aside>
-    <main class="app-main">
-        <h2>Nuevo expediente</h2>
+<div class="shell">
+  <aside class="rail">
+    <div class="rail-brand">
+      <div class="seal">
+        <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.1">
+          <circle cx="20" cy="20" r="17"/>
+          <path d="M6 24c4-4 8 4 12 0s8-6 12 0" opacity="0.6"/>
+          <path d="M7 16c4-3 8 3 12 0s8-5 12 0" opacity="0.45"/>
+          <circle cx="20" cy="20" r="2.2" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+      <div><b>Permisos<br>Ambientales</b><span>Caso 8 · MiAmbiente</span></div>
+    </div>
+    <nav>
+      <a href="dashboard.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="7" height="7"/><rect x="13.5" y="3.5" width="7" height="7"/><rect x="3.5" y="13.5" width="7" height="7"/><rect x="13.5" y="13.5" width="7" height="7"/></svg>
+        Panel
+      </a>
+      <a href="expedientes.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6.5a1.5 1.5 0 0 1 1.5-1.5H10l2 2.5h6.5A1.5 1.5 0 0 1 20 9v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18z"/></svg>
+        Mis expedientes
+      </a>
+      <a href="expediente-nuevo.html" class="active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3.5h9l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z"/><path d="M12 11v6M9 14h6"/></svg>
+        Nuevo expediente
+      </a>
+      <a href="consulta-publica.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M19.5 19.5 15 15"/></svg>
+        Consulta pública
+      </a>
+    </nav>
+    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 3</div>
+  </aside>
 
-        <div class="card">
-            <h3>Datos del proyecto</h3>
-            <div class="campo"><label>Nombre del proyecto</label><input type="text" placeholder="Ej. Planta Solar Azuero"></div>
-            <div class="campo"><label>Promotor / Empresa</label><input type="text" placeholder="Ej. Energía Verde S.A."></div>
-            <div class="campo">
-                <label>Categoría del estudio de impacto ambiental</label>
-                <select>
-                    <option>Categoría I — Bajo impacto</option>
-                    <option>Categoría II — Impacto moderado</option>
-                    <option>Categoría III — Alto impacto</option>
-                </select>
-            </div>
+  <div class="main">
+    <div class="topbar">
+      <span class="crumb">NUEVO EXPEDIENTE</span>
+      <div class="who"><span class="tag">Consultor</span> Consultor Uno <a href="index.html">Salir</a></div>
+    </div>
+
+    <div class="content">
+      <div class="content-head"><h2>Nuevo expediente</h2></div>
+      <p class="content-lede">Organiza los documentos en las carpetas predefinidas del checklist oficial antes de someter el expediente.</p>
+
+      <div class="panel">
+        <h3>Datos del proyecto</h3>
+        <div class="doc-field-row" style="margin-top:16px;">
+          <div class="doc-field">
+            <label>Nombre del proyecto</label>
+            <input type="text" placeholder="Ej. Planta Solar Azuero">
+          </div>
+          <div class="doc-field">
+            <label>Promotor / Empresa</label>
+            <input type="text" placeholder="Ej. Energía Verde S.A.">
+          </div>
         </div>
-
-        <div class="card">
-            <h3>Documentos del expediente</h3>
-            <p class="mb-2" style="color:#666; font-size:0.9rem;">
-                Sube los archivos en las carpetas predefinidas. Los formatos aceptados son PDF y DOCX.
-                Los planos cartográficos deben venir en .zip con estructura de shapefile.
-            </p>
-
-            <div class="carpetas">
-                <div class="carpeta"><div class="icono">📁</div><div class="nombre">Línea Base</div><div class="hint">PDF, DOCX</div></div>
-                <div class="carpeta"><div class="icono">📁</div><div class="nombre">Plan de Manejo</div><div class="hint">PDF, DOCX</div></div>
-                <div class="carpeta"><div class="icono">📁</div><div class="nombre">Anexos Legales</div><div class="hint">PDF</div></div>
-                <div class="carpeta"><div class="icono">📁</div><div class="nombre">Cartografía</div><div class="hint">ZIP (shapefile)</div></div>
-                <div class="carpeta"><div class="icono">📁</div><div class="nombre">Evidencia Foro Público</div><div class="hint">Solo Categoría III</div></div>
-            </div>
+        <div class="doc-field" style="max-width:340px;">
+          <label>Categoría de impacto ambiental</label>
+          <select>
+            <option>Categoría I — Bajo impacto</option>
+            <option selected>Categoría II — Impacto moderado</option>
+            <option>Categoría III — Alto impacto</option>
+          </select>
         </div>
+      </div>
 
-        <div class="card">
-            <h3>Verificación de requisitos (Categoría II)</h3>
-            <ul class="doc-lista">
-                <li><span class="nombre">Solicitud de evaluación</span> <span class="estado-ok">✓ Completo</span></li>
-                <li><span class="nombre">Copia del título de propiedad</span> <span class="estado-ok">✓ Completo</span></li>
-                <li><span class="nombre">Paz y salvo del Municipio</span> <span class="estado-falta">✗ Falta</span></li>
-                <li><span class="nombre">Certificado de registro de empresa</span> <span class="estado-ok">✓ Completo</span></li>
-                <li><span class="nombre">Hoja de vida del profesional</span> <span class="estado-falta">✗ Falta</span></li>
-            </ul>
-            <p class="mt-2" style="color:#c0392b; font-size:0.9rem;">
-                ⚠ No puedes marcar el expediente como "listo" hasta completar todos los documentos obligatorios.
-            </p>
+      <div class="panel">
+        <h3>Documentos del expediente</h3>
+        <p class="panel-note">Formatos aceptados: PDF y DOCX. Los planos cartográficos deben venir en .zip con estructura de shapefile válida.</p>
+        <div class="folder-grid">
+          <div class="folder"><div class="name">Línea Base</div><div class="hint">PDF · DOCX</div></div>
+          <div class="folder"><div class="name">Plan de Manejo</div><div class="hint">PDF · DOCX</div></div>
+          <div class="folder"><div class="name">Anexos Legales</div><div class="hint">PDF</div></div>
+          <div class="folder"><div class="name">Cartografía</div><div class="hint">ZIP · shapefile</div></div>
+          <div class="folder"><div class="name">Evidencia Foro Público</div><div class="hint">Solo Categoría III</div></div>
         </div>
+      </div>
 
-        <div class="flex gap-2">
-            <a href="expedientes.html" class="btn btn-secondary">Cancelar</a>
-            <button class="btn btn-primary">Guardar borrador</button>
-        </div>
-    </main>
+      <div class="panel">
+        <h3>Verificación de requisitos</h3>
+        <p class="panel-note"><span class="tier"><b>II</b> Categoría II — impacto moderado</span></p>
+        <ul class="checklist" id="checklist"></ul>
+        <div class="checklist-warn">No puedes marcar el expediente como "listo" hasta completar todos los documentos obligatorios.</div>
+      </div>
+
+      <div class="btn-row">
+        <a href="expedientes.html" class="btn btn-ghost" style="border:1.5px solid var(--line);">Cancelar</a>
+        <button class="btn btn-brass">Guardar borrador</button>
+      </div>
+    </div>
+  </div>
 </div>
+
+<script src="js/mock.js"></script>
+<script>
+  const ul = document.getElementById('checklist');
+  MOCK_DOCUMENTOS_CAT2.forEach(d => {
+    ul.innerHTML += `
+      <li>
+        <span class="name">${d.nombre}</span>
+        <span class="${d.ok ? 'tag-ok' : 'tag-missing'}">${d.ok ? 'Completo' : 'Falta'}</span>
+      </li>
+    `;
+  });
+</script>
 </body>
 </html>

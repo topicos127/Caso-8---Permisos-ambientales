@@ -1,49 +1,87 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Panel - Permisos Ambientales</title>
-    <link rel="stylesheet" href="css/estilos.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel — Permisos Ambientales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilos.css">
 </head>
 <body>
-<div class="app">
-    <header class="app-header">
-        <h1>Permisos Ambientales</h1>
-        <div class="user">Consultor Uno · <a href="index.html" style="color:#fff">Salir</a></div>
-    </header>
-    <aside class="app-sidebar">
-        <a href="dashboard.html" class="active">Panel</a>
-        <a href="expedientes.html">Mis expedientes</a>
-        <a href="expediente-nuevo.html">Nuevo expediente</a>
-        <a href="consulta-publica.html">Consulta pública</a>
-    </aside>
-    <main class="app-main">
+<div class="shell">
+  <aside class="rail">
+    <div class="rail-brand">
+      <div class="seal">
+        <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.1">
+          <circle cx="20" cy="20" r="17"/>
+          <path d="M6 24c4-4 8 4 12 0s8-6 12 0" opacity="0.6"/>
+          <path d="M7 16c4-3 8 3 12 0s8-5 12 0" opacity="0.45"/>
+          <circle cx="20" cy="20" r="2.2" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+      <div><b>Permisos<br>Ambientales</b><span>Caso 8 · MiAmbiente</span></div>
+    </div>
+    <nav>
+      <a href="dashboard.html" class="active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="7" height="7"/><rect x="13.5" y="3.5" width="7" height="7"/><rect x="3.5" y="13.5" width="7" height="7"/><rect x="13.5" y="13.5" width="7" height="7"/></svg>
+        Panel
+      </a>
+      <a href="expedientes.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6.5a1.5 1.5 0 0 1 1.5-1.5H10l2 2.5h6.5A1.5 1.5 0 0 1 20 9v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18z"/></svg>
+        Mis expedientes
+      </a>
+      <a href="expediente-nuevo.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3.5h9l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z"/><path d="M12 11v6M9 14h6"/></svg>
+        Nuevo expediente
+      </a>
+      <a href="consulta-publica.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M19.5 19.5 15 15"/></svg>
+        Consulta pública
+      </a>
+    </nav>
+    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 3</div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="crumb">PANEL</span>
+      <div class="who"><span class="tag">Consultor</span> Consultor Uno <a href="index.html">Salir</a></div>
+    </div>
+
+    <div class="content">
+      <div class="content-head">
         <h2>Panel principal</h2>
+      </div>
 
-        <div class="metricas">
-            <div class="metrica"><div class="num">3</div><div class="lbl">Expedientes activos</div></div>
-            <div class="metrica"><div class="num">1</div><div class="lbl">Pendiente de subsanación</div></div>
-            <div class="metrica"><div class="num">2</div><div class="lbl">Documentos por vencer</div></div>
-            <div class="metrica"><div class="num">1</div><div class="lbl">Aprobado este mes</div></div>
-        </div>
+      <div class="stat-row">
+        <div class="stat"><div class="num">3</div><div class="lbl">Expedientes activos</div></div>
+        <div class="stat"><div class="num">1</div><div class="lbl">Pendiente de subsanación</div></div>
+        <div class="stat"><div class="num">2</div><div class="lbl">Documentos por vencer</div></div>
+        <div class="stat"><div class="num">1</div><div class="lbl">Aprobado este mes</div></div>
+      </div>
 
-        <div class="card">
-            <h3>Actividad reciente</h3>
-            <ul class="doc-lista">
-                <li><span class="nombre">EXP-2026-001 · Planta Solar Azuero</span> <span class="badge badge-evaluacion">En evaluación</span></li>
-                <li><span class="nombre">EXP-2026-002 · Hotel Costero Bocas</span> <span class="badge badge-pendiente">Pendiente</span></li>
-                <li><span class="nombre">EXP-2026-003 · Reforestación Darién</span> <span class="badge badge-aprobado">Aprobado</span></li>
-            </ul>
-        </div>
+      <div class="panel">
+        <h3>Actividad reciente</h3>
+        <p class="panel-note">Últimos movimientos sobre tus expedientes.</p>
+        <ul class="reg-list">
+          <li><span><span class="code">SP-A8-2026-001</span>Planta Solar Azuero</span> <span class="status status-warn">En evaluación</span></li>
+          <li><span><span class="code">SP-A8-2026-002</span>Hotel Costero Bocas</span> <span class="status status-bad">Pendiente</span></li>
+          <li><span><span class="code">SP-A8-2026-003</span>Reforestación Darién</span> <span class="status status-ok">Aprobado</span></li>
+        </ul>
+      </div>
 
-        <div class="card">
-            <h3>Alertas próximas</h3>
-            <ul class="doc-lista">
-                <li><span class="nombre">Paz y salvo del Municipio vence en 12 días</span> <a href="#">Renovar</a></li>
-                <li><span class="nombre">Certificado de registro vence en 28 días</span> <a href="#">Renovar</a></li>
-            </ul>
-        </div>
-    </main>
+      <div class="panel">
+        <h3>Alertas próximas</h3>
+        <p class="panel-note">Documentos con vigencia por vencer.</p>
+        <ul class="reg-list">
+          <li>Paz y salvo del Municipio vence en 12 días <a href="#">Renovar</a></li>
+          <li>Certificado de registro vence en 28 días <a href="#">Renovar</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
 </div>
 </body>
 </html>
