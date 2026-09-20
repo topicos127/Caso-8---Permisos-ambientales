@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-permisos
+  labels:
+    app: mysql-permisos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql-permisos
+  template:
+    metadata:
+      labels:
+        app: mysql-permisos
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-credenciales
+                  key: DB_PASSWORD
+            - name: MYSQL_DATABASE
+              value: permisos_ambientales
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: mysql-pvc
