@@ -36,6 +36,8 @@
     .layout { grid-template-columns: 1fr; }
     .context { min-height: 220px; }
   }
+
+  /* ==== Panel izquierdo (contexto) ==== */
   .context {
     position: relative;
     overflow: hidden;
@@ -46,7 +48,7 @@
     color: #eef3ea;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
     padding: 48px;
   }
   .collage {
@@ -60,7 +62,7 @@
     stroke: #eef3ea;
     fill: none;
   }
-  .mark, .context > div, .context .foot {
+  .mark, .textblock, .foot {
     position: relative;
     z-index: 1;
   }
@@ -74,42 +76,29 @@
     justify-content: center;
   }
   .mark svg { width: 22px; height: 22px; }
-  .context {
-  position: relative;
-  overflow: hidden;
-  background:
-    linear-gradient(160deg, rgba(44,75,52,.88), rgba(31,42,34,.92)),
-    url('nature.jpg') center/cover no-repeat,
-    var(--accent-dark);
-  color: #eef3ea;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  padding: 48px;
-}
-.textblock {
-  margin-top: 150px;
-}
-.context h1 {
-  font-family: 'Fraunces', serif;
-  font-weight: 600;
-  font-size: clamp(28px, 4vw, 40px);
-  line-height: 1.15;
-  margin: 0 0 12px;
-  max-width: 11ch;
-}
-.context p {
-  font-size: 15px;
-  line-height: 1.6;
-  color: #cfdac9;
-  max-width: 34ch;
-  margin: 0;
-}
-.context .foot {
-  font-size: 13px;
-  color: #a9bfa2;
-  margin-top: auto;
-}
+  .textblock { margin-top: 150px; }
+  .context h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(28px, 4vw, 40px);
+    line-height: 1.15;
+    margin: 0 0 12px;
+    max-width: 11ch;
+  }
+  .context p {
+    font-size: 15px;
+    line-height: 1.6;
+    color: #cfdac9;
+    max-width: 34ch;
+    margin: 0;
+  }
+  .foot {
+    font-size: 13px;
+    color: #a9bfa2;
+    margin-top: auto;
+  }
+
+  /* ==== Panel derecho (formulario) ==== */
   .form-side {
     display: flex;
     align-items: center;
@@ -168,6 +157,7 @@
   }
   button:hover { background: var(--accent-dark); }
   button:disabled { background: #a9bfa2; cursor: not-allowed; }
+
   .message {
     margin-top: 18px;
     padding: 12px 14px;
@@ -187,6 +177,22 @@
     color: var(--error);
     border: 1px solid #e3c6ba;
   }
+
+  /* ==== Link a registro ==== */
+  .link-registro {
+    margin-top: 22px;
+    text-align: center;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+  }
+  .link-registro a {
+    color: var(--accent);
+    font-weight: 500;
+    text-decoration: none;
+  }
+  .link-registro a:hover { text-decoration: underline; }
+
+  /* ==== Credenciales de prueba ==== */
   .hint {
     margin-top: 22px;
     font-size: 12.5px;
@@ -203,11 +209,17 @@
 <body>
   <div class="layout">
     <div class="context">
-  <div class="textblock">
-    <h1>Permisos Ambientales</h1>
-    <p>Acceso para consultoras ambientales y empresas promotoras. Cada usuario ve únicamente los expedientes asociados a su perfil.</p>
-  </div>
-</div>
+      <div class="mark">
+        <svg viewBox="0 0 24 24" stroke-width="1.5">
+          <path d="M12 3v18M5 8l7-5 7 5M5 16l7 5 7-5"/>
+        </svg>
+      </div>
+      <div class="textblock">
+        <h1>Permisos Ambientales</h1>
+        <p>Acceso para consultoras ambientales y empresas promotoras. Cada usuario ve únicamente los expedientes asociados a su perfil.</p>
+      </div>
+      <div class="foot">Sistema de gestión de expedientes · Caso 8</div>
+    </div>
 
     <div class="form-side">
       <div class="card">
@@ -225,6 +237,10 @@
           </div>
           <button type="submit" id="submitBtn">Iniciar sesión</button>
         </form>
+
+        <p class="link-registro">
+          ¿No tienes cuenta? <a href="registro.html">Regístrate aquí</a>
+        </p>
 
         <div id="message" class="message"></div>
       </div>
@@ -258,8 +274,16 @@
       });
       const data = await response.json();
       showMessage(data.mensaje, data.acceso === true);
+
+      if (data.acceso === true) {
+        sessionStorage.setItem('usuario', JSON.stringify({
+          email: email,
+          rol: data.rol
+        }));
+        setTimeout(() => window.location.href = 'dashboard.html', 900);
+      }
     } catch (err) {
-      showMessage('No se pudo conectar con el servidor. Verifica que app.py esté corriendo en localhost:5000.', false);
+      showMessage('No se pudo conectar con el servidor. Verifica que el login-service esté corriendo.', false);
     } finally {
       btn.disabled = false;
       btn.textContent = 'Iniciar sesión';

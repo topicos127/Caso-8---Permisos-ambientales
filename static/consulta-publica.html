@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Consulta Pública</title>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="app">
+    <header class="app-header">
+        <h1>Permisos Ambientales</h1>
+        <div class="user">Consultor Uno · <a href="index.html" style="color:#fff">Salir</a></div>
+    </header>
+    <aside class="app-sidebar">
+        <a href="dashboard.html">Panel</a>
+        <a href="expedientes.html">Mis expedientes</a>
+        <a href="expediente-nuevo.html">Nuevo expediente</a>
+        <a href="consulta-publica.html" class="active">Consulta pública</a>
+    </aside>
+    <main class="app-main">
+        <h2>Consulta pública de proyectos</h2>
+        <p style="font-size:0.9rem; color:#666; margin-bottom:16px;">
+            Busca un proyecto por su código de expediente para consultar su estado e impacto ambiental.
+            Solo se muestra información pública (sin datos personales).
+        </p>
+
+        <div class="card">
+            <div class="flex gap-2">
+                <input type="text" placeholder="Ej. EXP-2026-001" style="flex:1; padding:10px; border:1px solid #ccc; border-radius:6px;">
+                <button class="btn btn-primary">Buscar</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Resultado</h3>
+            <table class="tabla">
+                <tbody>
+                    <tr><th>Código</th><td>EXP-2026-001</td></tr>
+                    <tr><th>Proyecto</th><td>Planta Solar Azuero</td></tr>
+                    <tr><th>Promotor</th><td>Energía Verde S.A.</td></tr>
+                    <tr><th>Categoría</th><td>II — Impacto moderado</td></tr>
+                    <tr><th>Estado</th><td><span class="badge badge-evaluacion">En evaluación</span></td></tr>
+                </tbody>
+            </table>
+            <a href="#" class="btn btn-secondary mt-2">Descargar resumen ejecutivo (PDF)</a>
+        </div>
+    </main>
+</div>
+</body>
+</html>

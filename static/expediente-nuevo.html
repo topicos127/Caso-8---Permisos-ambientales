@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Nuevo Expediente</title>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="app">
+    <header class="app-header">
+        <h1>Permisos Ambientales</h1>
+        <div class="user">Consultor Uno · <a href="index.html" style="color:#fff">Salir</a></div>
+    </header>
+    <aside class="app-sidebar">
+        <a href="dashboard.html">Panel</a>
+        <a href="expedientes.html">Mis expedientes</a>
+        <a href="expediente-nuevo.html" class="active">Nuevo expediente</a>
+        <a href="consulta-publica.html">Consulta pública</a>
+    </aside>
+    <main class="app-main">
+        <h2>Nuevo expediente</h2>
+
+        <div class="card">
+            <h3>Datos del proyecto</h3>
+            <div class="campo"><label>Nombre del proyecto</label><input type="text" placeholder="Ej. Planta Solar Azuero"></div>
+            <div class="campo"><label>Promotor / Empresa</label><input type="text" placeholder="Ej. Energía Verde S.A."></div>
+            <div class="campo">
+                <label>Categoría del estudio de impacto ambiental</label>
+                <select>
+                    <option>Categoría I — Bajo impacto</option>
+                    <option>Categoría II — Impacto moderado</option>
+                    <option>Categoría III — Alto impacto</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Documentos del expediente</h3>
+            <p class="mb-2" style="color:#666; font-size:0.9rem;">
+                Sube los archivos en las carpetas predefinidas. Los formatos aceptados son PDF y DOCX.
+                Los planos cartográficos deben venir en .zip con estructura de shapefile.
+            </p>
+
+            <div class="carpetas">
+                <div class="carpeta"><div class="icono">📁</div><div class="nombre">Línea Base</div><div class="hint">PDF, DOCX</div></div>
+                <div class="carpeta"><div class="icono">📁</div><div class="nombre">Plan de Manejo</div><div class="hint">PDF, DOCX</div></div>
+                <div class="carpeta"><div class="icono">📁</div><div class="nombre">Anexos Legales</div><div class="hint">PDF</div></div>
+                <div class="carpeta"><div class="icono">📁</div><div class="nombre">Cartografía</div><div class="hint">ZIP (shapefile)</div></div>
+                <div class="carpeta"><div class="icono">📁</div><div class="nombre">Evidencia Foro Público</div><div class="hint">Solo Categoría III</div></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Verificación de requisitos (Categoría II)</h3>
+            <ul class="doc-lista">
+                <li><span class="nombre">Solicitud de evaluación</span> <span class="estado-ok">✓ Completo</span></li>
+                <li><span class="nombre">Copia del título de propiedad</span> <span class="estado-ok">✓ Completo</span></li>
+                <li><span class="nombre">Paz y salvo del Municipio</span> <span class="estado-falta">✗ Falta</span></li>
+                <li><span class="nombre">Certificado de registro de empresa</span> <span class="estado-ok">✓ Completo</span></li>
+                <li><span class="nombre">Hoja de vida del profesional</span> <span class="estado-falta">✗ Falta</span></li>
+            </ul>
+            <p class="mt-2" style="color:#c0392b; font-size:0.9rem;">
+                ⚠ No puedes marcar el expediente como "listo" hasta completar todos los documentos obligatorios.
+            </p>
+        </div>
+
+        <div class="flex gap-2">
+            <a href="expedientes.html" class="btn btn-secondary">Cancelar</a>
+            <button class="btn btn-primary">Guardar borrador</button>
+        </div>
+    </main>
+</div>
+</body>
+</html>

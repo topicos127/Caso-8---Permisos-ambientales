@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mis Expedientes</title>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="app">
+    <header class="app-header">
+        <h1>Permisos Ambientales</h1>
+        <div class="user">Consultor Uno · <a href="index.html" style="color:#fff">Salir</a></div>
+    </header>
+    <aside class="app-sidebar">
+        <a href="dashboard.html">Panel</a>
+        <a href="expedientes.html" class="active">Mis expedientes</a>
+        <a href="expediente-nuevo.html">Nuevo expediente</a>
+        <a href="consulta-publica.html">Consulta pública</a>
+    </aside>
+    <main class="app-main">
+        <div class="flex-between mb-3">
+            <h2 class="mb-0">Mis expedientes</h2>
+            <a href="expediente-nuevo.html" class="btn btn-primary">+ Nuevo expediente</a>
+        </div>
+
+        <table class="tabla">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Proyecto</th>
+                    <th>Promotor</th>
+                    <th>Categoría</th>
+                    <th>Estado</th>
+                    <th>Fecha</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="tabla-expedientes"></tbody>
+        </table>
+    </main>
+</div>
+<script src="js/mock.js"></script>
+<script>
+    const tbody = document.getElementById('tabla-expedientes');
+    MOCK_EXPEDIENTES.forEach(e => {
+        tbody.innerHTML += `
+            <tr>
+                <td>${e.codigo}</td>
+                <td>${e.proyecto}</td>
+                <td>${e.promotor}</td>
+                <td>${e.categoria}</td>
+                <td><span class="${claseBadge(e.estado)}">${textoEstado(e.estado)}</span></td>
+                <td>${e.fecha}</td>
+                <td><a href="expediente-detalle.html">Ver detalle</a></td>
+            </tr>
+        `;
+    });
+</script>
+</body>
+</html>

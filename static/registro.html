@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro - Permisos Ambientales</title>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="login-wrap">
+    <div class="login-lado-izq">
+        <h1>Permisos Ambientales</h1>
+        <p>Crea tu cuenta como consultor o promotor para gestionar tus expedientes.</p>
+    </div>
+    <div class="login-lado-der">
+        <form class="login-card" id="formRegistro">
+            <h2>Registro de Usuario</h2>
+
+            <div class="campo">
+                <label for="tipo">Tipo de usuario</label>
+                <select id="tipo">
+                    <option value="consultor">Consultor ambiental</option>
+                    <option value="promotor">Promotor / Empresa</option>
+                </select>
+            </div>
+            <div class="campo">
+                <label for="nombre">Nombre completo</label>
+                <input type="text" id="nombre" placeholder="Ej. Juan Pérez" required>
+            </div>
+            <div class="campo">
+                <label for="email">Correo electrónico</label>
+                <input type="email" id="email" placeholder="correo@ejemplo.com" required>
+            </div>
+            <div class="campo">
+                <label for="password">Contraseña</label>
+                <input type="password" id="password" placeholder="Mínimo 8 caracteres" required>
+            </div>
+            <div class="campo">
+                <label for="password2">Repetir contraseña</label>
+                <input type="password" id="password2" placeholder="Repita la contraseña" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Registrarme</button>
+            <p class="text-center mt-2" style="font-size:0.9rem;">
+                ¿Ya tienes cuenta? <a href="index.html">Inicia sesión</a>
+            </p>
+            <div id="mensaje" class="msg"></div>
+        </form>
+    </div>
+</div>
+<script>
+    document.getElementById('formRegistro').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const m = document.getElementById('mensaje');
+        m.className = 'msg exito';
+        m.textContent = 'Prototipo: el registro se implementará en un próximo sprint.';
+    });
+</script>
+</body>
+</html>

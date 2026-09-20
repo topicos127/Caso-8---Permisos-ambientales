@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Detalle de Expediente</title>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="app">
+    <header class="app-header">
+        <h1>Permisos Ambientales</h1>
+        <div class="user">Consultor Uno · <a href="index.html" style="color:#fff">Salir</a></div>
+    </header>
+    <aside class="app-sidebar">
+        <a href="dashboard.html">Panel</a>
+        <a href="expedientes.html" class="active">Mis expedientes</a>
+        <a href="expediente-nuevo.html">Nuevo expediente</a>
+        <a href="consulta-publica.html">Consulta pública</a>
+    </aside>
+    <main class="app-main">
+        <a href="expedientes.html" style="font-size:0.9rem;">← Volver a la lista</a>
+        <h2 class="mt-2">EXP-2026-001 · Planta Solar Azuero</h2>
+
+        <div class="card">
+            <div class="flex-between mb-2">
+                <div>
+                    <div style="font-size:0.9rem; color:#666;">Estado del trámite</div>
+                    <div class="mt-1">
+                        <span class="semaforo sem-amarillo"></span>
+                        <strong>En evaluación</strong>
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size:0.9rem; color:#666;">Categoría</div>
+                    <div class="mt-1"><span class="badge badge-info">Categoría II</span></div>
+                </div>
+                <div>
+                    <div style="font-size:0.9rem; color:#666;">Promotor</div>
+                    <div class="mt-1"><strong>Energía Verde S.A.</strong></div>
+                </div>
+                <div>
+                    <div style="font-size:0.9rem; color:#666;">Fecha de ingreso</div>
+                    <div class="mt-1"><strong>10/09/2026</strong></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Documentos del expediente</h3>
+            <ul class="doc-lista">
+                <li><span class="nombre">Línea Base</span> <span class="estado-ok">✓ Recibido</span></li>
+                <li><span class="nombre">Plan de Manejo</span> <span class="estado-ok">✓ Recibido</span></li>
+                <li><span class="nombre">Anexos Legales</span> <span class="estado-falta">✗ Pendiente</span></li>
+                <li><span class="nombre">Cartografía</span> <span class="estado-ok">✓ Recibido</span></li>
+            </ul>
+            <a href="#" class="btn btn-secondary mt-2">Descargar expediente completo (.zip)</a>
+        </div>
+
+        <div class="card">
+            <h3>Aprobación interna</h3>
+            <p style="font-size:0.9rem; color:#666; margin-bottom:12px;">
+                Como jefe de la consultora, aprueba este expediente antes de someterlo a MiAmbiente.
+            </p>
+            <div class="campo">
+                <label>Motivo de aprobación</label>
+                <textarea rows="3" placeholder="Ej. Documentación verificada y completa..."></textarea>
+            </div>
+            <button class="btn btn-primary">Aprobar expediente</button>
+        </div>
+    </main>
+</div>
+</body>
+</html>

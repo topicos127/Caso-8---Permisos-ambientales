@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel - Permisos Ambientales</title>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="app">
+    <header class="app-header">
+        <h1>Permisos Ambientales</h1>
+        <div class="user">Consultor Uno · <a href="index.html" style="color:#fff">Salir</a></div>
+    </header>
+    <aside class="app-sidebar">
+        <a href="dashboard.html" class="active">Panel</a>
+        <a href="expedientes.html">Mis expedientes</a>
+        <a href="expediente-nuevo.html">Nuevo expediente</a>
+        <a href="consulta-publica.html">Consulta pública</a>
+    </aside>
+    <main class="app-main">
+        <h2>Panel principal</h2>
+
+        <div class="metricas">
+            <div class="metrica"><div class="num">3</div><div class="lbl">Expedientes activos</div></div>
+            <div class="metrica"><div class="num">1</div><div class="lbl">Pendiente de subsanación</div></div>
+            <div class="metrica"><div class="num">2</div><div class="lbl">Documentos por vencer</div></div>
+            <div class="metrica"><div class="num">1</div><div class="lbl">Aprobado este mes</div></div>
+        </div>
+
+        <div class="card">
+            <h3>Actividad reciente</h3>
+            <ul class="doc-lista">
+                <li><span class="nombre">EXP-2026-001 · Planta Solar Azuero</span> <span class="badge badge-evaluacion">En evaluación</span></li>
+                <li><span class="nombre">EXP-2026-002 · Hotel Costero Bocas</span> <span class="badge badge-pendiente">Pendiente</span></li>
+                <li><span class="nombre">EXP-2026-003 · Reforestación Darién</span> <span class="badge badge-aprobado">Aprobado</span></li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h3>Alertas próximas</h3>
+            <ul class="doc-lista">
+                <li><span class="nombre">Paz y salvo del Municipio vence en 12 días</span> <a href="#">Renovar</a></li>
+                <li><span class="nombre">Certificado de registro vence en 28 días</span> <a href="#">Renovar</a></li>
+            </ul>
+        </div>
+    </main>
+</div>
+</body>
+</html>
