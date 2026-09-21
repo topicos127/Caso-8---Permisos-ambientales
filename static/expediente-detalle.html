@@ -73,7 +73,7 @@
           <li><span class="name">Anexos Legales</span> <span class="tag-missing">Pendiente</span></li>
           <li><span class="name">Cartografía</span> <span class="tag-ok">Recibido</span></li>
         </ul>
-        <a href="#" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line);">Descargar expediente completo (.zip)</a>
+        <button type="button" id="btnZip" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line);">Descargar expediente completo (.zip)</button>
       </div>
 
       <div class="panel">
@@ -88,5 +88,36 @@
     </div>
   </div>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+  document.getElementById('btnZip').addEventListener('click', async () => {
+    const zip = new JSZip();
+    zip.file(
+      "indice.txt",
+      "EXPEDIENTE SP-A8-2026-001\n" +
+      "Proyecto: Planta Solar Azuero\n" +
+      "Promotor: Energía Verde S.A.\n" +
+      "Categoría: II - Impacto moderado\n" +
+      "Estado: En evaluación\n" +
+      "Fecha de ingreso: 10/09/2026\n\n" +
+      "Documentos incluidos:\n" +
+      "- Línea Base (recibido)\n" +
+      "- Plan de Manejo (recibido)\n" +
+      "- Anexos Legales (pendiente)\n" +
+      "- Cartografía (recibido)\n\n" +
+      "Archivo de demostración del prototipo. La generación real del\n" +
+      "expediente comprimido se implementará junto con el módulo de\n" +
+      "carga de documentos (HU-01 a HU-04)."
+    );
+    const blob = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'SP-A8-2026-001.zip';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+</script>
 </body>
 </html>
