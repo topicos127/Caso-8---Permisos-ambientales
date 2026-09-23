@@ -59,3 +59,26 @@ CREATE TABLE IF NOT EXISTS documentos (
     fecha_subida TIMESTAMP NULL,
     FOREIGN KEY (expediente_id) REFERENCES expedientes(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS expedientes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    codigo VARCHAR(30) NOT NULL UNIQUE,
+    proyecto VARCHAR(150) NOT NULL,
+    promotor VARCHAR(150) NOT NULL,
+    categoria ENUM('I', 'II', 'III') NOT NULL,
+    estado ENUM('evaluacion', 'pendiente', 'aprobado', 'rechazado') NOT NULL DEFAULT 'evaluacion',
+    creado_por INT NOT NULL,
+    fecha_ingreso DATE NOT NULL,
+    aprobacion_motivo TEXT NULL,
+    aprobacion_fecha DATETIME NULL,
+    aprobacion_usuario_id INT NULL,
+    FOREIGN KEY (creado_por) REFERENCES usuarios(id)
+);
+
+CREATE TABLE IF NOT EXISTS documentos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    expediente_id INT NOT NULL,
+    carpeta VARCHAR(100) NOT NULL,
+    estado ENUM('recibido', 'pendiente') NOT NULL DEFAULT 'pendiente',
+    FOREIGN KEY (expediente_id) REFERENCES expedientes(id)
+);

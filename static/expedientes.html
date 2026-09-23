@@ -47,7 +47,7 @@
   <div class="main">
     <div class="topbar">
       <span class="crumb">MIS EXPEDIENTES</span>
-      <div class="who"><span class="tag">Consultor</span> Consultor Uno <a href="index.html">Salir</a></div>
+      <div class="who"></div>
     </div>
 
     <div class="content">
@@ -70,17 +70,28 @@
               <th></th>
             </tr>
           </thead>
-          <tbody id="tabla-expedientes"></tbody>
+          <tbody id="tabla-expedientes">
+            <tr><td colspan="7" style="padding:24px; text-align:center; color:var(--muted, #777);">Cargando expedientes…</td></tr>
+          </tbody>
         </table>
       </div>
     </div>
   </div>
 </div>
 
-<script src="js/mock.js"></script>
+<script src="js/api.js"></script>
 <script>
+requireAuth();
+pintarTopbar();
+
+apiFetch('/expedientes').then(d => {
   const tbody = document.getElementById('tabla-expedientes');
-  MOCK_EXPEDIENTES.forEach(e => {
+  if (!d.expedientes || d.expedientes.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="padding:24px; text-align:center;">Todavía no tienes expedientes. Crea el primero.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = '';
+  d.expedientes.forEach(e => {
     tbody.innerHTML += `
       <tr>
         <td style="padding-left:24px;"><span class="case-tag">${e.codigo}</span></td>
@@ -88,11 +99,12 @@
         <td>${e.promotor}</td>
         <td>${fichaTier(e.categoria)}</td>
         <td><span class="${claseEstado(e.estado)}">${textoEstado(e.estado)}</span></td>
-        <td>${e.fecha}</td>
-        <td><a href="expediente-detalle.html">Ver detalle →</a></td>
+        <td>${e.fecha_ingreso}</td>
+        <td><a href="expediente-detalle.html?codigo=${e.codigo}">Ver detalle →</a></td>
       </tr>
     `;
   });
+}).catch(console.error);
 </script>
 </body>
 </html>

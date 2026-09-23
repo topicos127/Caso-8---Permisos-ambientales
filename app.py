@@ -18,6 +18,35 @@ DB_CONFIG = {
     "cursorclass": pymysql.cursors.DictCursor,
 }
 
+# Documentos exigidos por categoria de Estudio de Impacto Ambiental,
+# conforme al Decreto Ejecutivo 59 de 2000 (Articulos 23, 24 y 25).
+# Cada categoria acumula los documentos de la categoria anterior.
+DOCS_CATEGORIA_I = [
+    "Paz y Salvo de la ANAM",
+    "Descripcion del proyecto",
+    "Descripcion del area de influencia",
+    "Identificacion de impactos",
+    "Declaracion jurada notariada",
+]
+DOCS_CATEGORIA_II = DOCS_CATEGORIA_I + [
+    "Resumen ejecutivo (max. 20 paginas)",
+    "Plan de Manejo Ambiental",
+    "Plan de participacion ciudadana",
+    "Equipo de profesionales",
+    "Anexos cartograficos",
+]
+DOCS_CATEGORIA_III = [
+    d for d in DOCS_CATEGORIA_II if d != "Resumen ejecutivo (max. 20 paginas)"
+] + [
+    "Resumen ejecutivo (max. 40 paginas)",
+    "Evidencia de foro publico",
+]
+DOCS_POR_CATEGORIA = {
+    "I": DOCS_CATEGORIA_I,
+    "II": DOCS_CATEGORIA_II,
+    "III": DOCS_CATEGORIA_III,
+}
+
 
 def get_connection():
     return pymysql.connect(**DB_CONFIG)
@@ -25,6 +54,12 @@ def get_connection():
 
 def usuario_actual():
     return request.headers.get("X-Usuario-Email", "").strip().lower()
+
+
+def obtener_usuario_id(cur, email):
+    cur.execute("SELECT id FROM usuarios WHERE email=%s", (email,))
+    row = cur.fetchone()
+    return row["id"] if row else None
 
 
 # ---------- Estaticos y servicio ----------
@@ -102,6 +137,8 @@ def registro():
         return jsonify({"ok": False, "mensaje": "Todos los campos son obligatorios."}), 400
     if len(password) < 8:
         return jsonify({"ok": False, "mensaje": "La contrasena debe tener al menos 8 caracteres."}), 400
+    if rol not in ("consultor", "promotor"):
+        return jsonify({"ok": False, "mensaje": "Tipo de usuario invalido."}), 400
 
     try:
         conn = get_connection()
@@ -209,7 +246,7 @@ def listar_expedientes():
 
     for f in filas:
         if f["fecha_ingreso"]:
-            f["fecha_ingreso"] = f["fecha_ingreso"].strftime("%Y-%m-%d")
+            f["fecha_ingreso"] = f["fecha_ingreso"].strftime("%d/%m/%Y")
 
     return jsonify({"expedientes": filas})
 
@@ -227,16 +264,16 @@ def crear_expediente():
 
     if not proyecto or not promotor:
         return jsonify({"ok": False, "mensaje": "Proyecto y promotor son obligatorios."}), 400
+    if categoria not in DOCS_POR_CATEGORIA:
+        return jsonify({"ok": False, "mensaje": "Categoria invalida."}), 400
 
     try:
         conn = get_connection()
         try:
             with conn.cursor() as cur:
-                cur.execute("SELECT id FROM usuarios WHERE email=%s", (email,))
-                u = cur.fetchone()
-                if not u:
+                uid = obtener_usuario_id(cur, email)
+                if not uid:
                     return jsonify({"ok": False, "mensaje": "Usuario no encontrado."}), 404
-                uid = u["id"]
 
                 cur.execute("SELECT COUNT(*) AS n FROM expedientes")
                 n = cur.fetchone()["n"] + 1
@@ -249,12 +286,7 @@ def crear_expediente():
                 )
                 exp_id = cur.lastrowid
 
-                DOCS = {
-                    "I": ["Linea Base", "Plan de Manejo", "Anexos Legales"],
-                    "II": ["Linea Base", "Plan de Manejo", "Anexos Legales", "Cartografia"],
-                    "III": ["Linea Base", "Plan de Manejo", "Anexos Legales", "Cartografia", "Evidencia Foro Publico"],
-                }
-                for carpeta in DOCS.get(categoria, DOCS["II"]):
+                for carpeta in DOCS_POR_CATEGORIA[categoria]:
                     cur.execute(
                         "INSERT INTO documentos (expediente_id, carpeta, estado) VALUES (%s, %s, 'pendiente')",
                         (exp_id, carpeta),
@@ -270,14 +302,22 @@ def crear_expediente():
 
 @app.route("/expedientes/<codigo>", methods=["GET"])
 def detalle_expediente(codigo):
+    email = usuario_actual()
+    if not email:
+        return jsonify({"error": "No autenticado"}), 401
+
     try:
         conn = get_connection()
         try:
             with conn.cursor() as cur:
+                uid = obtener_usuario_id(cur, email)
+                if not uid:
+                    return jsonify({"error": "Usuario no encontrado"}), 404
+
                 cur.execute(
                     """SELECT id, codigo, proyecto, promotor, categoria, estado, fecha_ingreso
-                       FROM expedientes WHERE codigo=%s""",
-                    (codigo,),
+                       FROM expedientes WHERE codigo=%s AND usuario_id=%s""",
+                    (codigo, uid),
                 )
                 exp = cur.fetchone()
                 if not exp:
@@ -321,17 +361,28 @@ def aprobar_expediente(codigo):
         conn = get_connection()
         try:
             with conn.cursor() as cur:
-                cur.execute("SELECT id FROM expedientes WHERE codigo=%s", (codigo,))
+                cur.execute("SELECT id, rol FROM usuarios WHERE email=%s", (email,))
+                u = cur.fetchone()
+                if not u:
+                    return jsonify({"ok": False, "mensaje": "Usuario no encontrado."}), 404
+
+                # Solo el rol "consultor" puede dar la aprobacion interna
+                # (equivalente al "jefe de la consultora" en HU-10).
+                if u["rol"] != "consultor":
+                    return jsonify({"ok": False, "mensaje": "No tienes permiso para aprobar expedientes."}), 403
+
+                # El expediente debe pertenecer al usuario que aprueba.
+                cur.execute(
+                    "SELECT id FROM expedientes WHERE codigo=%s AND usuario_id=%s",
+                    (codigo, u["id"]),
+                )
                 exp = cur.fetchone()
                 if not exp:
                     return jsonify({"ok": False, "mensaje": "Expediente no encontrado."}), 404
 
-                cur.execute("SELECT id FROM usuarios WHERE email=%s", (email,))
-                u = cur.fetchone()
-
                 cur.execute(
                     "INSERT INTO aprobaciones (expediente_id, motivo, aprobado_por) VALUES (%s, %s, %s)",
-                    (exp["id"], motivo, u["id"] if u else None),
+                    (exp["id"], motivo, u["id"]),
                 )
                 cur.execute("UPDATE expedientes SET estado='aprobado' WHERE id=%s", (exp["id"],))
             conn.commit()

@@ -45,3 +45,12 @@ function fichaTier(cat) {
   const t = { 'I': 'Bajo impacto', 'II': 'Impacto moderado', 'III': 'Alto impacto' };
   return `<span class="tier"><b>${cat}</b> ${t[cat] || ''}</span>`;
 }
+
+function pintarTopbar() {
+  const u = getUsuario();
+  const who = document.querySelector('.who');
+  if (u && who) {
+    const rolTexto = u.rol === 'promotor' ? 'Promotor' : 'Consultor';
+    who.innerHTML = `<span class="tag">${rolTexto}</span> ${u.nombre || u.email} <a href="index.html">Salir</a>`;
+  }
+}

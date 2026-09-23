@@ -47,7 +47,7 @@
   <div class="main">
     <div class="topbar">
       <span class="crumb">CONSULTA PÚBLICA</span>
-      <div class="who"><span class="tag">Consultor</span> Consultor Uno <a href="index.html">Salir</a></div>
+      <div class="who"></div>
     </div>
 
     <div class="content">
@@ -56,51 +56,86 @@
 
       <div class="panel">
         <div class="search-row">
-          <input type="text" placeholder="Ej. SP-A8-2026-001">
-          <button class="btn btn-brass">Buscar</button>
+          <input type="text" id="inputCodigo" placeholder="Ej. SP-A8-2026-001">
+          <button class="btn btn-brass" id="btnBuscar">Buscar</button>
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel" id="panelResultado" style="display:none;">
         <h3>Resultado</h3>
-        <div class="fact-row mt-3">
-          <div class="fact"><span class="k">CÓDIGO</span><span class="v"><span class="case-tag">SP-A8-2026-001</span></span></div>
-          <div class="fact"><span class="k">PROYECTO</span><span class="v">Planta Solar Azuero</span></div>
-          <div class="fact"><span class="k">PROMOTOR</span><span class="v">Energía Verde S.A.</span></div>
-          <div class="fact"><span class="k">CATEGORÍA</span><span class="tier"><b>II</b> Impacto moderado</span></div>
-          <div class="fact"><span class="k">ESTADO</span><span class="status status-warn">En evaluación</span></div>
-        </div>
+        <div class="fact-row mt-3" id="factRow"></div>
         <button type="button" id="btnPdf" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line);">Descargar resumen ejecutivo (PDF)</button>
+      </div>
+
+      <div class="panel" id="panelSinResultado" style="display:none;">
+        <p class="panel-note">No se encontró ningún expediente con ese código.</p>
       </div>
     </div>
   </div>
 </div>
 
 <script src="js/lib/jspdf.umd.min.js"></script>
+<script src="js/api.js"></script>
 <script>
-  document.getElementById('btnPdf').addEventListener('click', () => {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.text("Resumen Ejecutivo del Expediente", 20, 20);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(11);
-    const lineas = [
-      "Código: SP-A8-2026-001",
-      "Proyecto: Planta Solar Azuero",
-      "Promotor: Energía Verde S.A.",
-      "Categoría: II - Impacto moderado",
-      "Estado: En evaluación",
-      "",
-      "Documento de demostración del prototipo. El resumen ejecutivo",
-      "real se generará a partir del expediente completo una vez",
-      "implementado ese módulo del sistema."
-    ];
-    let y = 34;
-    lineas.forEach(l => { doc.text(l, 20, y); y += 8; });
-    doc.save("SP-A8-2026-001-resumen.pdf");
-  });
+requireAuth();
+pintarTopbar();
+
+let expedienteActual = null;
+
+document.getElementById('btnBuscar').addEventListener('click', async () => {
+  const codigo = document.getElementById('inputCodigo').value.trim();
+  if (!codigo) return;
+
+  const r = await fetch('/consulta/' + encodeURIComponent(codigo));
+  const d = await r.json();
+
+  const panelOk = document.getElementById('panelResultado');
+  const panelNo = document.getElementById('panelSinResultado');
+
+  if (!d.expediente) {
+    panelOk.style.display = 'none';
+    panelNo.style.display = '';
+    return;
+}
+expedienteActual = d.expediente;
+
+  expedienteActual = d.expediente;
+  panelNo.style.display = 'none';
+  panelOk.style.display = '';
+
+  document.getElementById('factRow').innerHTML = `
+    <div class="fact"><span class="k">CÓDIGO</span><span class="v"><span class="case-tag">${expedienteActual.codigo}</span></span></div>
+    <div class="fact"><span class="k">PROYECTO</span><span class="v">${expedienteActual.proyecto}</span></div>
+    <div class="fact"><span class="k">PROMOTOR</span><span class="v">${expedienteActual.promotor}</span></div>
+    <div class="fact"><span class="k">CATEGORÍA</span>${fichaTier(expedienteActual.categoria)}</div>
+    <div class="fact"><span class="k">ESTADO</span><span class="${claseEstado(expedienteActual.estado)}">${textoEstado(expedienteActual.estado)}</span></div>
+  `;
+});
+
+document.getElementById('btnPdf').addEventListener('click', () => {
+  if (!expedienteActual) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text("Resumen Ejecutivo del Expediente", 20, 20);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  const lineas = [
+    "Código: " + expedienteActual.codigo,
+    "Proyecto: " + expedienteActual.proyecto,
+    "Promotor: " + expedienteActual.promotor,
+    "Categoría: " + expedienteActual.categoria,
+    "Estado: " + textoEstado(expedienteActual.estado),
+    "",
+    "Documento de demostración del prototipo. El resumen ejecutivo",
+    "real se generará a partir del expediente completo una vez",
+    "implementado ese módulo del sistema."
+  ];
+  let y = 34;
+  lineas.forEach(l => { doc.text(l, 20, y); y += 8; });
+  doc.save(expedienteActual.codigo + "-resumen.pdf");
+});
 </script>
 </body>
 </html>
