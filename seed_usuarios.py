@@ -1,11 +1,6 @@
 """
-Sistema de Permisos Ambientales - Seed de usuarios (HU-11)
-Sprint 3 - Caso 8
-
-Inserta los usuarios de prueba con la contrasena ya convertida a hash.
-Ejecutar una sola vez, despues de crear la base de datos con schema.sql.
+Sistema de Permisos Ambientales - Seed completo (Sprint 3)
 """
-
 import os
 import pymysql
 from werkzeug.security import generate_password_hash
@@ -18,30 +13,84 @@ DB_CONFIG = {
     "database": os.environ.get("DB_NAME", "permisos_ambientales"),
 }
 
-# (nombre, email, contrasena_en_claro, rol)
-# La contrasena en claro solo existe aqui, para generar el hash una vez.
-USUARIOS_PRUEBA = [
+USUARIOS = [
     ("Consultor Uno", "consultor1@ejemplo.com", "clave123", "consultor"),
     ("Promotor Uno", "promotor1@ejemplo.com", "clave456", "promotor"),
+]
+
+EXPEDIENTES = [
+    # codigo, proyecto, promotor, categoria, estado, fecha, email_dueno
+    ("SP-A8-2026-001", "Planta Solar Azuero",   "Energía Verde S.A.",     "II",  "evaluacion", "2026-09-10", "consultor1@ejemplo.com"),
+    ("SP-A8-2026-002", "Hotel Costero Bocas",   "Inversiones del Caribe", "III", "pendiente",  "2026-09-05", "consultor1@ejemplo.com"),
+    ("SP-A8-2026-003", "Reforestación Darién",  "ONG Ambiental",          "I",   "aprobado",   "2026-08-28", "consultor1@ejemplo.com"),
+]
+
+DOCS_POR_CAT = {
+    "I":   ["Línea Base", "Plan de Manejo", "Anexos Legales"],
+    "II":  ["Línea Base", "Plan de Manejo", "Anexos Legales", "Cartografía"],
+    "III": ["Línea Base", "Plan de Manejo", "Anexos Legales", "Cartografía", "Evidencia Foro Público"],
+}
+
+ALERTAS = [
+    ("SP-A8-2026-001", "Paz y salvo del Municipio vence en 12 días", 12),
+    ("SP-A8-2026-001", "Certificado de registro vence en 28 días", 28),
 ]
 
 
 def main():
     conn = pymysql.connect(**DB_CONFIG)
     try:
-        with conn.cursor() as cursor:
-            for nombre, email, password, rol in USUARIOS_PRUEBA:
-                password_hash = generate_password_hash(password)
-                cursor.execute(
-                    """
-                    INSERT INTO usuarios (nombre, email, password_hash, rol)
-                    VALUES (%s, %s, %s, %s)
-                    ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash)
-                    """,
-                    (nombre, email, password_hash, rol),
+        with conn.cursor() as cur:
+            # Usuarios
+            for nombre, email, password, rol in USUARIOS:
+                cur.execute(
+                    """INSERT INTO usuarios (nombre, email, password_hash, rol)
+                       VALUES (%s, %s, %s, %s)
+                       ON DUPLICATE KEY UPDATE password_hash=VALUES(password_hash)""",
+                    (nombre, email, generate_password_hash(password), rol),
                 )
+
+            # Expedientes + documentos
+            for codigo, proyecto, promotor, categoria, estado, fecha, email in EXPEDIENTES:
+                cur.execute("SELECT id FROM usuarios WHERE email=%s", (email,))
+                row = cur.fetchone()
+                uid = row[0] if row else None
+
+                cur.execute(
+                    """INSERT INTO expedientes (codigo, proyecto, promotor, categoria, estado, fecha_ingreso, usuario_id)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s)
+                       ON DUPLICATE KEY UPDATE
+                         proyecto=VALUES(proyecto), promotor=VALUES(promotor),
+                         categoria=VALUES(categoria), estado=VALUES(estado),
+                         fecha_ingreso=VALUES(fecha_ingreso), usuario_id=VALUES(usuario_id)""",
+                    (codigo, proyecto, promotor, categoria, estado, fecha, uid),
+                )
+
+                cur.execute("SELECT id FROM expedientes WHERE codigo=%s", (codigo,))
+                exp_id = cur.fetchone()[0]
+
+                cur.execute("DELETE FROM documentos WHERE expediente_id=%s", (exp_id,))
+                docs = DOCS_POR_CAT[categoria]
+                for i, carpeta in enumerate(docs):
+                    estado_doc = "pendiente" if i == len(docs) - 1 else "recibido"
+                    cur.execute(
+                        "INSERT INTO documentos (expediente_id, carpeta, estado) VALUES (%s, %s, %s)",
+                        (exp_id, carpeta, estado_doc),
+                    )
+
+            # Alertas
+            cur.execute("DELETE FROM alertas")
+            for codigo, descripcion, dias in ALERTAS:
+                cur.execute("SELECT id FROM expedientes WHERE codigo=%s", (codigo,))
+                row = cur.fetchone()
+                if row:
+                    cur.execute(
+                        "INSERT INTO alertas (expediente_id, descripcion, dias_restantes) VALUES (%s, %s, %s)",
+                        (row[0], descripcion, dias),
+                    )
+
         conn.commit()
-        print("Usuarios de prueba insertados/actualizados correctamente.")
+        print("Seed completo: usuarios, expedientes, documentos y alertas.")
     finally:
         conn.close()
 

@@ -83,5 +83,35 @@
     </div>
   </div>
 </div>
+<script src="js/api.js"></script>
+<script>
+const usuario = requireAuth();
+if (usuario) {
+  document.querySelector('.who').innerHTML =
+    `<span class="tag">${usuario.rol || 'Consultor'}</span> ${usuario.nombre || usuario.email} <a href="index.html">Salir</a>`;
+
+  apiFetch('/dashboard').then(d => {
+    const nums = document.querySelectorAll('.stat .num');
+    if (d.metricas && nums.length >= 4) {
+      nums[0].textContent = d.metricas.activos;
+      nums[1].textContent = d.metricas.pendientes;
+      nums[2].textContent = d.metricas.alertas;
+      nums[3].textContent = d.metricas.aprobados;
+    }
+
+    const ul = document.querySelector('.panel .reg-list');
+    ul.innerHTML = '';
+    d.recientes.forEach(r => {
+      ul.innerHTML += `<li><span><span class="code">${r.codigo}</span>${r.proyecto}</span> <span class="${claseEstado(r.estado)}">${textoEstado(r.estado)}</span></li>`;
+    });
+
+    const ulAl = document.querySelectorAll('.panel .reg-list')[1];
+    ulAl.innerHTML = '';
+    d.alertas.forEach(a => {
+      ulAl.innerHTML += `<li>${a.descripcion} <a href="#">Renovar</a></li>`;
+    });
+  }).catch(console.error);
+}
+</script>
 </body>
 </html>

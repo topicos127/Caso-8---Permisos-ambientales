@@ -87,13 +87,38 @@
   </div>
 </div>
 
+<script src="js/api.js"></script>
 <script>
-  document.getElementById('formRegistro').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const m = document.getElementById('mensaje');
-    m.className = 'doc-msg show ok';
-    m.textContent = 'Prototipo: el registro se implementará en un próximo sprint.';
-  });
+document.getElementById('formRegistro').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const m = document.getElementById('mensaje');
+  const nombre = document.getElementById('nombre').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const password2 = document.getElementById('password2').value;
+  const rol = document.getElementById('tipo').value;
+
+  if (password !== password2) {
+    m.className = 'doc-msg show error';
+    m.textContent = 'Las contraseñas no coinciden.';
+    return;
+  }
+
+  try {
+    const r = await fetch('/registro', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre, email, password, rol })
+    });
+    const d = await r.json();
+    m.className = 'doc-msg show ' + (d.ok ? 'ok' : 'error');
+    m.textContent = d.mensaje;
+    if (d.ok) setTimeout(() => window.location.href = 'index.html', 1400);
+  } catch {
+    m.className = 'doc-msg show error';
+    m.textContent = 'No se pudo conectar con el servidor.';
+  }
+});
 </script>
 </body>
 </html>

@@ -90,34 +90,66 @@
 </div>
 
 <script src="js/lib/jszip.min.js"></script>
+<script src="js/api.js"></script>
 <script>
+requireAuth();
+
+const params = new URLSearchParams(window.location.search);
+const codigo = params.get('codigo') || 'SP-A8-2026-001';
+
+apiFetch('/expedientes/' + codigo).then(d => {
+  const e = d.expediente;
+  document.querySelector('h2').innerHTML =
+    `<span class="case-tag" style="font-size:16px; margin-right:10px; vertical-align:2px;">${e.codigo}</span>${e.proyecto}`;
+
+  const facts = document.querySelectorAll('.fact');
+  facts[0].querySelector('.status').outerHTML =
+    `<span class="${claseEstado(e.estado)}">${textoEstado(e.estado)}</span>`;
+  facts[1].innerHTML = `<span class="k">CATEGORÍA</span>${fichaTier(e.categoria)}`;
+  facts[2].innerHTML = `<span class="k">PROMOTOR</span><span class="v">${e.promotor}</span>`;
+  facts[3].innerHTML = `<span class="k">FECHA DE INGRESO</span><span class="v">${e.fecha_ingreso}</span>`;
+
+  const ul = document.querySelector('.checklist');
+  ul.innerHTML = '';
+  d.documentos.forEach(doc => {
+    const ok = doc.estado === 'recibido';
+    ul.innerHTML += `<li><span class="name">${doc.carpeta}</span><span class="${ok ? 'tag-ok' : 'tag-missing'}">${ok ? 'Recibido' : 'Pendiente'}</span></li>`;
+  });
+
+  if (d.aprobacion) {
+    const panel = document.querySelectorAll('.panel')[2];
+    panel.innerHTML = `<h3>Aprobación interna</h3>
+      <p class="panel-note">Aprobado el ${d.aprobacion.fecha}.</p>
+      <p>${d.aprobacion.motivo}</p>`;
+  }
+
   document.getElementById('btnZip').addEventListener('click', async () => {
     const zip = new JSZip();
-    zip.file(
-      "indice.txt",
-      "EXPEDIENTE SP-A8-2026-001\n" +
-      "Proyecto: Planta Solar Azuero\n" +
-      "Promotor: Energía Verde S.A.\n" +
-      "Categoría: II - Impacto moderado\n" +
-      "Estado: En evaluación\n" +
-      "Fecha de ingreso: 10/09/2026\n\n" +
-      "Documentos incluidos:\n" +
-      "- Línea Base (recibido)\n" +
-      "- Plan de Manejo (recibido)\n" +
-      "- Anexos Legales (pendiente)\n" +
-      "- Cartografía (recibido)\n\n" +
-      "Archivo de demostración del prototipo. La generación real del\n" +
-      "expediente comprimido se implementará junto con el módulo de\n" +
-      "carga de documentos (HU-01 a HU-04)."
-    );
+    let txt = `EXPEDIENTE ${e.codigo}\nProyecto: ${e.proyecto}\nPromotor: ${e.promotor}\nCategoría: ${e.categoria}\nEstado: ${textoEstado(e.estado)}\n\nDocumentos:\n`;
+    d.documentos.forEach(doc => { txt += `- ${doc.carpeta} (${doc.estado})\n`; });
+    zip.file("indice.txt", txt);
     const blob = await zip.generateAsync({ type: "blob" });
-    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = 'SP-A8-2026-001.zip';
+    a.href = URL.createObjectURL(blob);
+    a.download = e.codigo + '.zip';
     a.click();
-    URL.revokeObjectURL(url);
   });
+}).catch(console.error);
+
+document.querySelector('.btn-brass').addEventListener('click', async () => {
+  const motivo = document.querySelector('textarea').value.trim();
+  if (!motivo) { alert('Escribe un motivo.'); return; }
+  const r = await apiFetch('/expedientes/' + codigo + '/aprobar', {
+    method: 'POST',
+    body: JSON.stringify({ motivo })
+  });
+  if (r.ok) {
+    alert('Aprobado.');
+    location.reload();
+  } else {
+    alert(r.mensaje || 'Error.');
+  }
+});
 </script>
 </body>
 </html>

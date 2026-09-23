@@ -77,10 +77,13 @@
   </div>
 </div>
 
-<script src="js/mock.js"></script>
+<script src="js/api.js"></script>
 <script>
+requireAuth();
+apiFetch('/expedientes').then(d => {
   const tbody = document.getElementById('tabla-expedientes');
-  MOCK_EXPEDIENTES.forEach(e => {
+  tbody.innerHTML = '';
+  d.expedientes.forEach(e => {
     tbody.innerHTML += `
       <tr>
         <td style="padding-left:24px;"><span class="case-tag">${e.codigo}</span></td>
@@ -88,11 +91,12 @@
         <td>${e.promotor}</td>
         <td>${fichaTier(e.categoria)}</td>
         <td><span class="${claseEstado(e.estado)}">${textoEstado(e.estado)}</span></td>
-        <td>${e.fecha}</td>
-        <td><a href="expediente-detalle.html">Ver detalle →</a></td>
+        <td>${e.fecha_ingreso}</td>
+        <td><a href="expediente-detalle.html?codigo=${e.codigo}">Ver detalle →</a></td>
       </tr>
     `;
   });
+}).catch(console.error);
 </script>
 </body>
 </html>

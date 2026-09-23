@@ -103,17 +103,54 @@
   </div>
 </div>
 
-<script src="js/mock.js"></script>
+<script src="js/api.js"></script>
 <script>
+requireAuth();
+
+const DOCS_POR_CAT = {
+  "I":   ["Línea Base","Plan de Manejo","Anexos Legales"],
+  "II":  ["Línea Base","Plan de Manejo","Anexos Legales","Cartografía"],
+  "III": ["Línea Base","Plan de Manejo","Anexos Legales","Cartografía","Evidencia Foro Público"]
+};
+
+function renderChecklist(cat) {
   const ul = document.getElementById('checklist');
-  MOCK_DOCUMENTOS_CAT2.forEach(d => {
-    ul.innerHTML += `
-      <li>
-        <span class="name">${d.nombre}</span>
-        <span class="${d.ok ? 'tag-ok' : 'tag-missing'}">${d.ok ? 'Completo' : 'Falta'}</span>
-      </li>
-    `;
+  ul.innerHTML = '';
+  DOCS_POR_CAT[cat].forEach(nombre => {
+    ul.innerHTML += `<li><span class="name">${nombre}</span><span class="tag-missing">Falta</span></li>`;
   });
+}
+
+const sel = document.querySelector('select');
+sel.addEventListener('change', () => {
+  const cat = sel.value.includes('III') ? 'III' : sel.value.includes('I —') ? 'I' : 'II';
+  renderChecklist(cat);
+  document.querySelector('.panel .tier').innerHTML = `<b>${cat}</b> Categoría ${cat}`;
+});
+renderChecklist('II');
+
+document.querySelector('.btn-brass').addEventListener('click', async () => {
+  const inputs = document.querySelectorAll('input[type="text"]');
+  const proyecto = inputs[0].value.trim();
+  const promotor = inputs[1].value.trim();
+  const cat = sel.value.includes('III') ? 'III' : sel.value.includes('I —') ? 'I' : 'II';
+
+  if (!proyecto || !promotor) {
+    alert('Completa proyecto y promotor.');
+    return;
+  }
+
+  const r = await apiFetch('/expedientes', {
+    method: 'POST',
+    body: JSON.stringify({ proyecto, promotor, categoria: cat })
+  });
+  if (r.ok) {
+    alert(`Expediente ${r.codigo} creado.`);
+    window.location.href = 'expedientes.html';
+  } else {
+    alert(r.mensaje || 'Error al crear.');
+  }
+});
 </script>
 </body>
 </html>

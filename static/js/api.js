@@ -1,0 +1,47 @@
+// Helpers de API compartidos por todas las pantallas internas.
+
+function getUsuario() {
+  try { return JSON.parse(sessionStorage.getItem('usuario') || 'null'); }
+  catch { return null; }
+}
+
+function requireAuth() {
+  const u = getUsuario();
+  if (!u || !u.email) { window.location.href = 'index.html'; return null; }
+  return u;
+}
+
+async function apiFetch(url, opciones = {}) {
+  const u = getUsuario();
+  const headers = Object.assign(
+    { 'Content-Type': 'application/json' },
+    opciones.headers || {},
+    (u && u.email) ? { 'X-Usuario-Email': u.email } : {}
+  );
+  const r = await fetch(url, Object.assign({}, opciones, { headers }));
+  if (r.status === 401) {
+    sessionStorage.removeItem('usuario');
+    window.location.href = 'index.html';
+    throw new Error('No autenticado');
+  }
+  return r.json();
+}
+
+function claseEstado(estado) {
+  if (estado === 'aprobado') return 'status status-ok';
+  if (estado === 'evaluacion') return 'status status-warn';
+  if (estado === 'pendiente') return 'status status-bad';
+  return 'status status-info';
+}
+
+function textoEstado(estado) {
+  if (estado === 'aprobado') return 'Aprobado';
+  if (estado === 'evaluacion') return 'En evaluación';
+  if (estado === 'pendiente') return 'Pendiente';
+  return estado;
+}
+
+function fichaTier(cat) {
+  const t = { 'I': 'Bajo impacto', 'II': 'Impacto moderado', 'III': 'Alto impacto' };
+  return `<span class="tier"><b>${cat}</b> ${t[cat] || ''}</span>`;
+}

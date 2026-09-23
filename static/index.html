@@ -98,7 +98,7 @@
       showMessage(data.mensaje, data.acceso === true);
 
       if (data.acceso === true) {
-        sessionStorage.setItem('usuario', JSON.stringify({ email, rol: data.rol }));
+        sessionStorage.setItem('usuario', JSON.stringify({ email, rol: data.rol, nombre: data.nombre }));
         setTimeout(() => window.location.href = 'dashboard.html', 900);
       }
     } catch (err) {
