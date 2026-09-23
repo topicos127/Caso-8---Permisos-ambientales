@@ -27,11 +27,21 @@ def usuario_actual():
     return request.headers.get("X-Usuario-Email", "").strip().lower()
 
 
-# ---------- Estáticos y servicio ----------
+# ---------- Estaticos y servicio ----------
 
 @app.route("/", methods=["GET"])
 def index():
     return send_from_directory("static", "index.html")
+
+
+@app.route("/<path:filename>", methods=["GET"])
+def static_files(filename):
+    """
+    Sirve cualquier archivo estatico (css, js, imagenes, otras paginas html)
+    que viva dentro de la carpeta 'static/'. Captura todo lo que no coincida
+    con una ruta mas especifica definida mas abajo (login, expedientes, etc).
+    """
+    return send_from_directory("static", filename)
 
 
 @app.route("/api", methods=["GET"])
@@ -44,7 +54,7 @@ def health():
     return jsonify({"status": "ok"}), 200
 
 
-# ---------- Autenticación ----------
+# ---------- Autenticacion ----------
 
 @app.route("/login", methods=["POST"])
 def login():
@@ -240,9 +250,9 @@ def crear_expediente():
                 exp_id = cur.lastrowid
 
                 DOCS = {
-                    "I": ["Línea Base", "Plan de Manejo", "Anexos Legales"],
-                    "II": ["Línea Base", "Plan de Manejo", "Anexos Legales", "Cartografía"],
-                    "III": ["Línea Base", "Plan de Manejo", "Anexos Legales", "Cartografía", "Evidencia Foro Público"],
+                    "I": ["Linea Base", "Plan de Manejo", "Anexos Legales"],
+                    "II": ["Linea Base", "Plan de Manejo", "Anexos Legales", "Cartografia"],
+                    "III": ["Linea Base", "Plan de Manejo", "Anexos Legales", "Cartografia", "Evidencia Foro Publico"],
                 }
                 for carpeta in DOCS.get(categoria, DOCS["II"]):
                     cur.execute(
@@ -333,7 +343,7 @@ def aprobar_expediente(codigo):
     return jsonify({"ok": True, "mensaje": "Expediente aprobado."}), 200
 
 
-# ---------- Consulta pública ----------
+# ---------- Consulta publica ----------
 
 @app.route("/consulta/<codigo>", methods=["GET"])
 def consulta_publica(codigo):
