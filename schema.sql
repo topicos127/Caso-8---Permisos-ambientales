@@ -48,3 +48,14 @@ CREATE TABLE IF NOT EXISTS aprobaciones (
     FOREIGN KEY (expediente_id) REFERENCES expedientes(id) ON DELETE CASCADE,
     FOREIGN KEY (aprobado_por) REFERENCES usuarios(id) ON DELETE SET NULL
 );
+
+CREATE TABLE IF NOT EXISTS documentos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    expediente_id INT NOT NULL,
+    carpeta VARCHAR(80) NOT NULL,
+    estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+    nombre_archivo VARCHAR(255) NULL,
+    contenido LONGBLOB NULL,
+    fecha_subida TIMESTAMP NULL,
+    FOREIGN KEY (expediente_id) REFERENCES expedientes(id) ON DELETE CASCADE
+);
