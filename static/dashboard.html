@@ -47,7 +47,7 @@
   <div class="main">
     <div class="topbar">
       <span class="crumb">PANEL</span>
-      <div class="who"><span class="tag">Consultor</span> Consultor Uno <a href="index.html">Salir</a></div>
+      <div class="who"></div>
     </div>
 
     <div class="content">
@@ -56,39 +56,32 @@
       </div>
 
       <div class="stat-row">
-        <div class="stat"><div class="num">3</div><div class="lbl">Expedientes activos</div></div>
-        <div class="stat"><div class="num">1</div><div class="lbl">Pendiente de subsanación</div></div>
-        <div class="stat"><div class="num">2</div><div class="lbl">Documentos por vencer</div></div>
-        <div class="stat"><div class="num">1</div><div class="lbl">Aprobado este mes</div></div>
+        <div class="stat"><div class="num">—</div><div class="lbl">Expedientes activos</div></div>
+        <div class="stat"><div class="num">—</div><div class="lbl">Pendiente de subsanación</div></div>
+        <div class="stat"><div class="num">—</div><div class="lbl">Documentos por vencer</div></div>
+        <div class="stat"><div class="num">—</div><div class="lbl">Aprobado este mes</div></div>
       </div>
 
       <div class="panel">
         <h3>Actividad reciente</h3>
         <p class="panel-note">Últimos movimientos sobre tus expedientes.</p>
-        <ul class="reg-list">
-          <li><span><span class="code">SP-A8-2026-001</span>Planta Solar Azuero</span> <span class="status status-warn">En evaluación</span></li>
-          <li><span><span class="code">SP-A8-2026-002</span>Hotel Costero Bocas</span> <span class="status status-bad">Pendiente</span></li>
-          <li><span><span class="code">SP-A8-2026-003</span>Reforestación Darién</span> <span class="status status-ok">Aprobado</span></li>
-        </ul>
+        <ul class="reg-list" id="lista-recientes"></ul>
       </div>
 
       <div class="panel">
         <h3>Alertas próximas</h3>
         <p class="panel-note">Documentos con vigencia por vencer.</p>
-        <ul class="reg-list">
-          <li>Paz y salvo del Municipio vence en 12 días <a href="#">Renovar</a></li>
-          <li>Certificado de registro vence en 28 días <a href="#">Renovar</a></li>
-        </ul>
+        <ul class="reg-list" id="lista-alertas"></ul>
       </div>
     </div>
   </div>
 </div>
+
 <script src="js/api.js"></script>
 <script>
 const usuario = requireAuth();
 if (usuario) {
-  document.querySelector('.who').innerHTML =
-    `<span class="tag">${usuario.rol || 'Consultor'}</span> ${usuario.nombre || usuario.email} <a href="index.html">Salir</a>`;
+  pintarTopbar();
 
   apiFetch('/dashboard').then(d => {
     const nums = document.querySelectorAll('.stat .num');
@@ -99,17 +92,25 @@ if (usuario) {
       nums[3].textContent = d.metricas.aprobados;
     }
 
-    const ul = document.querySelector('.panel .reg-list');
-    ul.innerHTML = '';
-    d.recientes.forEach(r => {
-      ul.innerHTML += `<li><span><span class="code">${r.codigo}</span>${r.proyecto}</span> <span class="${claseEstado(r.estado)}">${textoEstado(r.estado)}</span></li>`;
-    });
+    const ulR = document.getElementById('lista-recientes');
+    ulR.innerHTML = '';
+    if (d.recientes && d.recientes.length) {
+      d.recientes.forEach(r => {
+        ulR.innerHTML += `<li><span><span class="code">${r.codigo}</span>${r.proyecto}</span> <span class="${claseEstado(r.estado)}">${textoEstado(r.estado)}</span></li>`;
+      });
+    } else {
+      ulR.innerHTML = '<li style="color:var(--ink-faint);">Sin expedientes registrados.</li>';
+    }
 
-    const ulAl = document.querySelectorAll('.panel .reg-list')[1];
-    ulAl.innerHTML = '';
-    d.alertas.forEach(a => {
-      ulAl.innerHTML += `<li>${a.descripcion} <a href="#">Renovar</a></li>`;
-    });
+    const ulA = document.getElementById('lista-alertas');
+    ulA.innerHTML = '';
+    if (d.alertas && d.alertas.length) {
+      d.alertas.forEach(a => {
+        ulA.innerHTML += `<li>${a.descripcion} <a href="#">Renovar</a></li>`;
+      });
+    } else {
+      ulA.innerHTML = '<li style="color:var(--ink-faint);">Sin alertas próximas.</li>';
+    }
   }).catch(console.error);
 }
 </script>

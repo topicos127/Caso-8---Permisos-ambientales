@@ -53,7 +53,7 @@
     <div class="content">
       <div class="content-head">
         <h2>Mis expedientes</h2>
-        <a href="expediente-nuevo.html" class="btn btn-brass">+ Nuevo expediente</a>
+        <a href="expediente-nuevo.html" class="btn btn-brass" id="btnNuevo">+ Nuevo expediente</a>
       </div>
       <p class="content-lede">Expedientes que gestionas actualmente, con su categoría de impacto y estado de trámite.</p>
 
@@ -70,9 +70,7 @@
               <th></th>
             </tr>
           </thead>
-          <tbody id="tabla-expedientes">
-            <tr><td colspan="7" style="padding:24px; text-align:center; color:var(--muted, #777);">Cargando expedientes…</td></tr>
-          </tbody>
+          <tbody id="tabla-expedientes"></tbody>
         </table>
       </div>
     </div>
@@ -81,30 +79,36 @@
 
 <script src="js/api.js"></script>
 <script>
-requireAuth();
-pintarTopbar();
-
-apiFetch('/expedientes').then(d => {
-  const tbody = document.getElementById('tabla-expedientes');
-  if (!d.expedientes || d.expedientes.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="padding:24px; text-align:center;">Todavía no tienes expedientes. Crea el primero.</td></tr>';
-    return;
+const usuario = requireAuth();
+if (usuario) {
+  pintarTopbar();
+  if (esPromotor()) {
+    const btn = document.getElementById('btnNuevo');
+    if (btn) btn.style.display = 'none';
   }
-  tbody.innerHTML = '';
-  d.expedientes.forEach(e => {
-    tbody.innerHTML += `
-      <tr>
-        <td style="padding-left:24px;"><span class="case-tag">${e.codigo}</span></td>
-        <td>${e.proyecto}</td>
-        <td>${e.promotor}</td>
-        <td>${fichaTier(e.categoria)}</td>
-        <td><span class="${claseEstado(e.estado)}">${textoEstado(e.estado)}</span></td>
-        <td>${e.fecha_ingreso}</td>
-        <td><a href="expediente-detalle.html?codigo=${e.codigo}">Ver detalle →</a></td>
-      </tr>
-    `;
-  });
-}).catch(console.error);
+
+  apiFetch('/expedientes').then(d => {
+    const tbody = document.getElementById('tabla-expedientes');
+    tbody.innerHTML = '';
+    if (!d.expedientes || !d.expedientes.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="padding:24px; color:var(--ink-faint);">Sin expedientes registrados.</td></tr>';
+      return;
+    }
+    d.expedientes.forEach(e => {
+      tbody.innerHTML += `
+        <tr>
+          <td style="padding-left:24px;"><span class="case-tag">${e.codigo}</span></td>
+          <td>${e.proyecto}</td>
+          <td>${e.promotor}</td>
+          <td>${fichaTier(e.categoria)}</td>
+          <td><span class="${claseEstado(e.estado)}">${textoEstado(e.estado)}</span></td>
+          <td>${e.fecha_ingreso}</td>
+          <td><a href="expediente-detalle.html?codigo=${e.codigo}">Ver detalle →</a></td>
+        </tr>
+      `;
+    });
+  }).catch(console.error);
+}
 </script>
 </body>
 </html>

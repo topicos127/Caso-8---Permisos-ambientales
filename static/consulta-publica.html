@@ -63,12 +63,18 @@
 
       <div class="panel" id="panelResultado" style="display:none;">
         <h3>Resultado</h3>
-        <div class="fact-row mt-3" id="factRow"></div>
+        <div class="fact-row mt-3">
+          <div class="fact"><span class="k">CÓDIGO</span><span class="v"><span class="case-tag" id="rCodigo"></span></span></div>
+          <div class="fact"><span class="k">PROYECTO</span><span class="v" id="rProyecto"></span></div>
+          <div class="fact"><span class="k">PROMOTOR</span><span class="v" id="rPromotor"></span></div>
+          <div class="fact"><span class="k">CATEGORÍA</span><span id="rCategoria"></span></div>
+          <div class="fact"><span class="k">ESTADO</span><span id="rEstado"></span></div>
+        </div>
         <button type="button" id="btnPdf" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line);">Descargar resumen ejecutivo (PDF)</button>
       </div>
 
-      <div class="panel" id="panelSinResultado" style="display:none;">
-        <p class="panel-note">No se encontró ningún expediente con ese código.</p>
+      <div class="panel" id="panelNoEncontrado" style="display:none; border-left:3px solid var(--status-bad);">
+        <p style="color:var(--status-bad); font-size:14px;">No se encontró ningún expediente con ese código.</p>
       </div>
     </div>
   </div>
@@ -77,65 +83,59 @@
 <script src="js/lib/jspdf.umd.min.js"></script>
 <script src="js/api.js"></script>
 <script>
-requireAuth();
-pintarTopbar();
+const usuario = requireAuth();
+if (usuario) {
+  pintarTopbar();
 
-let expedienteActual = null;
+  let expActual = null;
 
-document.getElementById('btnBuscar').addEventListener('click', async () => {
-  const codigo = document.getElementById('inputCodigo').value.trim();
-  if (!codigo) return;
+  async function buscar() {
+    const codigo = document.getElementById('inputCodigo').value.trim();
+    if (!codigo) return;
+    document.getElementById('panelResultado').style.display = 'none';
+    document.getElementById('panelNoEncontrado').style.display = 'none';
+    try {
+      const d = await apiFetch('/consulta/' + codigo);
+      if (!d.expediente) {
+        document.getElementById('panelNoEncontrado').style.display = 'block';
+        return;
+      }
+      expActual = d.expediente;
+      document.getElementById('rCodigo').textContent = expActual.codigo;
+      document.getElementById('rProyecto').textContent = expActual.proyecto;
+      document.getElementById('rPromotor').textContent = expActual.promotor;
+      document.getElementById('rCategoria').innerHTML = fichaTier(expActual.categoria);
+      document.getElementById('rEstado').innerHTML = `<span class="${claseEstado(expActual.estado)}">${textoEstado(expActual.estado)}</span>`;
+      document.getElementById('panelResultado').style.display = 'block';
+    } catch (e) {
+      document.getElementById('panelNoEncontrado').style.display = 'block';
+    }
+  }
 
-  const r = await fetch('/consulta/' + encodeURIComponent(codigo));
-  const d = await r.json();
+  document.getElementById('btnBuscar').addEventListener('click', buscar);
+  document.getElementById('inputCodigo').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') buscar();
+  });
 
-  const panelOk = document.getElementById('panelResultado');
-  const panelNo = document.getElementById('panelSinResultado');
-
-  if (!d.expediente) {
-    panelOk.style.display = 'none';
-    panelNo.style.display = '';
-    return;
+  document.getElementById('btnPdf').addEventListener('click', () => {
+    if (!expActual) return;
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFont("helvetica", "bold"); doc.setFontSize(16);
+    doc.text("Resumen Ejecutivo del Expediente", 20, 20);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(11);
+    const lineas = [
+      "Código: " + expActual.codigo,
+      "Proyecto: " + expActual.proyecto,
+      "Promotor: " + expActual.promotor,
+      "Categoría: " + expActual.categoria,
+      "Estado: " + textoEstado(expActual.estado),
+    ];
+    let y = 34;
+    lineas.forEach(l => { doc.text(l, 20, y); y += 8; });
+    doc.save(expActual.codigo + "-resumen.pdf");
+  });
 }
-expedienteActual = d.expediente;
-
-  expedienteActual = d.expediente;
-  panelNo.style.display = 'none';
-  panelOk.style.display = '';
-
-  document.getElementById('factRow').innerHTML = `
-    <div class="fact"><span class="k">CÓDIGO</span><span class="v"><span class="case-tag">${expedienteActual.codigo}</span></span></div>
-    <div class="fact"><span class="k">PROYECTO</span><span class="v">${expedienteActual.proyecto}</span></div>
-    <div class="fact"><span class="k">PROMOTOR</span><span class="v">${expedienteActual.promotor}</span></div>
-    <div class="fact"><span class="k">CATEGORÍA</span>${fichaTier(expedienteActual.categoria)}</div>
-    <div class="fact"><span class="k">ESTADO</span><span class="${claseEstado(expedienteActual.estado)}">${textoEstado(expedienteActual.estado)}</span></div>
-  `;
-});
-
-document.getElementById('btnPdf').addEventListener('click', () => {
-  if (!expedienteActual) return;
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.text("Resumen Ejecutivo del Expediente", 20, 20);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  const lineas = [
-    "Código: " + expedienteActual.codigo,
-    "Proyecto: " + expedienteActual.proyecto,
-    "Promotor: " + expedienteActual.promotor,
-    "Categoría: " + expedienteActual.categoria,
-    "Estado: " + textoEstado(expedienteActual.estado),
-    "",
-    "Documento de demostración del prototipo. El resumen ejecutivo",
-    "real se generará a partir del expediente completo una vez",
-    "implementado ese módulo del sistema."
-  ];
-  let y = 34;
-  lineas.forEach(l => { doc.text(l, 20, y); y += 8; });
-  doc.save(expedienteActual.codigo + "-resumen.pdf");
-});
 </script>
 </body>
 </html>

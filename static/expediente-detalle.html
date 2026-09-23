@@ -53,30 +53,30 @@
     <div class="content">
       <a href="expedientes.html" class="content-head back">← Volver a la lista</a>
       <div class="content-head">
-        <h2 id="titulo">Cargando…</h2>
+        <h2 id="titulo-exp"></h2>
       </div>
 
       <div class="panel">
         <div class="fact-row">
-          <div class="fact"><span class="k">ESTADO DEL TRÁMITE</span><span class="status status-info">—</span></div>
-          <div class="fact"><span class="k">CATEGORÍA</span><span class="v">—</span></div>
-          <div class="fact"><span class="k">PROMOTOR</span><span class="v">—</span></div>
-          <div class="fact"><span class="k">FECHA DE INGRESO</span><span class="v">—</span></div>
+          <div class="fact"><span class="k">ESTADO DEL TRÁMITE</span><span id="fact-estado"></span></div>
+          <div class="fact"><span class="k">CATEGORÍA</span><span id="fact-categoria"></span></div>
+          <div class="fact"><span class="k">PROMOTOR</span><span class="v" id="fact-promotor"></span></div>
+          <div class="fact"><span class="k">FECHA DE INGRESO</span><span class="v" id="fact-fecha"></span></div>
         </div>
       </div>
 
       <div class="panel">
         <h3>Documentos del expediente</h3>
-        <ul class="checklist" id="checklist" style="margin-top:14px;"></ul>
+        <ul class="checklist" id="lista-docs" style="margin-top:14px;"></ul>
         <button type="button" id="btnZip" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line);">Descargar expediente completo (.zip)</button>
       </div>
 
-      <div class="panel" id="panelAprobacion" style="display:none;">
+      <div class="panel" id="panel-aprobacion">
         <h3>Aprobación interna</h3>
         <p class="panel-note">Como jefe de la consultora, aprueba este expediente antes de someterlo a MiAmbiente.</p>
         <div class="doc-field">
           <label>Motivo de aprobación</label>
-          <textarea id="motivo" rows="3" placeholder="Ej. Documentación verificada y completa..."></textarea>
+          <textarea id="input-motivo" rows="3" placeholder="Ej. Documentación verificada y completa..."></textarea>
         </div>
         <button class="btn btn-brass" id="btnAprobar">Aprobar expediente</button>
       </div>
@@ -87,44 +87,41 @@
 <script src="js/lib/jszip.min.js"></script>
 <script src="js/api.js"></script>
 <script>
-const usuarioActual = requireAuth();
-pintarTopbar();
+const usuario = requireAuth();
+if (usuario) {
+  pintarTopbar();
 
-const params = new URLSearchParams(window.location.search);
-const codigo = params.get('codigo');
+  const params = new URLSearchParams(window.location.search);
+  const codigo = params.get('codigo') || 'SP-A8-2026-001';
 
-if (!codigo) {
-  document.getElementById('titulo').textContent = 'Expediente no especificado.';
-} else {
   apiFetch('/expedientes/' + codigo).then(d => {
     const e = d.expediente;
-    document.getElementById('titulo').innerHTML =
+    document.getElementById('titulo-exp').innerHTML =
       `<span class="case-tag" style="font-size:16px; margin-right:10px; vertical-align:2px;">${e.codigo}</span>${e.proyecto}`;
+    document.getElementById('fact-estado').innerHTML = `<span class="${claseEstado(e.estado)}">${textoEstado(e.estado)}</span>`;
+    document.getElementById('fact-categoria').innerHTML = fichaTier(e.categoria);
+    document.getElementById('fact-promotor').textContent = e.promotor;
+    document.getElementById('fact-fecha').textContent = e.fecha_ingreso;
 
-    const facts = document.querySelectorAll('.fact');
-    facts[0].querySelector('.status').outerHTML =
-      `<span class="${claseEstado(e.estado)}">${textoEstado(e.estado)}</span>`;
-    facts[1].innerHTML = `<span class="k">CATEGORÍA</span>${fichaTier(e.categoria)}`;
-    facts[2].innerHTML = `<span class="k">PROMOTOR</span><span class="v">${e.promotor}</span>`;
-    facts[3].innerHTML = `<span class="k">FECHA DE INGRESO</span><span class="v">${e.fecha_ingreso}</span>`;
-
-    const ul = document.getElementById('checklist');
+    const ul = document.getElementById('lista-docs');
     ul.innerHTML = '';
     d.documentos.forEach(doc => {
       const ok = doc.estado === 'recibido';
       ul.innerHTML += `<li><span class="name">${doc.carpeta}</span><span class="${ok ? 'tag-ok' : 'tag-missing'}">${ok ? 'Recibido' : 'Pendiente'}</span></li>`;
     });
 
-    // La aprobación interna solo la puede realizar el rol "consultor"
-    // (rol "jefe de consultora" no está modelado por separado en este prototipo).
-    const panelAprob = document.getElementById('panelAprobacion');
-    if (usuarioActual.rol === 'consultor' && !d.aprobacion) {
-      panelAprob.style.display = '';
-    } else if (d.aprobacion) {
-      panelAprob.style.display = '';
-      panelAprob.innerHTML = `<h3>Aprobación interna</h3>
+    if (esPromotor()) {
+      const panel = document.getElementById('panel-aprobacion');
+      if (panel) panel.style.display = 'none';
+    }
+
+    if (d.aprobacion) {
+      const panel = document.getElementById('panel-aprobacion');
+      panel.innerHTML = `
+        <h3>Aprobación interna</h3>
         <p class="panel-note">Aprobado el ${d.aprobacion.fecha}.</p>
-        <p>${d.aprobacion.motivo}</p>`;
+        <p style="font-size:14px;">${d.aprobacion.motivo}</p>
+      `;
     }
 
     document.getElementById('btnZip').addEventListener('click', async () => {
@@ -138,25 +135,25 @@ if (!codigo) {
       a.download = e.codigo + '.zip';
       a.click();
     });
-
-    const btnAprobar = document.getElementById('btnAprobar');
-    if (btnAprobar) {
-      btnAprobar.addEventListener('click', async () => {
-        const motivo = document.getElementById('motivo').value.trim();
-        if (!motivo) { alert('Escribe un motivo.'); return; }
-        const r = await apiFetch('/expedientes/' + codigo + '/aprobar', {
-          method: 'POST',
-          body: JSON.stringify({ motivo })
-        });
-        if (r.ok) {
-          alert('Aprobado.');
-          location.reload();
-        } else {
-          alert(r.mensaje || 'Error.');
-        }
-      });
-    }
   }).catch(console.error);
+
+  const btnAprobar = document.getElementById('btnAprobar');
+  if (btnAprobar) {
+    btnAprobar.addEventListener('click', async () => {
+      const motivo = document.getElementById('input-motivo').value.trim();
+      if (!motivo) { alert('Escribe un motivo.'); return; }
+      const r = await apiFetch('/expedientes/' + codigo + '/aprobar', {
+        method: 'POST',
+        body: JSON.stringify({ motivo })
+      });
+      if (r.ok) {
+        alert('Aprobado.');
+        location.reload();
+      } else {
+        alert(r.mensaje || 'Error.');
+      }
+    });
+  }
 }
 </script>
 </body>

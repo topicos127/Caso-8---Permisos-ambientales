@@ -59,39 +59,40 @@
         <div class="doc-field-row" style="margin-top:16px;">
           <div class="doc-field">
             <label>Nombre del proyecto</label>
-            <input type="text" id="proyecto" placeholder="Ej. Planta Solar Azuero">
+            <input type="text" placeholder="Ej. Planta Solar Azuero">
           </div>
           <div class="doc-field">
             <label>Promotor / Empresa</label>
-            <input type="text" id="promotor" placeholder="Ej. Energía Verde S.A.">
+            <input type="text" placeholder="Ej. Energía Verde S.A.">
           </div>
         </div>
         <div class="doc-field" style="max-width:340px;">
           <label>Categoría de impacto ambiental</label>
-          <select id="categoria">
-            <option value="I">Categoría I — Bajo impacto</option>
-            <option value="II" selected>Categoría II — Impacto moderado</option>
-            <option value="III">Categoría III — Alto impacto</option>
+          <select>
+            <option>Categoría I — Bajo impacto</option>
+            <option selected>Categoría II — Impacto moderado</option>
+            <option>Categoría III — Alto impacto</option>
           </select>
         </div>
       </div>
 
       <div class="panel">
         <h3>Documentos del expediente</h3>
-        <p class="panel-note">Documentos exigidos según el Decreto Ejecutivo 59 de 2000, conforme a la categoría seleccionada. Formatos aceptados: PDF y DOCX. Los planos cartográficos deben venir en .zip con estructura de shapefile válida.</p>
-        <div class="folder-grid" id="folderGrid"></div>
+        <p class="panel-note">Formatos aceptados: PDF y DOCX. Los planos cartográficos deben venir en .zip con estructura de shapefile válida.</p>
+        <div class="folder-grid" id="folder-grid"></div>
       </div>
 
       <div class="panel">
         <h3>Verificación de requisitos</h3>
-        <p class="panel-note" id="tierNote"></p>
+        <p class="panel-note" id="cat-note"><span class="tier"><b>II</b> Categoría II — impacto moderado</span></p>
         <ul class="checklist" id="checklist"></ul>
-        <div class="checklist-warn">No puedes marcar el expediente como "listo" hasta completar todos los documentos obligatorios.</div>
+        <div class="checklist-warn" id="warn">No puedes marcar el expediente como "listo" hasta completar todos los documentos obligatorios.</div>
+        <div class="doc-msg" id="ok-msg" style="margin-top:14px;"></div>
       </div>
 
       <div class="btn-row">
         <a href="expedientes.html" class="btn btn-ghost" style="border:1.5px solid var(--line);">Cancelar</a>
-        <button class="btn btn-brass" id="btnGuardar">Guardar borrador</button>
+        <button class="btn btn-brass">Guardar borrador</button>
       </div>
     </div>
   </div>
@@ -99,85 +100,154 @@
 
 <script src="js/api.js"></script>
 <script>
-requireAuth();
+const usuario = requireAuth();
+if (!usuario) throw new Error('Sin sesión');
+
+// Bloquear a promotores: no pueden crear expedientes
+if (usuario.rol === 'promotor') {
+  window.location.href = 'expedientes.html';
+}
+
 pintarTopbar();
 
-// Documentos exigidos por categoría, conforme al Decreto Ejecutivo 59 de 2000.
-// Fuente única de verdad: se usa tanto para las carpetas de subida como
-// para el checklist de verificación, así ambos quedan siempre congruentes.
-const CARPETAS_POR_CATEGORIA = {
+// Carpetas que exige cada categoría
+const CARPETAS_POR_CAT = {
   "I": [
-    "Paz y Salvo de la ANAM",
-    "Descripción del proyecto",
-    "Descripción del área de influencia",
-    "Identificación de impactos",
-    "Declaración jurada notariada"
+    { nombre: "Línea Base",            hint: "PDF · DOCX", accept: ".pdf,.docx" },
+    { nombre: "Plan de Manejo",        hint: "PDF · DOCX", accept: ".pdf,.docx" },
+    { nombre: "Anexos Legales",        hint: "PDF",        accept: ".pdf" }
   ],
   "II": [
-    "Paz y Salvo de la ANAM",
-    "Descripción del proyecto",
-    "Descripción del área de influencia",
-    "Identificación de impactos",
-    "Declaración jurada notariada",
-    "Resumen ejecutivo (máx. 20 páginas)",
-    "Plan de Manejo Ambiental",
-    "Plan de participación ciudadana",
-    "Equipo de profesionales",
-    "Anexos cartográficos"
+    { nombre: "Línea Base",            hint: "PDF · DOCX", accept: ".pdf,.docx" },
+    { nombre: "Plan de Manejo",        hint: "PDF · DOCX", accept: ".pdf,.docx" },
+    { nombre: "Anexos Legales",        hint: "PDF",        accept: ".pdf" },
+    { nombre: "Cartografía",           hint: "ZIP · shapefile", accept: ".zip" }
   ],
   "III": [
-    "Paz y Salvo de la ANAM",
-    "Descripción del proyecto",
-    "Descripción del área de influencia",
-    "Identificación de impactos",
-    "Declaración jurada notariada",
-    "Resumen ejecutivo (máx. 40 páginas)",
-    "Plan de Manejo Ambiental",
-    "Plan de participación ciudadana",
-    "Equipo de profesionales",
-    "Anexos cartográficos",
-    "Evidencia de foro público"
+    { nombre: "Línea Base",            hint: "PDF · DOCX", accept: ".pdf,.docx" },
+    { nombre: "Plan de Manejo",        hint: "PDF · DOCX", accept: ".pdf,.docx" },
+    { nombre: "Anexos Legales",        hint: "PDF",        accept: ".pdf" },
+    { nombre: "Cartografía",           hint: "ZIP · shapefile", accept: ".zip" },
+    { nombre: "Evidencia Foro Público", hint: "Solo Categoría III", accept: ".pdf,.zip" }
   ]
 };
 
-const TIER_LABEL = { "I": "Bajo impacto", "II": "Impacto moderado", "III": "Alto impacto" };
+const DESCRIPCION_CAT = {
+  "I":   "bajo impacto",
+  "II":  "impacto moderado",
+  "III": "alto impacto"
+};
 
-function render(cat) {
-  const carpetas = CARPETAS_POR_CATEGORIA[cat];
+const carpetasCompletas = new Set();
+let categoriaActual = "II";
 
-  const grid = document.getElementById('folderGrid');
-  grid.innerHTML = carpetas.map(nombre => {
-    const hint = nombre.includes('cartográfic') ? 'ZIP · shapefile' : 'PDF · DOCX';
-    return `<div class="folder"><div class="name">${nombre}</div><div class="hint">${hint}</div></div>`;
-  }).join('');
-
-  const ul = document.getElementById('checklist');
-  ul.innerHTML = carpetas.map(nombre =>
-    `<li><span class="name">${nombre}</span><span class="tag-missing">Falta</span></li>`
-  ).join('');
-
-  document.getElementById('tierNote').innerHTML =
-    `<span class="tier"><b>${cat}</b> Categoría ${cat} — ${TIER_LABEL[cat]}</span>`;
+function categoriaDesdeSelect(valor) {
+  if (valor.includes("III")) return "III";
+  if (valor.includes("I —")) return "I";
+  return "II";
 }
 
-const sel = document.getElementById('categoria');
-sel.addEventListener('change', () => render(sel.value));
-render(sel.value);
+function renderCarpetas(cat) {
+  const grid = document.getElementById('folder-grid');
+  grid.innerHTML = '';
+  CARPETAS_POR_CAT[cat].forEach(c => {
+    const yaCompleta = carpetasCompletas.has(c.nombre);
+    const border = yaCompleta ? 'border-color: var(--status-ok); border-top-color: var(--status-ok);' : '';
+    const slotStyle = yaCompleta
+      ? 'color: var(--status-ok); font-family: var(--mono); font-size: 11.5px; margin-top: 8px;'
+      : '';
+    grid.innerHTML += `
+      <label class="folder" style="${border}">
+        <input type="file" hidden onchange="marcarCarpeta(this)" accept="${c.accept}">
+        <div class="name">${c.nombre}</div>
+        <div class="hint">${c.hint}</div>
+        <div class="file-name" style="${slotStyle}"></div>
+      </label>
+    `;
+  });
+}
 
-document.getElementById('btnGuardar').addEventListener('click', async () => {
-  const proyecto = document.getElementById('proyecto').value.trim();
-  const promotor = document.getElementById('promotor').value.trim();
-  const categoria = sel.value;
+function marcarCarpeta(input) {
+  const folder = input.closest('.folder');
+  const nombre = folder.querySelector('.name').textContent.trim();
+  const slot = folder.querySelector('.file-name');
+
+  if (input.files && input.files[0]) {
+    slot.textContent = '✔ ' + input.files[0].name;
+    slot.style.color = 'var(--status-ok)';
+    slot.style.fontFamily = 'var(--mono)';
+    slot.style.fontSize = '11.5px';
+    slot.style.marginTop = '8px';
+    folder.style.borderColor = 'var(--status-ok)';
+    folder.style.borderTopColor = 'var(--status-ok)';
+
+    carpetasCompletas.add(nombre);
+    renderChecklist(categoriaActual);
+  }
+}
+
+function renderChecklist(cat) {
+  const ul = document.getElementById('checklist');
+  const warn = document.getElementById('warn');
+  const okMsg = document.getElementById('ok-msg');
+  ul.innerHTML = '';
+
+  const requeridos = CARPETAS_POR_CAT[cat].map(c => c.nombre);
+  requeridos.forEach(nombre => {
+    const completo = carpetasCompletas.has(nombre);
+    ul.innerHTML += `
+      <li>
+        <span class="name">${nombre}</span>
+        <span class="${completo ? 'tag-ok' : 'tag-missing'}">${completo ? 'Completo' : 'Falta'}</span>
+      </li>
+    `;
+  });
+
+  const todosListos = requeridos.every(n => carpetasCompletas.has(n));
+  if (todosListos) {
+    warn.style.display = 'none';
+    okMsg.className = 'doc-msg show ok';
+    okMsg.textContent = '✔ Expediente completo. Listo para guardar.';
+  } else {
+    warn.style.display = 'block';
+    okMsg.className = 'doc-msg';
+    okMsg.textContent = '';
+  }
+}
+
+const sel = document.querySelector('select');
+sel.addEventListener('change', () => {
+  categoriaActual = categoriaDesdeSelect(sel.value);
+  document.getElementById('cat-note').innerHTML =
+    `<span class="tier"><b>${categoriaActual}</b> Categoría ${categoriaActual} — ${DESCRIPCION_CAT[categoriaActual]}</span>`;
+  renderCarpetas(categoriaActual);
+  renderChecklist(categoriaActual);
+});
+
+// Estado inicial
+renderCarpetas(categoriaActual);
+renderChecklist(categoriaActual);
+
+document.querySelector('.btn-brass').addEventListener('click', async () => {
+  const inputs = document.querySelectorAll('input[type="text"]');
+  const proyecto = inputs[0].value.trim();
+  const promotor = inputs[1].value.trim();
+  const cat = categoriaActual;
 
   if (!proyecto || !promotor) {
     alert('Completa proyecto y promotor.');
     return;
   }
 
+  const docs_completos = Array.from(carpetasCompletas).filter(
+    n => CARPETAS_POR_CAT[cat].some(c => c.nombre === n)
+  );
+
   const r = await apiFetch('/expedientes', {
     method: 'POST',
-    body: JSON.stringify({ proyecto, promotor, categoria })
+    body: JSON.stringify({ proyecto, promotor, categoria: cat, documentos_completos: docs_completos })
   });
+
   if (r.ok) {
     alert(`Expediente ${r.codigo} creado.`);
     window.location.href = 'expedientes.html';
