@@ -22,7 +22,8 @@ DB_CONFIG = {
 
 UPLOADS_DIR = os.environ.get("UPLOADS_DIR", "/app/uploads")
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
-EXTENSIONES_PERMITIDAS = {".pdf", ".docx", ".zip"}
+# Solo PDF y ZIP — sin documentos editables (DOCX bloqueado)
+EXTENSIONES_PERMITIDAS = {".pdf", ".zip"}
 
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
@@ -35,6 +36,39 @@ def usuario_actual():
     return request.headers.get("X-Usuario-Email", "").strip().lower()
 
 
+# ---------- Verificación de requisitos por categoría ----------
+
+CATEGORIAS_DOCS = {
+    "I":   ["Línea Base", "Plan de Manejo", "Anexos Legales"],
+    "II":  ["Línea Base", "Plan de Manejo", "Anexos Legales", "Cartografía"],
+    "III": ["Línea Base", "Plan de Manejo", "Anexos Legales", "Cartografía", "Evidencia Foro Público"],
+}
+
+
+def calcular_verificacion(categoria, documentos):
+    """
+    Calcula el estado de cumplimiento de un expediente según su categoría.
+    """
+    requeridos = CATEGORIAS_DOCS.get(categoria, CATEGORIAS_DOCS["II"])
+    docs_por_carpeta = {d["carpeta"]: d["estado"] for d in documentos}
+
+    completos = 0
+    faltantes = []
+    for carpeta in requeridos:
+        if docs_por_carpeta.get(carpeta) == "recibido":
+            completos += 1
+        else:
+            faltantes.append(carpeta)
+
+    return {
+        "categoria": categoria,
+        "total_requeridos": len(requeridos),
+        "completos": completos,
+        "faltantes": faltantes,
+        "puede_someter": len(faltantes) == 0,
+    }
+
+
 # ---------- Estáticos y servicio ----------
 
 @app.route("/", methods=["GET"])
@@ -44,7 +78,7 @@ def index():
 
 @app.route("/api", methods=["GET"])
 def api_info():
-    return jsonify({"servicio": "Permisos Ambientales - API", "version": "0.4", "estado": "activo"}), 200
+    return jsonify({"servicio": "Permisos Ambientales - API", "version": "0.5", "estado": "activo"}), 200
 
 
 @app.route("/health", methods=["GET"])
@@ -270,12 +304,7 @@ def crear_expediente():
                 )
                 exp_id = cur.lastrowid
 
-                DOCS = {
-                    "I": ["Línea Base", "Plan de Manejo", "Anexos Legales"],
-                    "II": ["Línea Base", "Plan de Manejo", "Anexos Legales", "Cartografía"],
-                    "III": ["Línea Base", "Plan de Manejo", "Anexos Legales", "Cartografía", "Evidencia Foro Público"],
-                }
-                for carpeta in DOCS.get(categoria, DOCS["II"]):
+                for carpeta in CATEGORIAS_DOCS.get(categoria, CATEGORIAS_DOCS["II"]):
                     cur.execute(
                         "INSERT INTO documentos (expediente_id, carpeta, estado) VALUES (%s, %s, 'pendiente')",
                         (exp_id, carpeta),
@@ -314,7 +343,6 @@ def detalle_expediente(codigo):
                 if not exp:
                     return jsonify({"error": "Expediente no encontrado"}), 404
 
-                # Control de acceso: consultor dueño o promotor asignado
                 permitido = False
                 if u["rol"] == "promotor":
                     permitido = exp["promotor_email"] and exp["promotor_email"] == email
@@ -353,7 +381,14 @@ def detalle_expediente(codigo):
     if aprob and aprob["fecha"]:
         aprob["fecha"] = aprob["fecha"].strftime("%d/%m/%Y %H:%M")
 
-    return jsonify({"expediente": exp, "documentos": docs, "aprobacion": aprob})
+    verificacion = calcular_verificacion(exp["categoria"], docs)
+
+    return jsonify({
+        "expediente": exp,
+        "documentos": docs,
+        "aprobacion": aprob,
+        "verificacion": verificacion,
+    })
 
 
 @app.route("/expedientes/<codigo>/documentos/<carpeta>/subir", methods=["POST"])
@@ -383,7 +418,10 @@ def subir_documento(codigo, carpeta):
                 nombre_original = secure_filename(archivo.filename)
                 ext = os.path.splitext(nombre_original)[1].lower()
                 if ext not in EXTENSIONES_PERMITIDAS:
-                    return jsonify({"ok": False, "mensaje": f"Extension no permitida: {ext}"}), 400
+                    return jsonify({
+                        "ok": False,
+                        "mensaje": f"Extension no permitida: {ext}. Solo se aceptan archivos PDF y ZIP."
+                    }), 400
 
                 archivo.seek(0, os.SEEK_END)
                 tamano = archivo.tell()
@@ -455,7 +493,6 @@ def descargar_documento(codigo, carpeta):
                 if not exp:
                     return jsonify({"error": "Expediente no encontrado"}), 404
 
-                # Control de acceso
                 permitido = False
                 if u["rol"] == "promotor":
                     permitido = exp["promotor_email"] and exp["promotor_email"] == email
@@ -533,6 +570,59 @@ def aprobar_expediente(codigo):
         return jsonify({"ok": False, "mensaje": "Error al aprobar."}), 500
 
     return jsonify({"ok": True, "mensaje": "Expediente aprobado."}), 200
+
+
+@app.route("/expedientes/<codigo>/someter", methods=["POST"])
+def someter_expediente(codigo):
+    email = usuario_actual()
+    if not email:
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+
+    try:
+        conn = get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT id, rol FROM usuarios WHERE email=%s", (email,))
+                u = cur.fetchone()
+                if not u or u["rol"] == "promotor":
+                    return jsonify({"ok": False, "mensaje": "No autorizado para someter."}), 403
+
+                cur.execute(
+                    "SELECT id, categoria, estado FROM expedientes WHERE codigo=%s",
+                    (codigo,),
+                )
+                exp = cur.fetchone()
+                if not exp:
+                    return jsonify({"ok": False, "mensaje": "Expediente no encontrado."}), 404
+
+                if exp["estado"] != "evaluacion":
+                    return jsonify({
+                        "ok": False,
+                        "mensaje": "Este expediente ya fue sometido o no esta en evaluacion."
+                    }), 400
+
+                cur.execute(
+                    "SELECT carpeta, estado FROM documentos WHERE expediente_id=%s",
+                    (exp["id"],),
+                )
+                docs = cur.fetchall()
+
+                verif = calcular_verificacion(exp["categoria"], docs)
+                if not verif["puede_someter"]:
+                    return jsonify({
+                        "ok": False,
+                        "mensaje": f"Faltan documentos obligatorios: {', '.join(verif['faltantes'])}",
+                        "verificacion": verif,
+                    }), 400
+
+                cur.execute("UPDATE expedientes SET estado='pendiente' WHERE id=%s", (exp["id"],))
+            conn.commit()
+        finally:
+            conn.close()
+    except pymysql.MySQLError:
+        return jsonify({"ok": False, "mensaje": "Error al someter."}), 500
+
+    return jsonify({"ok": True, "mensaje": "Expediente sometido a MiAmbiente."}), 200
 
 
 # ---------- Consulta pública ----------

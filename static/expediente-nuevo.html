@@ -52,7 +52,7 @@
 
     <div class="content">
       <div class="content-head"><h2>Nuevo expediente</h2></div>
-      <p class="content-lede">Organiza los documentos en las carpetas predefinidas del checklist oficial antes de someter el expediente.</p>
+      <p class="content-lede">Registra los datos del proyecto y la categoría de impacto. Los documentos se suben después de crear el expediente.</p>
 
       <div class="panel">
         <h3>Datos del proyecto</h3>
@@ -82,7 +82,7 @@
 
       <div class="panel">
         <h3>Documentos requeridos por categoría</h3>
-        <p class="panel-note">Estas son las carpetas que exige la categoría seleccionada. Los archivos se suben después de crear el expediente.</p>
+        <p class="panel-note">Estas son las carpetas que exige la categoría seleccionada. Solo se aceptan archivos PDF y ZIP (no documentos editables). Los archivos se suben después de crear el expediente.</p>
         <div class="folder-grid" id="folder-grid"></div>
       </div>
 
@@ -110,22 +110,22 @@ pintarTopbar();
 
 const CARPETAS_POR_CAT = {
   "I": [
-    { nombre: "Línea Base",            hint: "PDF · DOCX" },
-    { nombre: "Plan de Manejo",        hint: "PDF · DOCX" },
+    { nombre: "Línea Base",            hint: "PDF" },
+    { nombre: "Plan de Manejo",        hint: "PDF" },
     { nombre: "Anexos Legales",        hint: "PDF" }
   ],
   "II": [
-    { nombre: "Línea Base",            hint: "PDF · DOCX" },
-    { nombre: "Plan de Manejo",        hint: "PDF · DOCX" },
+    { nombre: "Línea Base",            hint: "PDF" },
+    { nombre: "Plan de Manejo",        hint: "PDF" },
     { nombre: "Anexos Legales",        hint: "PDF" },
     { nombre: "Cartografía",           hint: "ZIP · shapefile" }
   ],
   "III": [
-    { nombre: "Línea Base",            hint: "PDF · DOCX" },
-    { nombre: "Plan de Manejo",        hint: "PDF · DOCX" },
+    { nombre: "Línea Base",            hint: "PDF" },
+    { nombre: "Plan de Manejo",        hint: "PDF" },
     { nombre: "Anexos Legales",        hint: "PDF" },
     { nombre: "Cartografía",           hint: "ZIP · shapefile" },
-    { nombre: "Evidencia Foro Público", hint: "Solo Categoría III" }
+    { nombre: "Evidencia Foro Público", hint: "PDF · ZIP" }
   ]
 };
 
@@ -182,7 +182,6 @@ sel.addEventListener('change', () => {
 renderCarpetas(categoriaActual);
 renderChecklist(categoriaActual);
 
-// Guardar expediente
 document.getElementById('btnGuardar').addEventListener('click', async () => {
   const proyecto = document.getElementById('proyecto').value.trim();
   const promotor = document.getElementById('promotor').value.trim();

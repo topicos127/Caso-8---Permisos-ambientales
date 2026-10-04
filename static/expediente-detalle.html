@@ -56,7 +56,7 @@
         <h2 id="titulo-exp"></h2>
       </div>
 
-      <!-- Panel de acceso denegado (oculto por defecto) -->
+      <!-- Panel de acceso denegado -->
       <div class="panel" id="panel-denegado" style="display:none; border-top-color: var(--status-bad);">
         <h3 style="color: var(--status-bad);">Acceso denegado</h3>
         <p style="font-size:14px; margin-top:8px;">No tienes acceso a este expediente o no existe. Si crees que es un error, verifica el código del expediente o contacta al consultor responsable.</p>
@@ -75,11 +75,22 @@
       <div class="panel" id="panel-docs">
         <h3>Documentos del expediente</h3>
         <p class="panel-note" id="panel-note-docs">
-          Haz click en una carpeta para subir el archivo correspondiente. Formatos aceptados: PDF, DOCX y ZIP (máx. 20 MB).
+          Haz click en una carpeta para subir el archivo correspondiente. Solo se aceptan archivos PDF y ZIP (máx. 20 MB).
         </p>
         <ul class="checklist" id="lista-docs" style="margin-top:14px;"></ul>
         <div id="upload-status" class="doc-msg" style="margin-top:14px;"></div>
         <button type="button" id="btnZip" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line);">Descargar índice del expediente (.zip)</button>
+      </div>
+
+      <div class="panel" id="panel-verificacion" style="display:none;">
+        <h3>Verificación de requisitos</h3>
+        <p class="panel-note" id="verif-resumen"></p>
+        <ul class="checklist" id="verif-lista" style="margin-top:14px;"></ul>
+        <div class="checklist-warn" id="verif-warn" style="display:none;">
+          El expediente no puede someterse a MiAmbiente mientras falten documentos obligatorios.
+        </div>
+        <div class="doc-msg" id="verif-ok" style="margin-top:14px;"></div>
+        <button class="btn btn-brass mt-3" id="btnSometer" style="display:none;">Someter a MiAmbiente</button>
       </div>
 
       <div class="panel" id="panel-aprobacion">
@@ -106,13 +117,18 @@ if (usuario) {
   const codigo = params.get('codigo') || 'SP-A8-2026-001';
   const esPromotorUsuario = esPromotor();
 
+  const CARPETAS_POR_CAT_LOCAL = {
+    "I":   ["Línea Base", "Plan de Manejo", "Anexos Legales"],
+    "II":  ["Línea Base", "Plan de Manejo", "Anexos Legales", "Cartografía"],
+    "III": ["Línea Base", "Plan de Manejo", "Anexos Legales", "Cartografía", "Evidencia Foro Público"],
+  };
+
   // Ocultar panel de aprobación por defecto para promotores
   if (esPromotorUsuario) {
     const panelAprob = document.getElementById('panel-aprobacion');
     if (panelAprob) panelAprob.style.display = 'none';
   }
 
-  // Helpers UI
   function mensaje(texto, tipo) {
     const el = document.getElementById('upload-status');
     el.textContent = texto;
@@ -192,7 +208,7 @@ if (usuario) {
         if (!esPromotorUsuario) {
           const inputReempl = document.createElement('input');
           inputReempl.type = 'file';
-          inputReempl.accept = '.pdf,.docx,.zip';
+          inputReempl.accept = '.pdf,.zip';
           inputReempl.style.display = 'none';
           inputReempl.addEventListener('change', () => subirArchivo(doc.carpeta, inputReempl));
 
@@ -216,7 +232,7 @@ if (usuario) {
         if (!esPromotorUsuario) {
           const inputSubir = document.createElement('input');
           inputSubir.type = 'file';
-          inputSubir.accept = '.pdf,.docx,.zip';
+          inputSubir.accept = '.pdf,.zip';
           inputSubir.style.display = 'none';
           inputSubir.addEventListener('change', () => subirArchivo(doc.carpeta, inputSubir));
 
@@ -250,6 +266,56 @@ if (usuario) {
     });
   }
 
+  function renderVerificacion(verif, estadoExpediente) {
+    const panel = document.getElementById('panel-verificacion');
+    const resumen = document.getElementById('verif-resumen');
+    const lista = document.getElementById('verif-lista');
+    const warn = document.getElementById('verif-warn');
+    const ok = document.getElementById('verif-ok');
+    const btn = document.getElementById('btnSometer');
+
+    panel.style.display = 'block';
+    lista.innerHTML = '';
+
+    resumen.innerHTML = `<span class="tier"><b>${verif.categoria}</b> ${verif.completos} de ${verif.total_requeridos} documentos obligatorios completos</span>`;
+
+    const requeridos = CARPETAS_POR_CAT_LOCAL[verif.categoria] || [];
+    requeridos.forEach(carpeta => {
+      const completo = !verif.faltantes.includes(carpeta);
+      lista.innerHTML += `
+        <li>
+          <span class="name">${carpeta}</span>
+          <span class="${completo ? 'tag-ok' : 'tag-missing'}">${completo ? 'Completo' : 'Falta'}</span>
+        </li>
+      `;
+    });
+
+    if (verif.puede_someter) {
+      warn.style.display = 'none';
+      ok.className = 'doc-msg show ok';
+      ok.textContent = '✔ Expediente completo. Listo para someter a MiAmbiente.';
+
+      if (estadoExpediente === 'evaluacion' && !esPromotorUsuario) {
+        btn.style.display = 'inline-block';
+      } else {
+        btn.style.display = 'none';
+      }
+    } else {
+      warn.style.display = 'block';
+      ok.className = 'doc-msg';
+      ok.textContent = '';
+      btn.style.display = 'none';
+    }
+
+    if (estadoExpediente !== 'evaluacion') {
+      btn.style.display = 'none';
+    }
+
+    if (esPromotorUsuario) {
+      btn.style.display = 'none';
+    }
+  }
+
   async function cargarExpediente() {
     try {
       const d = await apiFetch('/expedientes/' + codigo);
@@ -265,6 +331,10 @@ if (usuario) {
 
       renderDocumentos(d.documentos);
 
+      if (d.verificacion) {
+        renderVerificacion(d.verificacion, e.estado);
+      }
+
       if (esPromotorUsuario) {
         document.getElementById('panel-note-docs').textContent =
           'Consulta el estado de los documentos y descarga los que ya fueron subidos.';
@@ -279,19 +349,18 @@ if (usuario) {
         `;
       }
     } catch (e) {
-      // Ocultar los paneles normales
       const panelResumen = document.getElementById('panel-resumen');
       const panelDocs = document.getElementById('panel-docs');
       const panelAprob = document.getElementById('panel-aprobacion');
+      const panelVerif = document.getElementById('panel-verificacion');
       if (panelResumen) panelResumen.style.display = 'none';
       if (panelDocs) panelDocs.style.display = 'none';
       if (panelAprob) panelAprob.style.display = 'none';
+      if (panelVerif) panelVerif.style.display = 'none';
 
-      // Mostrar el panel de acceso denegado
       const panelDenegado = document.getElementById('panel-denegado');
       if (panelDenegado) panelDenegado.style.display = 'block';
 
-      // Actualizar el título de la página
       document.getElementById('titulo-exp').textContent = 'Expediente no disponible';
     }
   }
@@ -299,6 +368,13 @@ if (usuario) {
   async function subirArchivo(carpeta, input) {
     if (!input.files || !input.files[0]) return;
     const archivo = input.files[0];
+
+    const ext = archivo.name.split('.').pop().toLowerCase();
+    if (!['pdf', 'zip'].includes(ext)) {
+      mensaje('Solo se aceptan archivos PDF y ZIP.', 'error');
+      input.value = '';
+      return;
+    }
 
     if (archivo.size > 20 * 1024 * 1024) {
       mensaje('El archivo supera el límite de 20 MB.', 'error');
@@ -335,7 +411,6 @@ if (usuario) {
     }
   }
 
-  // Descargar índice (JSZip en cliente)
   document.getElementById('btnZip').addEventListener('click', async () => {
     try {
       const d = await apiFetch('/expedientes/' + codigo);
@@ -359,7 +434,6 @@ if (usuario) {
     }
   });
 
-  // Aprobar expediente
   const btnAprobar = document.getElementById('btnAprobar');
   if (btnAprobar) {
     btnAprobar.addEventListener('click', async () => {
@@ -378,7 +452,30 @@ if (usuario) {
     });
   }
 
-  // Carga inicial
+  const btnSometer = document.getElementById('btnSometer');
+  if (btnSometer) {
+    btnSometer.addEventListener('click', async () => {
+      if (!confirm('¿Confirmas que quieres someter este expediente a MiAmbiente?')) return;
+
+      btnSometer.disabled = true;
+      btnSometer.textContent = 'Sometiendo...';
+
+      const r = await apiFetch(`/expedientes/${codigo}/someter`, {
+        method: 'POST',
+        body: JSON.stringify({})
+      });
+
+      if (r.ok) {
+        alert('Expediente sometido a MiAmbiente.');
+        location.reload();
+      } else {
+        alert(r.mensaje || 'Error al someter.');
+        btnSometer.disabled = false;
+        btnSometer.textContent = 'Someter a MiAmbiente';
+      }
+    });
+  }
+
   cargarExpediente();
 }
 </script>
