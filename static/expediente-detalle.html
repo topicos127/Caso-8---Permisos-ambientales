@@ -41,7 +41,7 @@
         Consulta pública
       </a>
     </nav>
-    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 3</div>
+    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 4</div>
   </aside>
 
   <div class="main">
@@ -56,7 +56,14 @@
         <h2 id="titulo-exp"></h2>
       </div>
 
-      <div class="panel">
+      <!-- Panel de acceso denegado (oculto por defecto) -->
+      <div class="panel" id="panel-denegado" style="display:none; border-top-color: var(--status-bad);">
+        <h3 style="color: var(--status-bad);">Acceso denegado</h3>
+        <p style="font-size:14px; margin-top:8px;">No tienes acceso a este expediente o no existe. Si crees que es un error, verifica el código del expediente o contacta al consultor responsable.</p>
+        <a href="expedientes.html" class="btn btn-brass mt-3" style="display:inline-block;">Volver a mis expedientes</a>
+      </div>
+
+      <div class="panel" id="panel-resumen">
         <div class="fact-row">
           <div class="fact"><span class="k">ESTADO DEL TRÁMITE</span><span id="fact-estado"></span></div>
           <div class="fact"><span class="k">CATEGORÍA</span><span id="fact-categoria"></span></div>
@@ -65,10 +72,14 @@
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel" id="panel-docs">
         <h3>Documentos del expediente</h3>
+        <p class="panel-note" id="panel-note-docs">
+          Haz click en una carpeta para subir el archivo correspondiente. Formatos aceptados: PDF, DOCX y ZIP (máx. 20 MB).
+        </p>
         <ul class="checklist" id="lista-docs" style="margin-top:14px;"></ul>
-        <button type="button" id="btnZip" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line);">Descargar expediente completo (.zip)</button>
+        <div id="upload-status" class="doc-msg" style="margin-top:14px;"></div>
+        <button type="button" id="btnZip" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line);">Descargar índice del expediente (.zip)</button>
       </div>
 
       <div class="panel" id="panel-aprobacion">
@@ -93,56 +104,268 @@ if (usuario) {
 
   const params = new URLSearchParams(window.location.search);
   const codigo = params.get('codigo') || 'SP-A8-2026-001';
+  const esPromotorUsuario = esPromotor();
 
-  apiFetch('/expedientes/' + codigo).then(d => {
-    const e = d.expediente;
-    document.getElementById('titulo-exp').innerHTML =
-      `<span class="case-tag" style="font-size:16px; margin-right:10px; vertical-align:2px;">${e.codigo}</span>${e.proyecto}`;
-    document.getElementById('fact-estado').innerHTML = `<span class="${claseEstado(e.estado)}">${textoEstado(e.estado)}</span>`;
-    document.getElementById('fact-categoria').innerHTML = fichaTier(e.categoria);
-    document.getElementById('fact-promotor').textContent = e.promotor;
-    document.getElementById('fact-fecha').textContent = e.fecha_ingreso;
+  // Ocultar panel de aprobación por defecto para promotores
+  if (esPromotorUsuario) {
+    const panelAprob = document.getElementById('panel-aprobacion');
+    if (panelAprob) panelAprob.style.display = 'none';
+  }
 
+  // Helpers UI
+  function mensaje(texto, tipo) {
+    const el = document.getElementById('upload-status');
+    el.textContent = texto;
+    el.className = 'doc-msg show ' + (tipo === 'error' ? 'error' : 'ok');
+    if (!texto) el.className = 'doc-msg';
+  }
+
+  function formatearTamano(bytes) {
+    if (!bytes) return '';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+  }
+
+  function renderDocumentos(docs) {
     const ul = document.getElementById('lista-docs');
     ul.innerHTML = '';
-    d.documentos.forEach(doc => {
-      const ok = doc.estado === 'recibido';
-      ul.innerHTML += `<li><span class="name">${doc.carpeta}</span><span class="${ok ? 'tag-ok' : 'tag-missing'}">${ok ? 'Recibido' : 'Pendiente'}</span></li>`;
+
+    docs.forEach(doc => {
+      const recibido = doc.estado === 'recibido' && doc.archivo_nombre;
+      const li = document.createElement('li');
+      li.style.display = 'block';
+      li.style.padding = '14px 0';
+
+      const header = document.createElement('div');
+      header.style.display = 'flex';
+      header.style.alignItems = 'center';
+      header.style.justifyContent = 'space-between';
+      header.style.gap = '14px';
+
+      const nombre = document.createElement('span');
+      nombre.className = 'name';
+      nombre.textContent = doc.carpeta;
+
+      const acciones = document.createElement('div');
+      acciones.style.display = 'flex';
+      acciones.style.gap = '8px';
+      acciones.style.alignItems = 'center';
+
+      if (recibido) {
+        const tagOk = document.createElement('span');
+        tagOk.className = 'tag-ok';
+        tagOk.textContent = 'Recibido';
+        acciones.appendChild(tagOk);
+
+        const btnDesc = document.createElement('a');
+        btnDesc.className = 'btn btn-ghost';
+        btnDesc.style.padding = '6px 12px';
+        btnDesc.style.fontSize = '12.5px';
+        btnDesc.style.border = '1px solid var(--line)';
+        btnDesc.textContent = 'Descargar';
+        btnDesc.href = `/expedientes/${codigo}/documentos/${encodeURIComponent(doc.carpeta)}/descargar`;
+        btnDesc.setAttribute('download', doc.archivo_nombre);
+        btnDesc.addEventListener('click', async (ev) => {
+          ev.preventDefault();
+          try {
+            const resp = await fetch(btnDesc.href, {
+              headers: { 'X-Usuario-Email': (usuario && usuario.email) || '' }
+            });
+            if (!resp.ok) {
+              mensaje('No se pudo descargar el archivo.', 'error');
+              return;
+            }
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = doc.archivo_nombre;
+            a.click();
+            URL.revokeObjectURL(url);
+          } catch (e) {
+            mensaje('Error de red al descargar.', 'error');
+          }
+        });
+        acciones.appendChild(btnDesc);
+
+        if (!esPromotorUsuario) {
+          const inputReempl = document.createElement('input');
+          inputReempl.type = 'file';
+          inputReempl.accept = '.pdf,.docx,.zip';
+          inputReempl.style.display = 'none';
+          inputReempl.addEventListener('change', () => subirArchivo(doc.carpeta, inputReempl));
+
+          const btnReemp = document.createElement('button');
+          btnReemp.className = 'btn btn-ghost';
+          btnReemp.style.padding = '6px 12px';
+          btnReemp.style.fontSize = '12.5px';
+          btnReemp.style.border = '1px solid var(--line)';
+          btnReemp.textContent = 'Reemplazar';
+          btnReemp.addEventListener('click', () => inputReempl.click());
+
+          acciones.appendChild(btnReemp);
+          acciones.appendChild(inputReempl);
+        }
+      } else {
+        const tagMissing = document.createElement('span');
+        tagMissing.className = 'tag-missing';
+        tagMissing.textContent = 'Pendiente';
+        acciones.appendChild(tagMissing);
+
+        if (!esPromotorUsuario) {
+          const inputSubir = document.createElement('input');
+          inputSubir.type = 'file';
+          inputSubir.accept = '.pdf,.docx,.zip';
+          inputSubir.style.display = 'none';
+          inputSubir.addEventListener('change', () => subirArchivo(doc.carpeta, inputSubir));
+
+          const btnSubir = document.createElement('button');
+          btnSubir.className = 'btn btn-brass';
+          btnSubir.style.padding = '6px 12px';
+          btnSubir.style.fontSize = '12.5px';
+          btnSubir.textContent = 'Subir archivo';
+          btnSubir.addEventListener('click', () => inputSubir.click());
+
+          acciones.appendChild(btnSubir);
+          acciones.appendChild(inputSubir);
+        }
+      }
+
+      header.appendChild(nombre);
+      header.appendChild(acciones);
+      li.appendChild(header);
+
+      if (recibido && doc.archivo_nombre) {
+        const info = document.createElement('div');
+        info.style.fontFamily = 'var(--mono)';
+        info.style.fontSize = '11.5px';
+        info.style.color = 'var(--ink-faint)';
+        info.style.marginTop = '6px';
+        info.textContent = `↳ ${doc.archivo_nombre}${doc.archivo_tamano ? ' · ' + formatearTamano(doc.archivo_tamano) : ''}${doc.fecha_subida ? ' · ' + doc.fecha_subida : ''}`;
+        li.appendChild(info);
+      }
+
+      ul.appendChild(li);
     });
+  }
 
-    if (esPromotor()) {
-      const panel = document.getElementById('panel-aprobacion');
-      if (panel) panel.style.display = 'none';
+  async function cargarExpediente() {
+    try {
+      const d = await apiFetch('/expedientes/' + codigo);
+      const e = d.expediente;
+
+      document.getElementById('titulo-exp').innerHTML =
+        `<span class="case-tag" style="font-size:16px; margin-right:10px; vertical-align:2px;">${e.codigo}</span>${e.proyecto}`;
+      document.getElementById('fact-estado').innerHTML =
+        `<span class="${claseEstado(e.estado)}">${textoEstado(e.estado)}</span>`;
+      document.getElementById('fact-categoria').innerHTML = fichaTier(e.categoria);
+      document.getElementById('fact-promotor').textContent = e.promotor;
+      document.getElementById('fact-fecha').textContent = e.fecha_ingreso;
+
+      renderDocumentos(d.documentos);
+
+      if (esPromotorUsuario) {
+        document.getElementById('panel-note-docs').textContent =
+          'Consulta el estado de los documentos y descarga los que ya fueron subidos.';
+      }
+
+      if (d.aprobacion) {
+        const panel = document.getElementById('panel-aprobacion');
+        panel.innerHTML = `
+          <h3>Aprobación interna</h3>
+          <p class="panel-note">Aprobado el ${d.aprobacion.fecha}.</p>
+          <p style="font-size:14px;">${d.aprobacion.motivo}</p>
+        `;
+      }
+    } catch (e) {
+      // Ocultar los paneles normales
+      const panelResumen = document.getElementById('panel-resumen');
+      const panelDocs = document.getElementById('panel-docs');
+      const panelAprob = document.getElementById('panel-aprobacion');
+      if (panelResumen) panelResumen.style.display = 'none';
+      if (panelDocs) panelDocs.style.display = 'none';
+      if (panelAprob) panelAprob.style.display = 'none';
+
+      // Mostrar el panel de acceso denegado
+      const panelDenegado = document.getElementById('panel-denegado');
+      if (panelDenegado) panelDenegado.style.display = 'block';
+
+      // Actualizar el título de la página
+      document.getElementById('titulo-exp').textContent = 'Expediente no disponible';
+    }
+  }
+
+  async function subirArchivo(carpeta, input) {
+    if (!input.files || !input.files[0]) return;
+    const archivo = input.files[0];
+
+    if (archivo.size > 20 * 1024 * 1024) {
+      mensaje('El archivo supera el límite de 20 MB.', 'error');
+      input.value = '';
+      return;
     }
 
-    if (d.aprobacion) {
-      const panel = document.getElementById('panel-aprobacion');
-      panel.innerHTML = `
-        <h3>Aprobación interna</h3>
-        <p class="panel-note">Aprobado el ${d.aprobacion.fecha}.</p>
-        <p style="font-size:14px;">${d.aprobacion.motivo}</p>
-      `;
-    }
+    mensaje(`Subiendo ${archivo.name}...`, 'ok');
 
-    document.getElementById('btnZip').addEventListener('click', async () => {
+    const formData = new FormData();
+    formData.append('archivo', archivo);
+
+    try {
+      const resp = await fetch(
+        `/expedientes/${codigo}/documentos/${encodeURIComponent(carpeta)}/subir`,
+        {
+          method: 'POST',
+          headers: { 'X-Usuario-Email': (usuario && usuario.email) || '' },
+          body: formData,
+        }
+      );
+      const data = await resp.json();
+
+      if (data.ok) {
+        mensaje(`✔ ${data.archivo_nombre} subido correctamente.`, 'ok');
+        await cargarExpediente();
+      } else {
+        mensaje(data.mensaje || 'Error al subir el archivo.', 'error');
+      }
+    } catch (err) {
+      mensaje('Error de red al subir el archivo.', 'error');
+    } finally {
+      input.value = '';
+    }
+  }
+
+  // Descargar índice (JSZip en cliente)
+  document.getElementById('btnZip').addEventListener('click', async () => {
+    try {
+      const d = await apiFetch('/expedientes/' + codigo);
+      const e = d.expediente;
       const zip = new JSZip();
       let txt = `EXPEDIENTE ${e.codigo}\nProyecto: ${e.proyecto}\nPromotor: ${e.promotor}\nCategoría: ${e.categoria}\nEstado: ${textoEstado(e.estado)}\n\nDocumentos:\n`;
-      d.documentos.forEach(doc => { txt += `- ${doc.carpeta} (${doc.estado})\n`; });
+      d.documentos.forEach(doc => {
+        txt += `- ${doc.carpeta}: ${doc.estado}`;
+        if (doc.archivo_nombre) txt += ` (${doc.archivo_nombre}, ${formatearTamano(doc.archivo_tamano)})`;
+        txt += '\n';
+      });
       zip.file("indice.txt", txt);
       const blob = await zip.generateAsync({ type: "blob" });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = e.codigo + '.zip';
+      a.download = e.codigo + '-indice.zip';
       a.click();
-    });
-  }).catch(console.error);
+      URL.revokeObjectURL(a.href);
+    } catch (err) {
+      mensaje('Error al generar el índice.', 'error');
+    }
+  });
 
+  // Aprobar expediente
   const btnAprobar = document.getElementById('btnAprobar');
   if (btnAprobar) {
     btnAprobar.addEventListener('click', async () => {
       const motivo = document.getElementById('input-motivo').value.trim();
       if (!motivo) { alert('Escribe un motivo.'); return; }
-      const r = await apiFetch('/expedientes/' + codigo + '/aprobar', {
+      const r = await apiFetch(`/expedientes/${codigo}/aprobar`, {
         method: 'POST',
         body: JSON.stringify({ motivo })
       });
@@ -154,6 +377,9 @@ if (usuario) {
       }
     });
   }
+
+  // Carga inicial
+  cargarExpediente();
 }
 </script>
 </body>

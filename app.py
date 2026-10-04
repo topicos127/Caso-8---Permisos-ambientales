@@ -1,10 +1,12 @@
 """
-Sistema de Permisos Ambientales - API completa (Sprint 3)
+Sistema de Permisos Ambientales - API completa (Sprint 4)
 """
 import os
-from datetime import date
+import uuid
+from datetime import date, datetime
+from werkzeug.utils import secure_filename
 import pymysql
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, send_file
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
@@ -17,6 +19,12 @@ DB_CONFIG = {
     "database": os.environ.get("DB_NAME", "permisos_ambientales"),
     "cursorclass": pymysql.cursors.DictCursor,
 }
+
+UPLOADS_DIR = os.environ.get("UPLOADS_DIR", "/app/uploads")
+MAX_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
+EXTENSIONES_PERMITIDAS = {".pdf", ".docx", ".zip"}
+
+os.makedirs(UPLOADS_DIR, exist_ok=True)
 
 
 def get_connection():
@@ -36,7 +44,7 @@ def index():
 
 @app.route("/api", methods=["GET"])
 def api_info():
-    return jsonify({"servicio": "Permisos Ambientales - API", "version": "0.3", "estado": "activo"}), 200
+    return jsonify({"servicio": "Permisos Ambientales - API", "version": "0.4", "estado": "activo"}), 200
 
 
 @app.route("/health", methods=["GET"])
@@ -77,7 +85,7 @@ def login():
             "nombre": u["nombre"],
         }), 200
 
-    return jsonify({"acceso": False, "mensaje": "Credenciales incorrectas. Verifique su correo y contrasena."}), 401
+    return jsonify({"acceso": False, "mensaje": "Credenciales incorrectas."}), 401
 
 
 @app.route("/registro", methods=["POST"])
@@ -125,46 +133,54 @@ def dashboard():
         conn = get_connection()
         try:
             with conn.cursor() as cur:
-                cur.execute("SELECT id FROM usuarios WHERE email=%s", (email,))
+                cur.execute("SELECT id, rol FROM usuarios WHERE email=%s", (email,))
                 u = cur.fetchone()
                 if not u:
                     return jsonify({"error": "Usuario no encontrado"}), 404
                 uid = u["id"]
+                es_promotor = (u["rol"] == "promotor")
 
-                cur.execute("SELECT COUNT(*) AS n FROM expedientes WHERE usuario_id=%s", (uid,))
+                if es_promotor:
+                    filtro = "promotor_email=%s"
+                    param = email
+                else:
+                    filtro = "usuario_id=%s"
+                    param = uid
+
+                cur.execute(f"SELECT COUNT(*) AS n FROM expedientes WHERE {filtro}", (param,))
                 activos = cur.fetchone()["n"]
 
-                cur.execute("SELECT COUNT(*) AS n FROM expedientes WHERE usuario_id=%s AND estado='pendiente'", (uid,))
+                cur.execute(f"SELECT COUNT(*) AS n FROM expedientes WHERE {filtro} AND estado='pendiente'", (param,))
                 pendientes = cur.fetchone()["n"]
 
                 cur.execute(
-                    """SELECT COUNT(*) AS n FROM alertas a
-                       JOIN expedientes e ON e.id=a.expediente_id WHERE e.usuario_id=%s""",
-                    (uid,),
+                    f"""SELECT COUNT(*) AS n FROM alertas a
+                        JOIN expedientes e ON e.id=a.expediente_id WHERE e.{filtro}""",
+                    (param,),
                 )
                 alertas = cur.fetchone()["n"]
 
-                cur.execute("SELECT COUNT(*) AS n FROM expedientes WHERE usuario_id=%s AND estado='aprobado'", (uid,))
+                cur.execute(f"SELECT COUNT(*) AS n FROM expedientes WHERE {filtro} AND estado='aprobado'", (param,))
                 aprobados = cur.fetchone()["n"]
 
                 cur.execute(
-                    """SELECT codigo, proyecto, estado FROM expedientes
-                       WHERE usuario_id=%s ORDER BY fecha_ingreso DESC LIMIT 5""",
-                    (uid,),
+                    f"""SELECT codigo, proyecto, estado FROM expedientes
+                        WHERE {filtro} ORDER BY fecha_ingreso DESC LIMIT 5""",
+                    (param,),
                 )
                 recientes = cur.fetchall()
 
                 cur.execute(
-                    """SELECT a.descripcion, a.dias_restantes FROM alertas a
-                       JOIN expedientes e ON e.id=a.expediente_id
-                       WHERE e.usuario_id=%s ORDER BY a.dias_restantes ASC LIMIT 5""",
-                    (uid,),
+                    f"""SELECT a.descripcion, a.dias_restantes FROM alertas a
+                        JOIN expedientes e ON e.id=a.expediente_id
+                        WHERE e.{filtro} ORDER BY a.dias_restantes ASC LIMIT 5""",
+                    (param,),
                 )
                 proximas = cur.fetchall()
         finally:
             conn.close()
-    except pymysql.MySQLError:
-        return jsonify({"error": "Error de base de datos"}), 500
+    except pymysql.MySQLError as e:
+        return jsonify({"error": f"Error de base de datos: {str(e)}"}), 500
 
     return jsonify({
         "metricas": {"activos": activos, "pendientes": pendientes, "alertas": alertas, "aprobados": aprobados},
@@ -185,12 +201,25 @@ def listar_expedientes():
         conn = get_connection()
         try:
             with conn.cursor() as cur:
-                cur.execute(
-                    """SELECT e.codigo, e.proyecto, e.promotor, e.categoria, e.estado, e.fecha_ingreso
-                       FROM expedientes e JOIN usuarios u ON u.id=e.usuario_id
-                       WHERE u.email=%s ORDER BY e.fecha_ingreso DESC""",
-                    (email,),
-                )
+                cur.execute("SELECT id, rol FROM usuarios WHERE email=%s", (email,))
+                u = cur.fetchone()
+                if not u:
+                    return jsonify({"error": "Usuario no encontrado"}), 404
+
+                if u["rol"] == "promotor":
+                    cur.execute(
+                        """SELECT codigo, proyecto, promotor, categoria, estado, fecha_ingreso
+                           FROM expedientes WHERE promotor_email=%s
+                           ORDER BY fecha_ingreso DESC""",
+                        (email,),
+                    )
+                else:
+                    cur.execute(
+                        """SELECT codigo, proyecto, promotor, categoria, estado, fecha_ingreso
+                           FROM expedientes WHERE usuario_id=%s
+                           ORDER BY fecha_ingreso DESC""",
+                        (u["id"],),
+                    )
                 filas = cur.fetchall()
         finally:
             conn.close()
@@ -213,8 +242,8 @@ def crear_expediente():
     data = request.get_json(silent=True) or {}
     proyecto = data.get("proyecto", "").strip()
     promotor = data.get("promotor", "").strip()
+    promotor_email = (data.get("promotor_email", "") or "").strip().lower() or None
     categoria = data.get("categoria", "II")
-    docs_completos = data.get("documentos_completos", []) or []
 
     if not proyecto or not promotor:
         return jsonify({"ok": False, "mensaje": "Proyecto y promotor son obligatorios."}), 400
@@ -234,9 +263,10 @@ def crear_expediente():
                 codigo = f"SP-A8-2026-{n:03d}"
 
                 cur.execute(
-                    """INSERT INTO expedientes (codigo, proyecto, promotor, categoria, estado, fecha_ingreso, usuario_id)
-                       VALUES (%s, %s, %s, %s, 'evaluacion', %s, %s)""",
-                    (codigo, proyecto, promotor, categoria, date.today().isoformat(), uid),
+                    """INSERT INTO expedientes
+                       (codigo, proyecto, promotor, promotor_email, categoria, estado, fecha_ingreso, usuario_id)
+                       VALUES (%s, %s, %s, %s, %s, 'evaluacion', %s, %s)""",
+                    (codigo, proyecto, promotor, promotor_email, categoria, date.today().isoformat(), uid),
                 )
                 exp_id = cur.lastrowid
 
@@ -246,10 +276,9 @@ def crear_expediente():
                     "III": ["Línea Base", "Plan de Manejo", "Anexos Legales", "Cartografía", "Evidencia Foro Público"],
                 }
                 for carpeta in DOCS.get(categoria, DOCS["II"]):
-                    estado_doc = "recibido" if carpeta in docs_completos else "pendiente"
                     cur.execute(
-                        "INSERT INTO documentos (expediente_id, carpeta, estado) VALUES (%s, %s, %s)",
-                        (exp_id, carpeta, estado_doc),
+                        "INSERT INTO documentos (expediente_id, carpeta, estado) VALUES (%s, %s, 'pendiente')",
+                        (exp_id, carpeta),
                     )
             conn.commit()
         finally:
@@ -262,12 +291,22 @@ def crear_expediente():
 
 @app.route("/expedientes/<codigo>", methods=["GET"])
 def detalle_expediente(codigo):
+    email = usuario_actual()
+    if not email:
+        return jsonify({"error": "No autenticado"}), 401
+
     try:
         conn = get_connection()
         try:
             with conn.cursor() as cur:
+                cur.execute("SELECT id, rol FROM usuarios WHERE email=%s", (email,))
+                u = cur.fetchone()
+                if not u:
+                    return jsonify({"error": "Usuario no encontrado"}), 404
+
                 cur.execute(
-                    """SELECT id, codigo, proyecto, promotor, categoria, estado, fecha_ingreso
+                    """SELECT id, codigo, proyecto, promotor, promotor_email,
+                              categoria, estado, fecha_ingreso, usuario_id
                        FROM expedientes WHERE codigo=%s""",
                     (codigo,),
                 )
@@ -275,7 +314,20 @@ def detalle_expediente(codigo):
                 if not exp:
                     return jsonify({"error": "Expediente no encontrado"}), 404
 
-                cur.execute("SELECT carpeta, estado FROM documentos WHERE expediente_id=%s", (exp["id"],))
+                # Control de acceso: consultor dueño o promotor asignado
+                permitido = False
+                if u["rol"] == "promotor":
+                    permitido = exp["promotor_email"] and exp["promotor_email"] == email
+                else:
+                    permitido = exp["usuario_id"] == u["id"]
+                if not permitido:
+                    return jsonify({"error": "Sin acceso a este expediente"}), 403
+
+                cur.execute(
+                    """SELECT id, carpeta, estado, archivo_nombre, archivo_tamano, fecha_subida
+                       FROM documentos WHERE expediente_id=%s ORDER BY id""",
+                    (exp["id"],),
+                )
                 docs = cur.fetchall()
 
                 cur.execute(
@@ -291,11 +343,157 @@ def detalle_expediente(codigo):
     if exp["fecha_ingreso"]:
         exp["fecha_ingreso"] = exp["fecha_ingreso"].strftime("%d/%m/%Y")
     del exp["id"]
+    del exp["usuario_id"]
+    del exp["promotor_email"]
+
+    for d in docs:
+        if d["fecha_subida"]:
+            d["fecha_subida"] = d["fecha_subida"].strftime("%d/%m/%Y %H:%M")
 
     if aprob and aprob["fecha"]:
         aprob["fecha"] = aprob["fecha"].strftime("%d/%m/%Y %H:%M")
 
     return jsonify({"expediente": exp, "documentos": docs, "aprobacion": aprob})
+
+
+@app.route("/expedientes/<codigo>/documentos/<carpeta>/subir", methods=["POST"])
+def subir_documento(codigo, carpeta):
+    email = usuario_actual()
+    if not email:
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+
+    try:
+        conn = get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT rol FROM usuarios WHERE email=%s", (email,))
+                u = cur.fetchone()
+                if not u:
+                    return jsonify({"ok": False, "mensaje": "Usuario no encontrado."}), 404
+                if u["rol"] == "promotor":
+                    return jsonify({"ok": False, "mensaje": "Los promotores no pueden subir documentos."}), 403
+
+                if "archivo" not in request.files:
+                    return jsonify({"ok": False, "mensaje": "No se recibio ningun archivo."}), 400
+
+                archivo = request.files["archivo"]
+                if not archivo.filename:
+                    return jsonify({"ok": False, "mensaje": "Nombre de archivo vacio."}), 400
+
+                nombre_original = secure_filename(archivo.filename)
+                ext = os.path.splitext(nombre_original)[1].lower()
+                if ext not in EXTENSIONES_PERMITIDAS:
+                    return jsonify({"ok": False, "mensaje": f"Extension no permitida: {ext}"}), 400
+
+                archivo.seek(0, os.SEEK_END)
+                tamano = archivo.tell()
+                archivo.seek(0)
+                if tamano > MAX_FILE_SIZE:
+                    return jsonify({"ok": False, "mensaje": "El archivo supera el tamano maximo de 20 MB."}), 400
+
+                cur.execute(
+                    """SELECT d.id FROM documentos d
+                       JOIN expedientes e ON e.id=d.expediente_id
+                       WHERE e.codigo=%s AND d.carpeta=%s""",
+                    (codigo, carpeta),
+                )
+                doc = cur.fetchone()
+                if not doc:
+                    return jsonify({"ok": False, "mensaje": "Documento no encontrado."}), 404
+
+                carpeta_path = os.path.join(UPLOADS_DIR, codigo)
+                os.makedirs(carpeta_path, exist_ok=True)
+
+                nombre_unico = f"{uuid.uuid4().hex[:8]}_{nombre_original}"
+                ruta_fisica = os.path.join(carpeta_path, nombre_unico)
+                archivo.save(ruta_fisica)
+
+                ruta_relativa = os.path.join(codigo, nombre_unico)
+                cur.execute(
+                    """UPDATE documentos
+                       SET estado='recibido', archivo_nombre=%s, archivo_ruta=%s,
+                           archivo_tamano=%s, fecha_subida=NOW()
+                       WHERE id=%s""",
+                    (nombre_original, ruta_relativa, tamano, doc["id"]),
+                )
+            conn.commit()
+        finally:
+            conn.close()
+    except pymysql.MySQLError as e:
+        return jsonify({"ok": False, "mensaje": f"Error de base de datos: {str(e)}"}), 500
+    except Exception as e:
+        return jsonify({"ok": False, "mensaje": f"Error al guardar: {str(e)}"}), 500
+
+    return jsonify({
+        "ok": True,
+        "mensaje": "Documento subido correctamente.",
+        "archivo_nombre": nombre_original,
+        "archivo_tamano": tamano,
+    }), 200
+
+
+@app.route("/expedientes/<codigo>/documentos/<carpeta>/descargar", methods=["GET"])
+def descargar_documento(codigo, carpeta):
+    email = usuario_actual()
+    if not email:
+        return jsonify({"error": "No autenticado"}), 401
+
+    try:
+        conn = get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT id, rol FROM usuarios WHERE email=%s", (email,))
+                u = cur.fetchone()
+                if not u:
+                    return jsonify({"error": "Usuario no encontrado"}), 404
+
+                cur.execute(
+                    """SELECT id, usuario_id, promotor_email FROM expedientes WHERE codigo=%s""",
+                    (codigo,),
+                )
+                exp = cur.fetchone()
+                if not exp:
+                    return jsonify({"error": "Expediente no encontrado"}), 404
+
+                # Control de acceso
+                permitido = False
+                if u["rol"] == "promotor":
+                    permitido = exp["promotor_email"] and exp["promotor_email"] == email
+                else:
+                    permitido = exp["usuario_id"] == u["id"]
+                if not permitido:
+                    return jsonify({"error": "Sin acceso"}), 403
+
+                cur.execute(
+                    """SELECT archivo_nombre, archivo_ruta FROM documentos
+                       WHERE expediente_id=%s AND carpeta=%s""",
+                    (exp["id"], carpeta),
+                )
+                doc = cur.fetchone()
+        finally:
+            conn.close()
+    except pymysql.MySQLError:
+        return jsonify({"error": "Error de base de datos"}), 500
+
+    if not doc or not doc["archivo_ruta"]:
+        return jsonify({"error": "Documento no disponible."}), 404
+
+    ruta = doc["archivo_ruta"]
+    if ".." in ruta or ruta.startswith("/") or ruta.startswith("\\"):
+        return jsonify({"error": "Ruta no valida."}), 400
+
+    carpeta_fisica = os.path.join(UPLOADS_DIR, os.path.dirname(ruta))
+    nombre_fisico = os.path.basename(ruta)
+
+    if not os.path.exists(os.path.join(carpeta_fisica, nombre_fisico)):
+        return jsonify({"error": "Archivo no encontrado en disco."}), 404
+
+    return send_from_directory(
+        carpeta_fisica,
+        nombre_fisico,
+        as_attachment=True,
+        download_name=doc["archivo_nombre"],
+    )
 
 
 @app.route("/expedientes/<codigo>/aprobar", methods=["POST"])
@@ -313,17 +511,19 @@ def aprobar_expediente(codigo):
         conn = get_connection()
         try:
             with conn.cursor() as cur:
+                cur.execute("SELECT id, rol FROM usuarios WHERE email=%s", (email,))
+                u = cur.fetchone()
+                if not u or u["rol"] == "promotor":
+                    return jsonify({"ok": False, "mensaje": "No autorizado para aprobar."}), 403
+
                 cur.execute("SELECT id FROM expedientes WHERE codigo=%s", (codigo,))
                 exp = cur.fetchone()
                 if not exp:
                     return jsonify({"ok": False, "mensaje": "Expediente no encontrado."}), 404
 
-                cur.execute("SELECT id FROM usuarios WHERE email=%s", (email,))
-                u = cur.fetchone()
-
                 cur.execute(
                     "INSERT INTO aprobaciones (expediente_id, motivo, aprobado_por) VALUES (%s, %s, %s)",
-                    (exp["id"], motivo, u["id"] if u else None),
+                    (exp["id"], motivo, u["id"]),
                 )
                 cur.execute("UPDATE expedientes SET estado='aprobado' WHERE id=%s", (exp["id"],))
             conn.commit()
@@ -359,9 +559,8 @@ def consulta_publica(codigo):
     return jsonify({"expediente": exp}), 200
 
 
-# ---------- Servir archivos estáticos (css, js, html, imágenes) ----------
-# Esta ruta debe ir AL FINAL, después de todos los endpoints /login, /registro, etc.
-# Captura cualquier URL que no haya sido capturada antes y la busca dentro de static/.
+# ---------- Servir archivos estáticos ----------
+
 @app.route("/<path:filename>")
 def static_files(filename):
     return send_from_directory("static", filename)

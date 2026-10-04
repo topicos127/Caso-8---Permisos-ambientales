@@ -1,5 +1,5 @@
 """
-Sistema de Permisos Ambientales - Seed completo (Sprint 3)
+Sistema de Permisos Ambientales - Seed completo (Sprint 4)
 """
 import os
 import pymysql
@@ -18,11 +18,11 @@ USUARIOS = [
     ("Promotor Uno", "promotor1@ejemplo.com", "clave456", "promotor"),
 ]
 
+# codigo, proyecto, promotor, promotor_email, categoria, estado, fecha, email_consultor
 EXPEDIENTES = [
-    # codigo, proyecto, promotor, categoria, estado, fecha, email_dueno
-    ("SP-A8-2026-001", "Planta Solar Azuero",   "Energía Verde S.A.",     "II",  "evaluacion", "2026-09-10", "consultor1@ejemplo.com"),
-    ("SP-A8-2026-002", "Hotel Costero Bocas",   "Inversiones del Caribe", "III", "pendiente",  "2026-09-05", "consultor1@ejemplo.com"),
-    ("SP-A8-2026-003", "Reforestación Darién",  "ONG Ambiental",          "I",   "aprobado",   "2026-08-28", "consultor1@ejemplo.com"),
+    ("SP-A8-2026-001", "Planta Solar Azuero",  "Energía Verde S.A.",     "promotor1@ejemplo.com", "II",  "evaluacion", "2026-09-10", "consultor1@ejemplo.com"),
+    ("SP-A8-2026-002", "Hotel Costero Bocas",  "Inversiones del Caribe", "promotor1@ejemplo.com", "III", "pendiente",  "2026-09-05", "consultor1@ejemplo.com"),
+    ("SP-A8-2026-003", "Reforestación Darién", "ONG Ambiental",          None,                    "I",   "aprobado",   "2026-08-28", "consultor1@ejemplo.com"),
 ]
 
 DOCS_POR_CAT = {
@@ -51,19 +51,21 @@ def main():
                 )
 
             # Expedientes + documentos
-            for codigo, proyecto, promotor, categoria, estado, fecha, email in EXPEDIENTES:
-                cur.execute("SELECT id FROM usuarios WHERE email=%s", (email,))
+            for codigo, proyecto, promotor, prom_email, categoria, estado, fecha, email_consultor in EXPEDIENTES:
+                cur.execute("SELECT id FROM usuarios WHERE email=%s", (email_consultor,))
                 row = cur.fetchone()
                 uid = row[0] if row else None
 
                 cur.execute(
-                    """INSERT INTO expedientes (codigo, proyecto, promotor, categoria, estado, fecha_ingreso, usuario_id)
-                       VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    """INSERT INTO expedientes
+                       (codigo, proyecto, promotor, promotor_email, categoria, estado, fecha_ingreso, usuario_id)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                        ON DUPLICATE KEY UPDATE
                          proyecto=VALUES(proyecto), promotor=VALUES(promotor),
+                         promotor_email=VALUES(promotor_email),
                          categoria=VALUES(categoria), estado=VALUES(estado),
                          fecha_ingreso=VALUES(fecha_ingreso), usuario_id=VALUES(usuario_id)""",
-                    (codigo, proyecto, promotor, categoria, estado, fecha, uid),
+                    (codigo, proyecto, promotor, prom_email, categoria, estado, fecha, uid),
                 )
 
                 cur.execute("SELECT id FROM expedientes WHERE codigo=%s", (codigo,))

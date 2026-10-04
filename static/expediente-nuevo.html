@@ -41,7 +41,7 @@
         Consulta pública
       </a>
     </nav>
-    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 3</div>
+    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 4</div>
   </aside>
 
   <div class="main">
@@ -59,16 +59,20 @@
         <div class="doc-field-row" style="margin-top:16px;">
           <div class="doc-field">
             <label>Nombre del proyecto</label>
-            <input type="text" placeholder="Ej. Planta Solar Azuero">
+            <input type="text" id="proyecto" placeholder="Ej. Planta Solar Azuero">
           </div>
           <div class="doc-field">
             <label>Promotor / Empresa</label>
-            <input type="text" placeholder="Ej. Energía Verde S.A.">
+            <input type="text" id="promotor" placeholder="Ej. Energía Verde S.A.">
           </div>
         </div>
-        <div class="doc-field" style="max-width:340px;">
+        <div class="doc-field" style="margin-top:16px;">
+          <label>Correo del promotor <span style="font-family:var(--sans); text-transform:none; color:var(--ink-faint); font-weight:400;">(opcional — para que el promotor vea el estado del trámite)</span></label>
+          <input type="email" id="promotor_email" placeholder="promotor@empresa.com">
+        </div>
+        <div class="doc-field" style="max-width:340px; margin-top:16px;">
           <label>Categoría de impacto ambiental</label>
-          <select>
+          <select id="selectCategoria">
             <option>Categoría I — Bajo impacto</option>
             <option selected>Categoría II — Impacto moderado</option>
             <option>Categoría III — Alto impacto</option>
@@ -77,8 +81,8 @@
       </div>
 
       <div class="panel">
-        <h3>Documentos del expediente</h3>
-        <p class="panel-note">Formatos aceptados: PDF y DOCX. Los planos cartográficos deben venir en .zip con estructura de shapefile válida.</p>
+        <h3>Documentos requeridos por categoría</h3>
+        <p class="panel-note">Estas son las carpetas que exige la categoría seleccionada. Los archivos se suben después de crear el expediente.</p>
         <div class="folder-grid" id="folder-grid"></div>
       </div>
 
@@ -86,13 +90,12 @@
         <h3>Verificación de requisitos</h3>
         <p class="panel-note" id="cat-note"><span class="tier"><b>II</b> Categoría II — impacto moderado</span></p>
         <ul class="checklist" id="checklist"></ul>
-        <div class="checklist-warn" id="warn">No puedes marcar el expediente como "listo" hasta completar todos los documentos obligatorios.</div>
-        <div class="doc-msg" id="ok-msg" style="margin-top:14px;"></div>
+        <div class="checklist-warn" id="warn">El expediente se creará con todos los documentos en estado "pendiente". Deberás subir los archivos desde la vista de detalle.</div>
       </div>
 
       <div class="btn-row">
         <a href="expedientes.html" class="btn btn-ghost" style="border:1.5px solid var(--line);">Cancelar</a>
-        <button class="btn btn-brass">Guardar borrador</button>
+        <button class="btn btn-brass" id="btnGuardar">Guardar expediente</button>
       </div>
     </div>
   </div>
@@ -102,33 +105,27 @@
 <script>
 const usuario = requireAuth();
 if (!usuario) throw new Error('Sin sesión');
-
-// Bloquear a promotores: no pueden crear expedientes
-if (usuario.rol === 'promotor') {
-  window.location.href = 'expedientes.html';
-}
-
+if (usuario.rol === 'promotor') { window.location.href = 'expedientes.html'; }
 pintarTopbar();
 
-// Carpetas que exige cada categoría
 const CARPETAS_POR_CAT = {
   "I": [
-    { nombre: "Línea Base",            hint: "PDF · DOCX", accept: ".pdf,.docx" },
-    { nombre: "Plan de Manejo",        hint: "PDF · DOCX", accept: ".pdf,.docx" },
-    { nombre: "Anexos Legales",        hint: "PDF",        accept: ".pdf" }
+    { nombre: "Línea Base",            hint: "PDF · DOCX" },
+    { nombre: "Plan de Manejo",        hint: "PDF · DOCX" },
+    { nombre: "Anexos Legales",        hint: "PDF" }
   ],
   "II": [
-    { nombre: "Línea Base",            hint: "PDF · DOCX", accept: ".pdf,.docx" },
-    { nombre: "Plan de Manejo",        hint: "PDF · DOCX", accept: ".pdf,.docx" },
-    { nombre: "Anexos Legales",        hint: "PDF",        accept: ".pdf" },
-    { nombre: "Cartografía",           hint: "ZIP · shapefile", accept: ".zip" }
+    { nombre: "Línea Base",            hint: "PDF · DOCX" },
+    { nombre: "Plan de Manejo",        hint: "PDF · DOCX" },
+    { nombre: "Anexos Legales",        hint: "PDF" },
+    { nombre: "Cartografía",           hint: "ZIP · shapefile" }
   ],
   "III": [
-    { nombre: "Línea Base",            hint: "PDF · DOCX", accept: ".pdf,.docx" },
-    { nombre: "Plan de Manejo",        hint: "PDF · DOCX", accept: ".pdf,.docx" },
-    { nombre: "Anexos Legales",        hint: "PDF",        accept: ".pdf" },
-    { nombre: "Cartografía",           hint: "ZIP · shapefile", accept: ".zip" },
-    { nombre: "Evidencia Foro Público", hint: "Solo Categoría III", accept: ".pdf,.zip" }
+    { nombre: "Línea Base",            hint: "PDF · DOCX" },
+    { nombre: "Plan de Manejo",        hint: "PDF · DOCX" },
+    { nombre: "Anexos Legales",        hint: "PDF" },
+    { nombre: "Cartografía",           hint: "ZIP · shapefile" },
+    { nombre: "Evidencia Foro Público", hint: "Solo Categoría III" }
   ]
 };
 
@@ -138,7 +135,6 @@ const DESCRIPCION_CAT = {
   "III": "alto impacto"
 };
 
-const carpetasCompletas = new Set();
 let categoriaActual = "II";
 
 function categoriaDesdeSelect(valor) {
@@ -151,71 +147,29 @@ function renderCarpetas(cat) {
   const grid = document.getElementById('folder-grid');
   grid.innerHTML = '';
   CARPETAS_POR_CAT[cat].forEach(c => {
-    const yaCompleta = carpetasCompletas.has(c.nombre);
-    const border = yaCompleta ? 'border-color: var(--status-ok); border-top-color: var(--status-ok);' : '';
-    const slotStyle = yaCompleta
-      ? 'color: var(--status-ok); font-family: var(--mono); font-size: 11.5px; margin-top: 8px;'
-      : '';
     grid.innerHTML += `
-      <label class="folder" style="${border}">
-        <input type="file" hidden onchange="marcarCarpeta(this)" accept="${c.accept}">
+      <div class="folder">
         <div class="name">${c.nombre}</div>
         <div class="hint">${c.hint}</div>
-        <div class="file-name" style="${slotStyle}"></div>
-      </label>
+      </div>
     `;
   });
-}
-
-function marcarCarpeta(input) {
-  const folder = input.closest('.folder');
-  const nombre = folder.querySelector('.name').textContent.trim();
-  const slot = folder.querySelector('.file-name');
-
-  if (input.files && input.files[0]) {
-    slot.textContent = '✔ ' + input.files[0].name;
-    slot.style.color = 'var(--status-ok)';
-    slot.style.fontFamily = 'var(--mono)';
-    slot.style.fontSize = '11.5px';
-    slot.style.marginTop = '8px';
-    folder.style.borderColor = 'var(--status-ok)';
-    folder.style.borderTopColor = 'var(--status-ok)';
-
-    carpetasCompletas.add(nombre);
-    renderChecklist(categoriaActual);
-  }
 }
 
 function renderChecklist(cat) {
   const ul = document.getElementById('checklist');
-  const warn = document.getElementById('warn');
-  const okMsg = document.getElementById('ok-msg');
   ul.innerHTML = '';
-
-  const requeridos = CARPETAS_POR_CAT[cat].map(c => c.nombre);
-  requeridos.forEach(nombre => {
-    const completo = carpetasCompletas.has(nombre);
+  CARPETAS_POR_CAT[cat].forEach(c => {
     ul.innerHTML += `
       <li>
-        <span class="name">${nombre}</span>
-        <span class="${completo ? 'tag-ok' : 'tag-missing'}">${completo ? 'Completo' : 'Falta'}</span>
+        <span class="name">${c.nombre}</span>
+        <span class="tag-missing">Pendiente</span>
       </li>
     `;
   });
-
-  const todosListos = requeridos.every(n => carpetasCompletas.has(n));
-  if (todosListos) {
-    warn.style.display = 'none';
-    okMsg.className = 'doc-msg show ok';
-    okMsg.textContent = '✔ Expediente completo. Listo para guardar.';
-  } else {
-    warn.style.display = 'block';
-    okMsg.className = 'doc-msg';
-    okMsg.textContent = '';
-  }
 }
 
-const sel = document.querySelector('select');
+const sel = document.getElementById('selectCategoria');
 sel.addEventListener('change', () => {
   categoriaActual = categoriaDesdeSelect(sel.value);
   document.getElementById('cat-note').innerHTML =
@@ -228,31 +182,44 @@ sel.addEventListener('change', () => {
 renderCarpetas(categoriaActual);
 renderChecklist(categoriaActual);
 
-document.querySelector('.btn-brass').addEventListener('click', async () => {
-  const inputs = document.querySelectorAll('input[type="text"]');
-  const proyecto = inputs[0].value.trim();
-  const promotor = inputs[1].value.trim();
-  const cat = categoriaActual;
+// Guardar expediente
+document.getElementById('btnGuardar').addEventListener('click', async () => {
+  const proyecto = document.getElementById('proyecto').value.trim();
+  const promotor = document.getElementById('promotor').value.trim();
+  const promotor_email = (document.getElementById('promotor_email').value || '').trim();
 
   if (!proyecto || !promotor) {
-    alert('Completa proyecto y promotor.');
+    alert('Completa el nombre del proyecto y el promotor.');
     return;
   }
 
-  const docs_completos = Array.from(carpetasCompletas).filter(
-    n => CARPETAS_POR_CAT[cat].some(c => c.nombre === n)
-  );
+  const btn = document.getElementById('btnGuardar');
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
 
-  const r = await apiFetch('/expedientes', {
-    method: 'POST',
-    body: JSON.stringify({ proyecto, promotor, categoria: cat, documentos_completos: docs_completos })
-  });
+  try {
+    const r = await apiFetch('/expedientes', {
+      method: 'POST',
+      body: JSON.stringify({
+        proyecto,
+        promotor,
+        promotor_email,
+        categoria: categoriaActual
+      })
+    });
 
-  if (r.ok) {
-    alert(`Expediente ${r.codigo} creado.`);
-    window.location.href = 'expedientes.html';
-  } else {
-    alert(r.mensaje || 'Error al crear.');
+    if (r.ok) {
+      alert(`Expediente ${r.codigo} creado. Ahora puedes subir los documentos.`);
+      window.location.href = 'expediente-detalle.html?codigo=' + r.codigo;
+    } else {
+      alert(r.mensaje || 'Error al crear.');
+      btn.disabled = false;
+      btn.textContent = 'Guardar expediente';
+    }
+  } catch (err) {
+    alert('Error de red al guardar.');
+    btn.disabled = false;
+    btn.textContent = 'Guardar expediente';
   }
 });
 </script>
