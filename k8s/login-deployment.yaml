@@ -15,19 +15,31 @@ spec:
         app: login-service
     spec:
       containers:
-      - name: login-service
-        image: login-service:v3
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 5000
-        env:
-        - name: DB_HOST
-          value: "mysql-permisos"
-        - name: DB_PORT
-          value: "3306"
-        - name: DB_USER
-          value: "root"
-        - name: DB_PASSWORD
-          value: "permisos123"
-        - name: DB_NAME
-          value: "permisos_ambientales"
+        - name: login-service
+          image: login-service:tilt
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5000
+          env:
+            - name: DB_HOST
+              value: mysql-permisos
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_USER
+              value: root
+            - name: DB_NAME
+              value: permisos_ambientales
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-credenciales
+                  key: DB_PASSWORD
+            - name: UPLOADS_DIR
+              value: /app/uploads
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: uploads-pvc
