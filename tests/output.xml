@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generator="Robot 7.4.2 (Python 3.13.3 on win32)" generated="2026-10-04T18:47:38.385974" rpa="false" schemaversion="5">
+<suite id="s1" name="Test Sprint4" source="C:\Users\josea\Downloads\Caso-8---Permisos-ambientales\tests\test_sprint4.robot">
+<test id="s1-t1" name="01 - Validar Estado Del Servicio (Health Check)" line="13">
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-10-04T18:47:38.816049" level="INFO">Creating Session using : alias=api_session, url=http://127.0.0.1:5000, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>api_session</arg>
+<arg>${BASE_URL}</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-10-04T18:47:38.815671" elapsed="0.000751"/>
+</kw>
+<kw name="GET On Session" owner="RequestsLibrary">
+<msg time="2026-10-04T18:47:38.828638" level="INFO">GET Request : url=http://127.0.0.1:5000/health 
+ path_url=/health 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive'} 
+ body=None 
+ </msg>
+<msg time="2026-10-04T18:47:38.828826" level="INFO">GET Response : url=http://127.0.0.1:5000/health 
+ status=200, reason=OK 
+ headers={'Server': 'Werkzeug/3.1.8 Python/3.13.3', 'Date': 'Sun, 04 Oct 2026 23:47:38 GMT', 'Content-Type': 'application/json', 'Content-Length': '16', 'Connection': 'close'} 
+ body={"status":"ok"}
+ 
+ </msg>
+<msg time="2026-10-04T18:47:38.829047" level="INFO">${response} = &lt;Response [200]&gt;</msg>
+<var>${response}</var>
+<arg>api_session</arg>
+<arg>/health</arg>
+<doc>Sends a GET request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-10-04T18:47:38.816897" elapsed="0.012199"/>
+</kw>
+<kw name="Should Be Equal As Integers" owner="BuiltIn">
+<msg time="2026-10-04T18:47:38.831130" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${response.status_code}</arg>
+<arg>200</arg>
+<doc>Fails if objects are unequal after converting them to integers.</doc>
+<status status="PASS" start="2026-10-04T18:47:38.829584" elapsed="0.001704"/>
+</kw>
+<kw name="Set Variable" owner="BuiltIn">
+<msg time="2026-10-04T18:47:38.833548" level="INFO">${json} = {'status': 'ok'}</msg>
+<var>${json}</var>
+<arg>${response.json()}</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2026-10-04T18:47:38.831819" elapsed="0.001811"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<arg>${json['status']}</arg>
+<arg>ok</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-10-04T18:47:38.834657" elapsed="0.001929"/>
+</kw>
+<doc>Verifica que la API del servicio de permisos ambientales responda correctamente.</doc>
+<status status="PASS" start="2026-10-04T18:47:38.814043" elapsed="0.023059"/>
+</test>
+<test id="s1-t2" name="02 - Validar Descarga De Expediente ZIP Con Indice" line="21">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-10-04T18:47:38.840438" level="INFO">${headers} = {'X-Usuario-Email': 'consultor@test.com'}</msg>
+<var>${headers}</var>
+<arg>X-Usuario-Email=${USER_EMAIL}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-10-04T18:47:38.839200" elapsed="0.001321"/>
+</kw>
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-10-04T18:47:38.841572" level="INFO">Creating Session using : alias=api_session, url=http://127.0.0.1:5000, headers={'X-Usuario-Email': 'consultor@test.com'},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>api_session</arg>
+<arg>${BASE_URL}</arg>
+<arg>headers=${headers}</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-10-04T18:47:38.841133" elapsed="0.000879"/>
+</kw>
+<kw name="GET On Session" owner="RequestsLibrary">
+<msg time="2026-10-04T18:47:42.909970" level="INFO">GET Request : url=http://127.0.0.1:5000/expedientes/SP-A8-2026-001/descargar-todo 
+ path_url=/expedientes/SP-A8-2026-001/descargar-todo 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'X-Usuario-Email': 'consultor@test.com'} 
+ body=None 
+ </msg>
+<msg time="2026-10-04T18:47:42.933497" level="INFO">GET Response : url=http://127.0.0.1:5000/expedientes/SP-A8-2026-001/descargar-todo 
+ status=200, reason=OK 
+ headers={'Server': 'Werkzeug/3.1.8 Python/3.13.3', 'Date': 'Sun, 04 Oct 2026 23:47:42 GMT, Sun, 04 Oct 2026 23:47:42 GMT', 'Content-Disposition': 'attachment; filename=SP-A8-2026-001_completo.zip', 'Content-Type': 'application/zip', 'Content-Length': '451', 'Cache-Control': 'no-cache', 'Accept-Ranges': 'bytes', 'Connection': 'close'} 
+ body=PK��D]whLLinea_Base.pdfS
+pq�5�3Q��O�Vp�O.�M�+Qp��+�PK��D]s�N��Indice_Expediente.txt���
+�0��&lt;�?�HKђ��()�:����FlS�V�!|'�/f[p����;nx�i���=�c!�L���,hӐ�+�X@
+g��:���`�
+:y%[T���u+o=vR��y0�"b�y��H�Te��C�/}�Y�	�Ei�V�5NN��%��p����hQ������Ie�O�$_PK��D]whL�Linea_Base.pdfPK��D]s�N���JIndice_Expediente.txtPK. 
+ </msg>
+<msg time="2026-10-04T18:47:42.933842" level="INFO">${response} = &lt;Response [200]&gt;</msg>
+<var>${response}</var>
+<arg>api_session</arg>
+<arg>/expedientes/${EXPEDIENTE_TEST}/descargar-todo</arg>
+<doc>Sends a GET request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-10-04T18:47:38.842573" elapsed="4.091316"/>
+</kw>
+<kw name="Should Be Equal As Integers" owner="BuiltIn">
+<msg time="2026-10-04T18:47:42.935239" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${response.status_code}</arg>
+<arg>200</arg>
+<doc>Fails if objects are unequal after converting them to integers.</doc>
+<status status="PASS" start="2026-10-04T18:47:42.934303" elapsed="0.001039"/>
+</kw>
+<kw name="Should Contain" owner="BuiltIn">
+<arg>${response.headers['Content-Type']}</arg>
+<arg>application/zip</arg>
+<doc>Fails if ``container`` does not contain ``item`` one or more times.</doc>
+<status status="PASS" start="2026-10-04T18:47:42.935681" elapsed="0.001145"/>
+</kw>
+<kw name="Get Length" owner="BuiltIn">
+<msg time="2026-10-04T18:47:42.938497" level="INFO">Length is 451.</msg>
+<msg time="2026-10-04T18:47:42.938661" level="INFO">${len} = 451</msg>
+<var>${len}</var>
+<arg>${response.content}</arg>
+<doc>Returns and logs the length of the given item as an integer.</doc>
+<status status="PASS" start="2026-10-04T18:47:42.937257" elapsed="0.001443"/>
+</kw>
+<kw name="Should Be True" owner="BuiltIn">
+<arg>${len} &gt; 0</arg>
+<doc>Fails if the given condition is not true.</doc>
+<status status="PASS" start="2026-10-04T18:47:42.939126" elapsed="0.000871"/>
+</kw>
+<doc>HU-06: Verifica que la descarga completa de un expediente devuelva un archivo ZIP válido.</doc>
+<status status="PASS" start="2026-10-04T18:47:38.838007" elapsed="4.102430"/>
+</test>
+<test id="s1-t3" name="03 - Validar Calculo De Alertas Y Plazos Legales" line="31">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-10-04T18:47:42.942960" level="INFO">${headers} = {'X-Usuario-Email': 'consultor@test.com'}</msg>
+<var>${headers}</var>
+<arg>X-Usuario-Email=${USER_EMAIL}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-10-04T18:47:42.942134" elapsed="0.000881"/>
+</kw>
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-10-04T18:47:42.944050" level="INFO">Creating Session using : alias=api_session, url=http://127.0.0.1:5000, headers={'X-Usuario-Email': 'consultor@test.com'},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>api_session</arg>
+<arg>${BASE_URL}</arg>
+<arg>headers=${headers}</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-10-04T18:47:42.943519" elapsed="0.001191"/>
+</kw>
+<kw name="GET On Session" owner="RequestsLibrary">
+<msg time="2026-10-04T18:47:47.021348" level="INFO">GET Request : url=http://127.0.0.1:5000/expedientes/SP-A8-2026-001/alertas 
+ path_url=/expedientes/SP-A8-2026-001/alertas 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'X-Usuario-Email': 'consultor@test.com'} 
+ body=None 
+ </msg>
+<msg time="2026-10-04T18:47:47.021474" level="INFO">GET Response : url=http://127.0.0.1:5000/expedientes/SP-A8-2026-001/alertas 
+ status=200, reason=OK 
+ headers={'Server': 'Werkzeug/3.1.8 Python/3.13.3', 'Date': 'Sun, 04 Oct 2026 23:47:47 GMT', 'Content-Type': 'application/json', 'Content-Length': '174', 'Connection': 'close'} 
+ body={"alerta_vencimiento":"Dentro del plazo legal (40 d\u00edas m\u00e1ximo)","categoria":"II","dias_restantes_legales":25,"dias_transcurridos":15,"expediente":"SP-A8-2026-001"}
+ 
+ </msg>
+<msg time="2026-10-04T18:47:47.021700" level="INFO">${response} = &lt;Response [200]&gt;</msg>
+<var>${response}</var>
+<arg>api_session</arg>
+<arg>/expedientes/${EXPEDIENTE_TEST}/alertas</arg>
+<doc>Sends a GET request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-10-04T18:47:42.945309" elapsed="4.076438"/>
+</kw>
+<kw name="Should Be Equal As Integers" owner="BuiltIn">
+<msg time="2026-10-04T18:47:47.023212" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${response.status_code}</arg>
+<arg>200</arg>
+<doc>Fails if objects are unequal after converting them to integers.</doc>
+<status status="PASS" start="2026-10-04T18:47:47.022239" elapsed="0.001072"/>
+</kw>
+<kw name="Set Variable" owner="BuiltIn">
+<msg time="2026-10-04T18:47:47.024824" level="INFO">${json} = {'alerta_vencimiento': 'Dentro del plazo legal (40 días máximo)', 'categoria': 'II', 'dias_restantes_legales': 25, 'dias_transcurridos': 15, 'expediente': 'SP-A8-2026-001'}</msg>
+<var>${json}</var>
+<arg>${response.json()}</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2026-10-04T18:47:47.023711" elapsed="0.001162"/>
+</kw>
+<kw name="Dictionary Should Contain Key" owner="Collections">
+<arg>${json}</arg>
+<arg>dias_transcurridos</arg>
+<doc>Fails if ``key`` is not found from ``dictionary``.</doc>
+<status status="PASS" start="2026-10-04T18:47:47.025227" elapsed="0.000303"/>
+</kw>
+<kw name="Dictionary Should Contain Key" owner="Collections">
+<arg>${json}</arg>
+<arg>dias_restantes_legales</arg>
+<doc>Fails if ``key`` is not found from ``dictionary``.</doc>
+<status status="PASS" start="2026-10-04T18:47:47.026001" elapsed="0.000393"/>
+</kw>
+<kw name="Dictionary Should Contain Key" owner="Collections">
+<arg>${json}</arg>
+<arg>alerta_vencimiento</arg>
+<doc>Fails if ``key`` is not found from ``dictionary``.</doc>
+<status status="PASS" start="2026-10-04T18:47:47.026819" elapsed="0.000377"/>
+</kw>
+<doc>HU-05 / HU-08: Verifica la consulta de plazos legales y cálculo de días restantes.</doc>
+<status status="PASS" start="2026-10-04T18:47:42.941235" elapsed="4.086383"/>
+</test>
+<test id="s1-t4" name="04 - Validar Rechazo De Subida Sin Autenticacion" line="42">
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-10-04T18:47:47.029754" level="INFO">Creating Session using : alias=api_session, url=http://127.0.0.1:5000, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>api_session</arg>
+<arg>${BASE_URL}</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-10-04T18:47:47.029413" elapsed="0.000707"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-10-04T18:47:47.037359" level="INFO">POST Request : url=http://127.0.0.1:5000/expedientes/SP-A8-2026-001/documentos/Linea%20Base/subir 
+ path_url=/expedientes/SP-A8-2026-001/documentos/Linea%20Base/subir 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '0'} 
+ body=None 
+ </msg>
+<msg time="2026-10-04T18:47:47.037475" level="INFO">POST Response : url=http://127.0.0.1:5000/expedientes/SP-A8-2026-001/documentos/Linea%20Base/subir 
+ status=401, reason=UNAUTHORIZED 
+ headers={'Server': 'Werkzeug/3.1.8 Python/3.13.3', 'Date': 'Sun, 04 Oct 2026 23:47:47 GMT', 'Content-Type': 'application/json', 'Content-Length': '40', 'Connection': 'close'} 
+ body={"mensaje":"No autenticado","ok":false}
+ 
+ </msg>
+<msg time="2026-10-04T18:47:47.037727" level="INFO">${response} = &lt;Response [401]&gt;</msg>
+<var>${response}</var>
+<arg>api_session</arg>
+<arg>/expedientes/${EXPEDIENTE_TEST}/documentos/Linea Base/subir</arg>
+<arg>expected_status=401</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-10-04T18:47:47.030555" elapsed="0.007239"/>
+</kw>
+<kw name="Should Be Equal As Integers" owner="BuiltIn">
+<msg time="2026-10-04T18:47:47.039392" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${response.status_code}</arg>
+<arg>401</arg>
+<doc>Fails if objects are unequal after converting them to integers.</doc>
+<status status="PASS" start="2026-10-04T18:47:47.038349" elapsed="0.001138"/>
+</kw>
+<doc>HU-01: Verifica que se rechace la subida de un documento si no hay credenciales enviadas.</doc>
+<status status="PASS" start="2026-10-04T18:47:47.028457" elapsed="0.011436"/>
+</test>
+<doc>Suite de Pruebas Automatizadas - Sprint 4 (Permisos Ambientales API)</doc>
+<status status="PASS" start="2026-10-04T18:47:38.389158" elapsed="8.652040"/>
+</suite>
+<statistics>
+<total>
+<stat pass="4" fail="0" skip="0">All Tests</stat>
+</total>
+<tag>
+</tag>
+<suite>
+<stat name="Test Sprint4" id="s1" pass="4" fail="0" skip="0">Test Sprint4</stat>
+</suite>
+</statistics>
+<errors>
+</errors>
+</robot>
