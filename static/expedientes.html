@@ -41,7 +41,7 @@
         Consulta pública
       </a>
     </nav>
-    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 3</div>
+    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 5</div>
   </aside>
 
   <div class="main">
@@ -79,9 +79,22 @@
 
 <script src="js/api.js"></script>
 <script>
+// HU-07: Semáforo visual con LED de color
+function ledEstado(estado) {
+  const colores = {
+    'aprobado': '#2e7d4f',
+    'evaluacion': '#b3812f',
+    'pendiente': '#a23b2e',
+    'rechazado': '#a23b2e'
+  };
+  const color = colores[estado] || '#8790a6';
+  return `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${color}; box-shadow:0 0 6px ${color}; margin-right:8px; vertical-align:middle;"></span>`;
+}
+
 const usuario = requireAuth();
 if (usuario) {
   pintarTopbar();
+
   if (esPromotor()) {
     const btn = document.getElementById('btnNuevo');
     if (btn) btn.style.display = 'none';
@@ -90,10 +103,12 @@ if (usuario) {
   apiFetch('/expedientes').then(d => {
     const tbody = document.getElementById('tabla-expedientes');
     tbody.innerHTML = '';
+
     if (!d.expedientes || !d.expedientes.length) {
       tbody.innerHTML = '<tr><td colspan="7" style="padding:24px; color:var(--ink-faint);">Sin expedientes registrados.</td></tr>';
       return;
     }
+
     d.expedientes.forEach(e => {
       tbody.innerHTML += `
         <tr>
@@ -101,7 +116,7 @@ if (usuario) {
           <td>${e.proyecto}</td>
           <td>${e.promotor}</td>
           <td>${fichaTier(e.categoria)}</td>
-          <td><span class="${claseEstado(e.estado)}">${textoEstado(e.estado)}</span></td>
+          <td>${ledEstado(e.estado)}<span class="${claseEstado(e.estado)}">${textoEstado(e.estado)}</span></td>
           <td>${e.fecha_ingreso}</td>
           <td><a href="expediente-detalle.html?codigo=${e.codigo}">Ver detalle →</a></td>
         </tr>

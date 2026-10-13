@@ -41,7 +41,7 @@
         Consulta pública
       </a>
     </nav>
-    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 4</div>
+    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 5</div>
   </aside>
 
   <div class="main">
@@ -91,6 +91,31 @@
         </div>
         <div class="doc-msg" id="verif-ok" style="margin-top:14px;"></div>
         <button class="btn btn-brass mt-3" id="btnSometer" style="display:none;">Someter a MiAmbiente</button>
+      </div>
+
+      <!-- NUEVO: Panel de plazos legales (HU-05 / HU-08) -->
+      <div class="panel" id="panel-plazos" style="display:none;">
+        <h3>Plazo legal de respuesta</h3>
+        <p class="panel-note">Según la Ley 41 de 1998, MiAmbiente tiene un plazo máximo de respuesta según la categoría del proyecto.</p>
+
+        <div style="margin-top:16px;">
+          <div class="fact-row">
+            <div class="fact"><span class="k">CATEGORÍA</span><span class="v" id="plazo-categoria">—</span></div>
+            <div class="fact"><span class="k">DÍAS TRANSCURRIDOS</span><span class="v" id="plazo-transcurridos">—</span></div>
+            <div class="fact"><span class="k">DÍAS RESTANTES</span><span class="v" id="plazo-restantes">—</span></div>
+            <div class="fact"><span class="k">ESTADO</span><span id="plazo-estado">—</span></div>
+          </div>
+        </div>
+
+        <div style="margin-top:20px;">
+          <div style="height:10px; background:#e8e1cf; border-radius:5px; overflow:hidden;">
+            <div id="plazo-barra" style="height:100%; width:0%; background:#2e7d4f; transition:width 0.5s;"></div>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-top:6px; font-family:var(--mono); font-size:11px; color:var(--ink-faint);">
+            <span>Ingreso</span>
+            <span>Plazo máximo</span>
+          </div>
+        </div>
       </div>
 
       <div class="panel" id="panel-aprobacion">
@@ -316,6 +341,37 @@ if (usuario) {
     }
   }
 
+  // NUEVA función: render de plazos legales (HU-05 / HU-08)
+  function renderPlazos(alertas) {
+    const panel = document.getElementById('panel-plazos');
+    panel.style.display = 'block';
+
+    document.getElementById('plazo-categoria').innerHTML = fichaTier(alertas.categoria);
+    document.getElementById('plazo-transcurridos').textContent = alertas.dias_transcurridos + ' días';
+
+    const restantes = alertas.dias_restantes_legales;
+    const total = alertas.categoria === 'I' ? 20 : alertas.categoria === 'III' ? 80 : 40;
+    const porcentaje = Math.min(100, Math.max(0, (alertas.dias_transcurridos / total) * 100));
+
+    document.getElementById('plazo-restantes').textContent = restantes + ' días';
+
+    const estadoEl = document.getElementById('plazo-estado');
+    const barra = document.getElementById('plazo-barra');
+
+    if (restantes < 0) {
+      estadoEl.innerHTML = '<span class="status status-bad">Vencido</span>';
+      barra.style.background = '#a23b2e';
+    } else if (restantes <= 5) {
+      estadoEl.innerHTML = '<span class="status status-warn">Por vencer</span>';
+      barra.style.background = '#b3812f';
+    } else {
+      estadoEl.innerHTML = '<span class="status status-ok">En plazo</span>';
+      barra.style.background = '#2e7d4f';
+    }
+
+    barra.style.width = porcentaje + '%';
+  }
+
   async function cargarExpediente() {
     try {
       const d = await apiFetch('/expedientes/' + codigo);
@@ -333,6 +389,14 @@ if (usuario) {
 
       if (d.verificacion) {
         renderVerificacion(d.verificacion, e.estado);
+      }
+
+      // Cargar plazos legales (HU-05 / HU-08)
+      try {
+        const alertas = await apiFetch('/expedientes/' + codigo + '/alertas');
+        renderPlazos(alertas);
+      } catch (err) {
+        console.error('Error al cargar plazos:', err);
       }
 
       if (esPromotorUsuario) {
@@ -353,10 +417,12 @@ if (usuario) {
       const panelDocs = document.getElementById('panel-docs');
       const panelAprob = document.getElementById('panel-aprobacion');
       const panelVerif = document.getElementById('panel-verificacion');
+      const panelPlazos = document.getElementById('panel-plazos');
       if (panelResumen) panelResumen.style.display = 'none';
       if (panelDocs) panelDocs.style.display = 'none';
       if (panelAprob) panelAprob.style.display = 'none';
       if (panelVerif) panelVerif.style.display = 'none';
+      if (panelPlazos) panelPlazos.style.display = 'none';
 
       const panelDenegado = document.getElementById('panel-denegado');
       if (panelDenegado) panelDenegado.style.display = 'block';

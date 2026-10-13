@@ -1,4 +1,4 @@
--- Sistema de Permisos Ambientales — Esquema Sprint 4
+-- Sistema de Permisos Ambientales — Esquema Sprint 5
 CREATE DATABASE IF NOT EXISTS permisos_ambientales;
 USE permisos_ambientales;
 
@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS expedientes (
     estado ENUM('evaluacion','pendiente','aprobado','rechazado') NOT NULL DEFAULT 'evaluacion',
     fecha_ingreso DATE NOT NULL,
     usuario_id INT NOT NULL,
+    acceso_publico BOOLEAN NOT NULL DEFAULT TRUE,
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 );
 

@@ -795,7 +795,7 @@ def consulta_publica(codigo):
         try:
             with conn.cursor() as cur:
                 cur.execute(
-                    """SELECT codigo, proyecto, promotor, categoria, estado
+                                        """SELECT codigo, proyecto, promotor, categoria, estado, acceso_publico
                        FROM expedientes WHERE codigo=%s""",
                     (codigo,),
                 )

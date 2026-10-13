@@ -76,6 +76,10 @@
       <p style="color:var(--status-bad); font-size:14px;">No se encontró ningún expediente con ese código.</p>
     </div>
 
+    <div class="panel" id="panelSinAcceso" style="display:none; border-left:3px solid var(--status-warn);">
+      <p style="color:var(--status-warn); font-size:14px;">Este expediente no tiene habilitada la descarga pública del resumen ejecutivo.</p>
+    </div>
+
     <p class="small" style="margin-top:40px; max-width:56ch;">
       ¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a> para gestionar tus expedientes o dar seguimiento a tus trámites.
     </p>
@@ -113,6 +117,7 @@ async function buscar() {
 
   document.getElementById('panelResultado').style.display = 'none';
   document.getElementById('panelNoEncontrado').style.display = 'none';
+  document.getElementById('panelSinAcceso').style.display = 'none';
 
   try {
     const r = await fetch('/consulta/' + codigo);
@@ -122,11 +127,21 @@ async function buscar() {
     }
     const d = await r.json();
     expActual = d.expediente;
+
     document.getElementById('rCodigo').textContent = expActual.codigo;
     document.getElementById('rProyecto').textContent = expActual.proyecto;
     document.getElementById('rPromotor').textContent = expActual.promotor;
     document.getElementById('rCategoria').innerHTML = fichaTier(expActual.categoria);
     document.getElementById('rEstado').innerHTML = `<span class="${claseEstado(expActual.estado)}">${textoEstado(expActual.estado)}</span>`;
+
+    const btnPdf = document.getElementById('btnPdf');
+    if (expActual.acceso_publico) {
+      btnPdf.style.display = 'inline-block';
+    } else {
+      btnPdf.style.display = 'none';
+      document.getElementById('panelSinAcceso').style.display = 'block';
+    }
+
     document.getElementById('panelResultado').style.display = 'block';
   } catch (e) {
     document.getElementById('panelNoEncontrado').style.display = 'block';
