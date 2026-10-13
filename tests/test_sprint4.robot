@@ -7,7 +7,7 @@ Library           OperatingSystem
 *** Variables ***
 ${BASE_URL}          http://127.0.0.1:5000
 ${EXPEDIENTE_TEST}    SP-A8-2026-001
-${USER_EMAIL}         consultor@test.com
+${USER_EMAIL}         consultor1@ejemplo.com
 
 *** Test Cases ***
 01 - Validar Estado Del Servicio (Health Check)
