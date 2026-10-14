@@ -1881,22 +1881,22 @@ storage = function () {
 window.output = {};
 </script>
 <script type="text/javascript">
-window.output["suite"] = [1,2,3,4,[],[0,0,34697],[],[[5,0,6,[],[0,1052,16947,7],[]],[8,0,9,[],[0,18000,16642,7],[]],[10,0,11,[],[0,34643,52,12],[]]],[],[3,0,3,0]];
+window.output["suite"] = [1,2,3,4,[],[0,0,37230],[],[[5,0,6,[],[0,594,6124,7],[]],[8,0,9,[],[0,6720,6086,10],[]],[11,0,12,[],[0,12809,6176,13],[]],[14,0,15,[],[0,18986,6081,16],[]],[17,0,18,[],[0,25067,6087,19],[]],[20,0,21,[],[0,31156,6072,22],[]]],[],[6,0,6,0]];
 </script>
 <script type="text/javascript">
 window.output["strings"] = [];
 </script>
 <script type="text/javascript">
-window.output["strings"] = window.output["strings"].concat(["*","*Test Sprint5","*C:\\Users\\josea\\Downloads\\Caso-8---Permisos-ambientales\\tests\\sprint5\\Test_Sprint5.robot","*../tests/sprint5/Test_Sprint5.robot","*<p>Suite de Pruebas Automatizadas - Sprint 5 (Permisos Ambientales - HU-05 / HU-08)\x3c/p>","*01 - Validar Endpoint De Alertas Y Estructura De Semaforo (HU-05 / HU-08)","*<p>Verifica que el endpoint de alertas entregue el estado del semáforo visual (verde, amarillo, rojo) y los plazos calculados.\x3c/p>","eNqFj0FLw0AQhf/Ko5cmoGRz0EOgp1DxYsmhoCAeppvRXVh3yu7EpP/erUKxJw/DDG8ej+/1EiNb9RK3KUnq8LjfD/1FHERC5STrZh3EUjif6xscJenmzhhTd3iiBYk1ec7gxTKPPGL26jCl0KHh5cij56icm+3LcGtM21DgpJRR9TTlYj+csOO5v2apVtcs/3A8kA8lSgWclQ7BZwdC5Bn2EtHh9dn/pqM15r59w07+/Ms5hYLD+KSRy7ZnPqgrQ+mDtejW+cig4v/icCrV338qeF3V9TcXeXVW","*02 - Validar Precision En Dias Restantes Y Alerta","*<p>Comprueba que el cálculo de días restantes y el mensaje de alerta coincidan con la categoría del expediente.\x3c/p>","*03 - Validar Respuesta De Error En Expediente Inexistente","*<p>Garantiza que la API maneje correctamente un código de expediente no registrado.\x3c/p>","*ValueError: not enough values to unpack (expected 2, got 1)"]);
+window.output["strings"] = window.output["strings"].concat(["*","*Test Sprint5","*C:\\Users\\josea\\Downloads\\Caso-8---Permisos-ambientales\\tests\\sprint5\\Test_Sprint5.robot","*../tests/sprint5/Test_Sprint5.robot","*<p>Suite de Pruebas Automatizadas - Sprint 5 (Permisos Ambientales)\x3c/p>","*01 - Validar Consulta Publica De Expediente (HU-09)","*<p>Verifica que /consulta/&lt;codigo&gt; devuelva estado 200 y la propiedad acceso_publico.\x3c/p>","*HTTPError: 500 Server Error: INTERNAL SERVER ERROR for url: <a href=\"http://localhost:5000/consulta/SP-A8-2026-001\">http://localhost:5000/consulta/SP-A8-2026-001\x3c/a>","*02 - Validar Lista De Aprobaciones De Expediente (HU-10)","*<p>Verifica que /expedientes/&lt;codigo&gt;/aprobaciones devuelva estado 200 con credenciales validas.\x3c/p>","*HTTPError: 500 Server Error: INTERNAL SERVER ERROR for url: <a href=\"http://localhost:5000/expedientes/SP-A8-2026-001/aprobaciones\">http://localhost:5000/expedientes/SP-A8-2026-001/aprobaciones\x3c/a>","*03 - Validar Rechazo De Subida En Expediente Aprobado (HU-10)","*<p>Verifica estrictamente que subir archivos a un expediente aprobado devuelva HTTP 403 Forbidden.\x3c/p>","eNqtzMEKwjAMgOFXibuXhE1FyjZQ8OZBEM8S28gK2zqWDHx8+xCef/7vuY4eWoZhlU9XDWaLRxxz4HHIav5ARCjfRWKS2UTxcXfnk6upPjqiBmMO21RKVrylWfh1YRXU7Z3Wqv+n1iL3cC1rMImgxraphwLCroM9NT8UO0GX","*04 - Validar Que ZIP Respeta Jerarquia De Carpetas (HU-06)","*<p>Verifica que la descarga del ZIP devuelva HTTP 200 y Content-Type application/zip.\x3c/p>","eNqlzLEKwjAQANBfObqHxIIioRY6BBSklktwD83VCMGUSxQ/Xwf/wPUN7+jcZJgza9gqBZb4RQw/OY3O4DicwRq8GgSDeEFYMsOTk4bOQ2RaDk2sddVSpjz7FHOp+lspSe+Vwp0elYq0kxj2olXtTii1kYHK7PnmWdQcctP/GXTS9x9CY0Bi","*05 - Validar Alertas Con Categoria I (20 Dias Legal Limit)","*<p>Verifica que las alertas devuelvan HTTP 200 y la clave dias_restantes_legales.\x3c/p>","*HTTPError: 500 Server Error: INTERNAL SERVER ERROR for url: <a href=\"http://localhost:5000/expedientes/SP-A8-2026-001/alertas\">http://localhost:5000/expedientes/SP-A8-2026-001/alertas\x3c/a>","*06 - Validar Alertas Con Categoria III (80 Dias Legal Limit)","*<p>Verifica que un expediente de Categoria III responda con sus datos de alerta.\x3c/p>","*HTTPError: 500 Server Error: INTERNAL SERVER ERROR for url: <a href=\"http://localhost:5000/expedientes/SP-A8-2026-003/alertas\">http://localhost:5000/expedientes/SP-A8-2026-003/alertas\x3c/a>"]);
 </script>
 <script type="text/javascript">
-window.output["stats"] = [[{"elapsed":"00:00:34","fail":3,"label":"All Tests","pass":0,"skip":0}],[],[{"elapsed":"00:00:35","fail":3,"id":"s1","label":"Test Sprint5","name":"Test Sprint5","pass":0,"skip":0}]];
+window.output["stats"] = [[{"elapsed":"00:00:37","fail":6,"label":"All Tests","pass":0,"skip":0}],[],[{"elapsed":"00:00:37","fail":6,"id":"s1","label":"Test Sprint5","name":"Test Sprint5","pass":0,"skip":0}]];
 </script>
 <script type="text/javascript">
-window.output["baseMillis"] = 1791934147333;
+window.output["baseMillis"] = 1791941757076;
 </script>
 <script type="text/javascript">
-window.output["generated"] = 34735;
+window.output["generated"] = 37279;
 </script>
 <script type="text/javascript">
 window.output["expand_keywords"] = null;

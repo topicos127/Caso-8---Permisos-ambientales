@@ -1,163 +1,284 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<robot generator="Robot 7.4.2 (Python 3.13.3 on win32)" generated="2026-10-13T18:29:07.328827" rpa="false" schemaversion="5">
+<robot generator="Robot 7.4.2 (Python 3.13.3 on win32)" generated="2026-10-13T20:35:57.071667" rpa="false" schemaversion="5">
 <suite id="s1" name="Test Sprint5" source="C:\Users\josea\Downloads\Caso-8---Permisos-ambientales\tests\sprint5\Test_Sprint5.robot">
-<test id="s1-t1" name="01 - Validar Endpoint De Alertas Y Estructura De Semaforo (HU-05 / HU-08)" line="10">
+<test id="s1-t1" name="01 - Validar Consulta Publica De Expediente (HU-09)" line="11">
 <kw name="Create Session" owner="RequestsLibrary">
-<msg time="2026-10-13T18:29:08.404977" level="INFO">Creating Session using : alias=api, url=http://localhost:5000, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<msg time="2026-10-13T20:35:57.672118" level="INFO">Creating Session using : alias=api, url=http://localhost:5000, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
 <arg>api</arg>
 <arg>${BASE_URL}</arg>
 <doc>Create Session: create a HTTP session to a server</doc>
-<status status="PASS" start="2026-10-13T18:29:08.404414" elapsed="0.001141"/>
+<status status="PASS" start="2026-10-13T20:35:57.671755" elapsed="0.000777"/>
 </kw>
 <kw name="GET On Session" owner="RequestsLibrary">
-<msg time="2026-10-13T18:29:12.470698" level="WARN">Retrying (RetryAdapter(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=5000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /expedientes/EXP-001/alertas</msg>
-<msg time="2026-10-13T18:29:16.680393" level="WARN">Retrying (RetryAdapter(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=5000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /expedientes/EXP-001/alertas</msg>
-<msg time="2026-10-13T18:29:21.088607" level="WARN">Retrying (RetryAdapter(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=5000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /expedientes/EXP-001/alertas</msg>
-<msg time="2026-10-13T18:29:25.098530" level="FAIL">ConnectionError: HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /expedientes/EXP-001/alertas (Caused by NewConnectionError("HTTPConnection(host='localhost', port=5000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))</msg>
+<msg time="2026-10-13T20:36:03.782807" level="INFO">GET Request : url=http://localhost:5000/consulta/SP-A8-2026-001 
+ path_url=/consulta/SP-A8-2026-001 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive'} 
+ body=None 
+ </msg>
+<msg time="2026-10-13T20:36:03.783086" level="INFO">GET Response : url=http://localhost:5000/consulta/SP-A8-2026-001 
+ status=500, reason=INTERNAL SERVER ERROR 
+ headers={'Server': 'Werkzeug/3.1.8 Python/3.13.3', 'Date': 'Wed, 14 Oct 2026 01:36:03 GMT', 'Content-Type': 'application/json', 'Content-Length': '35', 'Connection': 'close'} 
+ body={"error":"Error de base de datos"}
+ 
+ </msg>
+<msg time="2026-10-13T20:36:03.783478" level="FAIL">HTTPError: 500 Server Error: INTERNAL SERVER ERROR for url: http://localhost:5000/consulta/SP-A8-2026-001</msg>
 <var>${response}</var>
 <arg>api</arg>
-<arg>/expedientes/EXP-001/alertas</arg>
+<arg>/consulta/SP-A8-2026-001</arg>
 <doc>Sends a GET request on a previously created HTTP Session.</doc>
-<status status="FAIL" start="2026-10-13T18:29:08.416063" elapsed="16.912459">ConnectionError: HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /expedientes/EXP-001/alertas (Caused by NewConnectionError("HTTPConnection(host='localhost', port=5000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))</status>
+<status status="FAIL" start="2026-10-13T20:35:57.673126" elapsed="6.118178">HTTPError: 500 Server Error: INTERNAL SERVER ERROR for url: http://localhost:5000/consulta/SP-A8-2026-001</status>
 </kw>
 <kw name="Status Should Be" owner="RequestsLibrary">
 <arg>200</arg>
 <arg>${response}</arg>
 <doc>Fails if response status code is different than the expected.</doc>
-<status status="NOT RUN" start="2026-10-13T18:29:25.329046" elapsed="0.000067"/>
+<status status="NOT RUN" start="2026-10-13T20:36:03.792248" elapsed="0.000054"/>
 </kw>
 <kw name="Dictionary Should Contain Key" owner="Collections">
-<arg>${response.json()}</arg>
-<arg>expediente</arg>
+<arg>${response.json()['expediente']}</arg>
+<arg>acceso_publico</arg>
 <doc>Fails if ``key`` is not found from ``dictionary``.</doc>
-<status status="NOT RUN" start="2026-10-13T18:29:25.329557" elapsed="0.000051"/>
+<status status="NOT RUN" start="2026-10-13T20:36:03.792794" elapsed="0.000062"/>
 </kw>
-<kw name="Dictionary Should Contain Key" owner="Collections">
-<arg>${response.json()}</arg>
-<arg>dias_transcurridos</arg>
-<doc>Fails if ``key`` is not found from ``dictionary``.</doc>
-<status status="NOT RUN" start="2026-10-13T18:29:25.330047" elapsed="0.000050"/>
-</kw>
-<kw name="Dictionary Should Contain Key" owner="Collections">
-<arg>${response.json()}</arg>
-<arg>dias_restantes_legales</arg>
-<doc>Fails if ``key`` is not found from ``dictionary``.</doc>
-<status status="NOT RUN" start="2026-10-13T18:29:25.330512" elapsed="0.000044"/>
-</kw>
-<kw name="Dictionary Should Contain Key" owner="Collections">
-<arg>${response.json()}</arg>
-<arg>semaforo</arg>
-<doc>Fails if ``key`` is not found from ``dictionary``.</doc>
-<status status="NOT RUN" start="2026-10-13T18:29:25.330873" elapsed="0.000037"/>
-</kw>
-<kw name="Get From Dictionary" owner="Collections">
-<var>${semaforo}</var>
-<arg>${response.json()}</arg>
-<arg>semaforo</arg>
-<doc>Returns a value from the given ``dictionary`` based on the given ``key``.</doc>
-<status status="NOT RUN" start="2026-10-13T18:29:25.331184" elapsed="0.000033"/>
-</kw>
-<kw name="Should Be True" owner="BuiltIn">
-<arg>'${semaforo}' in ['verde', 'amarillo', 'rojo']</arg>
-<doc>Fails if the given condition is not true.</doc>
-<status status="NOT RUN" start="2026-10-13T18:29:25.331576" elapsed="0.000065"/>
-</kw>
-<doc>Verifica que el endpoint de alertas entregue el estado del semáforo visual (verde, amarillo, rojo) y los plazos calculados.</doc>
-<status status="FAIL" start="2026-10-13T18:29:08.385059" elapsed="16.947057">ConnectionError: HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /expedientes/EXP-001/alertas (Caused by NewConnectionError("HTTPConnection(host='localhost', port=5000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))</status>
+<doc>Verifica que /consulta/&lt;codigo&gt; devuelva estado 200 y la propiedad acceso_publico.</doc>
+<status status="FAIL" start="2026-10-13T20:35:57.669939" elapsed="6.123612">HTTPError: 500 Server Error: INTERNAL SERVER ERROR for url: http://localhost:5000/consulta/SP-A8-2026-001</status>
 </test>
-<test id="s1-t2" name="02 - Validar Precision En Dias Restantes Y Alerta" line="26">
+<test id="s1-t2" name="02 - Validar Lista De Aprobaciones De Expediente (HU-10)" line="18">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-10-13T20:36:03.799538" level="INFO">${headers} = {'X-Usuario-Email': 'consultor1@ejemplo.com'}</msg>
+<var>${headers}</var>
+<arg>X-Usuario-Email=${AUTH_HEADER}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-10-13T20:36:03.797950" elapsed="0.001679"/>
+</kw>
 <kw name="Create Session" owner="RequestsLibrary">
-<msg time="2026-10-13T18:29:25.333985" level="INFO">Creating Session using : alias=api, url=http://localhost:5000, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<msg time="2026-10-13T20:36:03.801186" level="INFO">Creating Session using : alias=api, url=http://localhost:5000, headers={'X-Usuario-Email': 'consultor1@ejemplo.com'},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
 <arg>api</arg>
 <arg>${BASE_URL}</arg>
+<arg>headers=${headers}</arg>
 <doc>Create Session: create a HTTP session to a server</doc>
-<status status="PASS" start="2026-10-13T18:29:25.333695" elapsed="0.000624"/>
+<status status="PASS" start="2026-10-13T20:36:03.800526" elapsed="0.001131"/>
 </kw>
 <kw name="GET On Session" owner="RequestsLibrary">
-<msg time="2026-10-13T18:29:29.342171" level="WARN">Retrying (RetryAdapter(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=5000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /expedientes/EXP-001/alertas</msg>
-<msg time="2026-10-13T18:29:33.551177" level="WARN">Retrying (RetryAdapter(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=5000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /expedientes/EXP-001/alertas</msg>
-<msg time="2026-10-13T18:29:37.957622" level="WARN">Retrying (RetryAdapter(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=5000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /expedientes/EXP-001/alertas</msg>
-<msg time="2026-10-13T18:29:41.963910" level="FAIL">ConnectionError: HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /expedientes/EXP-001/alertas (Caused by NewConnectionError("HTTPConnection(host='localhost', port=5000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))</msg>
+<msg time="2026-10-13T20:36:09.877248" level="INFO">GET Request : url=http://localhost:5000/expedientes/SP-A8-2026-001/aprobaciones 
+ path_url=/expedientes/SP-A8-2026-001/aprobaciones 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'X-Usuario-Email': 'consultor1@ejemplo.com'} 
+ body=None 
+ </msg>
+<msg time="2026-10-13T20:36:09.877472" level="INFO">GET Response : url=http://localhost:5000/expedientes/SP-A8-2026-001/aprobaciones 
+ status=500, reason=INTERNAL SERVER ERROR 
+ headers={'Server': 'Werkzeug/3.1.8 Python/3.13.3', 'Date': 'Wed, 14 Oct 2026 01:36:09 GMT', 'Content-Type': 'application/json', 'Content-Length': '187', 'Connection': 'close'} 
+ body={"error":"Error de base de datos: (2003, \"Can't connect to MySQL server on 'localhost' ([WinError 10061] No connection could be made because the target machine actively refused it)\")"}
+ 
+ </msg>
+<msg time="2026-10-13T20:36:09.877777" level="FAIL">HTTPError: 500 Server Error: INTERNAL SERVER ERROR for url: http://localhost:5000/expedientes/SP-A8-2026-001/aprobaciones</msg>
 <var>${response}</var>
 <arg>api</arg>
-<arg>/expedientes/EXP-001/alertas</arg>
+<arg>/expedientes/SP-A8-2026-001/aprobaciones</arg>
 <doc>Sends a GET request on a previously created HTTP Session.</doc>
-<status status="FAIL" start="2026-10-13T18:29:25.334762" elapsed="16.637970">ConnectionError: HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /expedientes/EXP-001/alertas (Caused by NewConnectionError("HTTPConnection(host='localhost', port=5000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))</status>
-</kw>
-<kw name="Get From Dictionary" owner="Collections">
-<var>${dias_restantes}</var>
-<arg>${response.json()}</arg>
-<arg>dias_restantes_legales</arg>
-<doc>Returns a value from the given ``dictionary`` based on the given ``key``.</doc>
-<status status="NOT RUN" start="2026-10-13T18:29:41.973548" elapsed="0.000053"/>
-</kw>
-<kw name="Get From Dictionary" owner="Collections">
-<var>${alerta}</var>
-<arg>${response.json()}</arg>
-<arg>alerta_vencimiento</arg>
-<doc>Returns a value from the given ``dictionary`` based on the given ``key``.</doc>
-<status status="NOT RUN" start="2026-10-13T18:29:41.973963" elapsed="0.000036"/>
-</kw>
-<kw name="Should Be Equal As Integers" owner="BuiltIn">
-<arg>${dias_restantes}</arg>
-<arg>25</arg>
-<doc>Fails if objects are unequal after converting them to integers.</doc>
-<status status="NOT RUN" start="2026-10-13T18:29:41.974306" elapsed="0.000055"/>
-</kw>
-<kw name="Should Contain" owner="BuiltIn">
-<arg>${alerta}</arg>
-<arg>Dentro del plazo legal</arg>
-<doc>Fails if ``container`` does not contain ``item`` one or more times.</doc>
-<status status="NOT RUN" start="2026-10-13T18:29:41.974714" elapsed="0.000049"/>
-</kw>
-<doc>Comprueba que el cálculo de días restantes y el mensaje de alerta coincidan con la categoría del expediente.</doc>
-<status status="FAIL" start="2026-10-13T18:29:25.332883" elapsed="16.642294">ConnectionError: HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /expedientes/EXP-001/alertas (Caused by NewConnectionError("HTTPConnection(host='localhost', port=5000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))</status>
-</test>
-<test id="s1-t3" name="03 - Validar Respuesta De Error En Expediente Inexistente" line="37">
-<kw name="Create Session" owner="RequestsLibrary">
-<msg time="2026-10-13T18:29:41.977475" level="INFO">Creating Session using : alias=api, url=http://localhost:5000, headers=expected_status=any,                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
-<msg time="2026-10-13T18:29:41.977774" level="FAIL">ValueError: not enough values to unpack (expected 2, got 1)</msg>
-<arg>api</arg>
-<arg>${BASE_URL}</arg>
-<arg>expected_status=any</arg>
-<doc>Create Session: create a HTTP session to a server</doc>
-<status status="FAIL" start="2026-10-13T18:29:41.977052" elapsed="0.050051">ValueError: not enough values to unpack (expected 2, got 1)</status>
-</kw>
-<kw name="GET On Session" owner="RequestsLibrary">
-<var>${response}</var>
-<arg>api</arg>
-<arg>/expedientes/EXP-INEXISTENTE/alertas</arg>
-<doc>Sends a GET request on a previously created HTTP Session.</doc>
-<status status="NOT RUN" start="2026-10-13T18:29:42.027612" elapsed="0.000063"/>
+<status status="FAIL" start="2026-10-13T20:36:03.803789" elapsed="6.076611">HTTPError: 500 Server Error: INTERNAL SERVER ERROR for url: http://localhost:5000/expedientes/SP-A8-2026-001/aprobaciones</status>
 </kw>
 <kw name="Status Should Be" owner="RequestsLibrary">
-<arg>404</arg>
+<arg>200</arg>
 <arg>${response}</arg>
 <doc>Fails if response status code is different than the expected.</doc>
-<status status="NOT RUN" start="2026-10-13T18:29:42.028075" elapsed="0.000043"/>
+<status status="NOT RUN" start="2026-10-13T20:36:09.881050" elapsed="0.000072"/>
 </kw>
-<doc>Garantiza que la API maneje correctamente un código de expediente no registrado.</doc>
-<status status="FAIL" start="2026-10-13T18:29:41.976120" elapsed="0.052430">ValueError: not enough values to unpack (expected 2, got 1)</status>
+<doc>Verifica que /expedientes/&lt;codigo&gt;/aprobaciones devuelva estado 200 con credenciales validas.</doc>
+<status status="FAIL" start="2026-10-13T20:36:03.795563" elapsed="6.086168">HTTPError: 500 Server Error: INTERNAL SERVER ERROR for url: http://localhost:5000/expedientes/SP-A8-2026-001/aprobaciones</status>
 </test>
-<doc>Suite de Pruebas Automatizadas - Sprint 5 (Permisos Ambientales - HU-05 / HU-08)</doc>
-<status status="FAIL" start="2026-10-13T18:29:07.333201" elapsed="34.696694"/>
+<test id="s1-t3" name="03 - Validar Rechazo De Subida En Expediente Aprobado (HU-10)" line="25">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-10-13T20:36:09.887577" level="INFO">${headers} = {'X-Usuario-Email': 'consultor1@ejemplo.com'}</msg>
+<var>${headers}</var>
+<arg>X-Usuario-Email=${AUTH_HEADER}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-10-13T20:36:09.886027" elapsed="0.001646"/>
+</kw>
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-10-13T20:36:09.889479" level="INFO">Creating Session using : alias=api, url=http://localhost:5000, headers={'X-Usuario-Email': 'consultor1@ejemplo.com'},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>api</arg>
+<arg>${BASE_URL}</arg>
+<arg>headers=${headers}</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-10-13T20:36:09.888222" elapsed="0.001673"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-10-13T20:36:15.977713" level="INFO">POST Request : url=http://localhost:5000/expedientes/SP-A8-2026-003/documentos/Linea_Base/subir 
+ path_url=/expedientes/SP-A8-2026-003/documentos/Linea_Base/subir 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'X-Usuario-Email': 'consultor1@ejemplo.com', 'Content-Length': '0'} 
+ body=None 
+ </msg>
+<msg time="2026-10-13T20:36:15.977882" level="INFO">POST Response : url=http://localhost:5000/expedientes/SP-A8-2026-003/documentos/Linea_Base/subir 
+ status=500, reason=INTERNAL SERVER ERROR 
+ headers={'Server': 'Werkzeug/3.1.8 Python/3.13.3', 'Date': 'Wed, 14 Oct 2026 01:36:15 GMT', 'Content-Type': 'application/json', 'Content-Length': '200', 'Connection': 'close'} 
+ body={"mensaje":"Error de base de datos: (2003, \"Can't connect to MySQL server on 'localhost' ([WinError 10061] No connection could be made because the target machine actively refused it)\")","ok":false}
+ 
+ </msg>
+<msg time="2026-10-13T20:36:15.978418" level="FAIL">Url: http://localhost:5000/expedientes/SP-A8-2026-003/documentos/Linea_Base/subir Expected status: 500 != 403</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/expedientes/SP-A8-2026-003/documentos/Linea_Base/subir</arg>
+<arg>expected_status=403</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="FAIL" start="2026-10-13T20:36:09.890770" elapsed="6.168225">Url: http://localhost:5000/expedientes/SP-A8-2026-003/documentos/Linea_Base/subir Expected status: 500 != 403</status>
+</kw>
+<kw name="Status Should Be" owner="RequestsLibrary">
+<arg>403</arg>
+<arg>${response}</arg>
+<doc>Fails if response status code is different than the expected.</doc>
+<status status="NOT RUN" start="2026-10-13T20:36:16.059690" elapsed="0.000071"/>
+</kw>
+<doc>Verifica estrictamente que subir archivos a un expediente aprobado devuelva HTTP 403 Forbidden.</doc>
+<status status="FAIL" start="2026-10-13T20:36:09.884505" elapsed="6.175826">Url: http://localhost:5000/expedientes/SP-A8-2026-003/documentos/Linea_Base/subir Expected status: 500 != 403</status>
+</test>
+<test id="s1-t4" name="04 - Validar Que ZIP Respeta Jerarquia De Carpetas (HU-06)" line="32">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-10-13T20:36:16.064461" level="INFO">${headers} = {'X-Usuario-Email': 'consultor1@ejemplo.com'}</msg>
+<var>${headers}</var>
+<arg>X-Usuario-Email=${AUTH_HEADER}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-10-13T20:36:16.063346" elapsed="0.001204"/>
+</kw>
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-10-13T20:36:16.065606" level="INFO">Creating Session using : alias=api, url=http://localhost:5000, headers={'X-Usuario-Email': 'consultor1@ejemplo.com'},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>api</arg>
+<arg>${BASE_URL}</arg>
+<arg>headers=${headers}</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-10-13T20:36:16.065103" elapsed="0.000864"/>
+</kw>
+<kw name="GET On Session" owner="RequestsLibrary">
+<msg time="2026-10-13T20:36:22.138401" level="INFO">GET Request : url=http://localhost:5000/expedientes/SP-A8-2026-001/descargar-todo 
+ path_url=/expedientes/SP-A8-2026-001/descargar-todo 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'X-Usuario-Email': 'consultor1@ejemplo.com'} 
+ body=None 
+ </msg>
+<msg time="2026-10-13T20:36:22.138524" level="INFO">GET Response : url=http://localhost:5000/expedientes/SP-A8-2026-001/descargar-todo 
+ status=500, reason=INTERNAL SERVER ERROR 
+ headers={'Server': 'Werkzeug/3.1.8 Python/3.13.3', 'Date': 'Wed, 14 Oct 2026 01:36:22 GMT', 'Content-Type': 'application/json', 'Content-Length': '35', 'Connection': 'close'} 
+ body={"error":"Error de base de datos"}
+ 
+ </msg>
+<msg time="2026-10-13T20:36:22.138692" level="FAIL">HTTPError: 500 Server Error: INTERNAL SERVER ERROR for url: http://localhost:5000/expedientes/SP-A8-2026-001/descargar-todo</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/expedientes/SP-A8-2026-001/descargar-todo</arg>
+<doc>Sends a GET request on a previously created HTTP Session.</doc>
+<status status="FAIL" start="2026-10-13T20:36:16.066697" elapsed="6.074032">HTTPError: 500 Server Error: INTERNAL SERVER ERROR for url: http://localhost:5000/expedientes/SP-A8-2026-001/descargar-todo</status>
+</kw>
+<kw name="Status Should Be" owner="RequestsLibrary">
+<arg>200</arg>
+<arg>${response}</arg>
+<doc>Fails if response status code is different than the expected.</doc>
+<status status="NOT RUN" start="2026-10-13T20:36:22.141261" elapsed="0.000068"/>
+</kw>
+<kw name="Should Contain" owner="BuiltIn">
+<arg>${response.headers['Content-Type']}</arg>
+<arg>application/zip</arg>
+<doc>Fails if ``container`` does not contain ``item`` one or more times.</doc>
+<status status="NOT RUN" start="2026-10-13T20:36:22.141924" elapsed="0.000080"/>
+</kw>
+<doc>Verifica que la descarga del ZIP devuelva HTTP 200 y Content-Type application/zip.</doc>
+<status status="FAIL" start="2026-10-13T20:36:16.061754" elapsed="6.080802">HTTPError: 500 Server Error: INTERNAL SERVER ERROR for url: http://localhost:5000/expedientes/SP-A8-2026-001/descargar-todo</status>
+</test>
+<test id="s1-t5" name="05 - Validar Alertas Con Categoria I (20 Dias Legal Limit)" line="40">
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-10-13T20:36:22.144904" level="INFO">Creating Session using : alias=api, url=http://localhost:5000, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>api</arg>
+<arg>${BASE_URL}</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-10-13T20:36:22.144573" elapsed="0.000649"/>
+</kw>
+<kw name="GET On Session" owner="RequestsLibrary">
+<msg time="2026-10-13T20:36:28.226052" level="INFO">GET Request : url=http://localhost:5000/expedientes/SP-A8-2026-001/alertas 
+ path_url=/expedientes/SP-A8-2026-001/alertas 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive'} 
+ body=None 
+ </msg>
+<msg time="2026-10-13T20:36:28.226177" level="INFO">GET Response : url=http://localhost:5000/expedientes/SP-A8-2026-001/alertas 
+ status=500, reason=INTERNAL SERVER ERROR 
+ headers={'Server': 'Werkzeug/3.1.8 Python/3.13.3', 'Date': 'Wed, 14 Oct 2026 01:36:28 GMT', 'Content-Type': 'application/json', 'Content-Length': '170', 'Connection': 'close'} 
+ body={"error":"Error: (2003, \"Can't connect to MySQL server on 'localhost' ([WinError 10061] No connection could be made because the target machine actively refused it)\")"}
+ 
+ </msg>
+<msg time="2026-10-13T20:36:28.226348" level="FAIL">HTTPError: 500 Server Error: INTERNAL SERVER ERROR for url: http://localhost:5000/expedientes/SP-A8-2026-001/alertas</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/expedientes/SP-A8-2026-001/alertas</arg>
+<doc>Sends a GET request on a previously created HTTP Session.</doc>
+<status status="FAIL" start="2026-10-13T20:36:22.145649" elapsed="6.083221">HTTPError: 500 Server Error: INTERNAL SERVER ERROR for url: http://localhost:5000/expedientes/SP-A8-2026-001/alertas</status>
+</kw>
+<kw name="Status Should Be" owner="RequestsLibrary">
+<arg>200</arg>
+<arg>${response}</arg>
+<doc>Fails if response status code is different than the expected.</doc>
+<status status="NOT RUN" start="2026-10-13T20:36:28.229399" elapsed="0.000060"/>
+</kw>
+<kw name="Dictionary Should Contain Key" owner="Collections">
+<arg>${response.json()}</arg>
+<arg>dias_restantes_legales</arg>
+<doc>Fails if ``key`` is not found from ``dictionary``.</doc>
+<status status="NOT RUN" start="2026-10-13T20:36:28.229807" elapsed="0.000051"/>
+</kw>
+<doc>Verifica que las alertas devuelvan HTTP 200 y la clave dias_restantes_legales.</doc>
+<status status="FAIL" start="2026-10-13T20:36:22.143417" elapsed="6.086937">HTTPError: 500 Server Error: INTERNAL SERVER ERROR for url: http://localhost:5000/expedientes/SP-A8-2026-001/alertas</status>
+</test>
+<test id="s1-t6" name="06 - Validar Alertas Con Categoria III (80 Dias Legal Limit)" line="47">
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-10-13T20:36:28.233487" level="INFO">Creating Session using : alias=api, url=http://localhost:5000, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>api</arg>
+<arg>${BASE_URL}</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-10-13T20:36:28.233210" elapsed="0.000546"/>
+</kw>
+<kw name="GET On Session" owner="RequestsLibrary">
+<msg time="2026-10-13T20:36:34.300216" level="INFO">GET Request : url=http://localhost:5000/expedientes/SP-A8-2026-003/alertas 
+ path_url=/expedientes/SP-A8-2026-003/alertas 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive'} 
+ body=None 
+ </msg>
+<msg time="2026-10-13T20:36:34.300585" level="INFO">GET Response : url=http://localhost:5000/expedientes/SP-A8-2026-003/alertas 
+ status=500, reason=INTERNAL SERVER ERROR 
+ headers={'Server': 'Werkzeug/3.1.8 Python/3.13.3', 'Date': 'Wed, 14 Oct 2026 01:36:34 GMT', 'Content-Type': 'application/json', 'Content-Length': '170', 'Connection': 'close'} 
+ body={"error":"Error: (2003, \"Can't connect to MySQL server on 'localhost' ([WinError 10061] No connection could be made because the target machine actively refused it)\")"}
+ 
+ </msg>
+<msg time="2026-10-13T20:36:34.300783" level="FAIL">HTTPError: 500 Server Error: INTERNAL SERVER ERROR for url: http://localhost:5000/expedientes/SP-A8-2026-003/alertas</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/expedientes/SP-A8-2026-003/alertas</arg>
+<doc>Sends a GET request on a previously created HTTP Session.</doc>
+<status status="FAIL" start="2026-10-13T20:36:28.234163" elapsed="6.068438">HTTPError: 500 Server Error: INTERNAL SERVER ERROR for url: http://localhost:5000/expedientes/SP-A8-2026-003/alertas</status>
+</kw>
+<kw name="Status Should Be" owner="RequestsLibrary">
+<arg>200</arg>
+<arg>${response}</arg>
+<doc>Fails if response status code is different than the expected.</doc>
+<status status="NOT RUN" start="2026-10-13T20:36:34.303178" elapsed="0.000062"/>
+</kw>
+<kw name="Dictionary Should Contain Key" owner="Collections">
+<arg>${response.json()}</arg>
+<arg>dias_restantes_legales</arg>
+<doc>Fails if ``key`` is not found from ``dictionary``.</doc>
+<status status="NOT RUN" start="2026-10-13T20:36:34.303637" elapsed="0.000058"/>
+</kw>
+<doc>Verifica que un expediente de Categoria III responda con sus datos de alerta.</doc>
+<status status="FAIL" start="2026-10-13T20:36:28.231889" elapsed="6.072379">HTTPError: 500 Server Error: INTERNAL SERVER ERROR for url: http://localhost:5000/expedientes/SP-A8-2026-003/alertas</status>
+</test>
+<doc>Suite de Pruebas Automatizadas - Sprint 5 (Permisos Ambientales)</doc>
+<status status="FAIL" start="2026-10-13T20:35:57.075504" elapsed="37.230168"/>
 </suite>
 <statistics>
 <total>
-<stat pass="0" fail="3" skip="0">All Tests</stat>
+<stat pass="0" fail="6" skip="0">All Tests</stat>
 </total>
 <tag>
 </tag>
 <suite>
-<stat name="Test Sprint5" id="s1" pass="0" fail="3" skip="0">Test Sprint5</stat>
+<stat name="Test Sprint5" id="s1" pass="0" fail="6" skip="0">Test Sprint5</stat>
 </suite>
 </statistics>
 <errors>
-<msg time="2026-10-13T18:29:12.470698" level="WARN">Retrying (RetryAdapter(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=5000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /expedientes/EXP-001/alertas</msg>
-<msg time="2026-10-13T18:29:16.680393" level="WARN">Retrying (RetryAdapter(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=5000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /expedientes/EXP-001/alertas</msg>
-<msg time="2026-10-13T18:29:21.088607" level="WARN">Retrying (RetryAdapter(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=5000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /expedientes/EXP-001/alertas</msg>
-<msg time="2026-10-13T18:29:29.342171" level="WARN">Retrying (RetryAdapter(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=5000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /expedientes/EXP-001/alertas</msg>
-<msg time="2026-10-13T18:29:33.551177" level="WARN">Retrying (RetryAdapter(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=5000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /expedientes/EXP-001/alertas</msg>
-<msg time="2026-10-13T18:29:37.957622" level="WARN">Retrying (RetryAdapter(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=5000): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /expedientes/EXP-001/alertas</msg>
 </errors>
 </robot>
