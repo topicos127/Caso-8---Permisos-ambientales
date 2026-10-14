@@ -1,0 +1,22 @@
+# Robot Framework artifacts
+tests/**/log.html
+tests/**/report.html
+tests/**/output.xml
+tests/**/selenium-screenshot-*.png
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Docker
+.dockerignore
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Tilt
+.tiltignore
