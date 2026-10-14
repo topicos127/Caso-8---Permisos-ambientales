@@ -54,7 +54,6 @@ CATEGORIAS_DOCS = {
     "III": ["Línea Base", "Plan de Manejo", "Anexos Legales", "Cartografía", "Evidencia Foro Público"],
 }
 
-# Plazos legales en días según la Ley 41 de 1998
 PLAZOS_LEGALES = {
     "I": 20,
     "II": 40,
@@ -314,7 +313,7 @@ def crear_expediente():
                 cur.execute(
                     """INSERT INTO expedientes
                        (codigo, proyecto, promotor, promotor_email, categoria, estado, fecha_ingreso, usuario_id)
-                       VALUES (%s, %s, %s, %s, %s, 'evaluacion', %s, %s)""",
+                       VALUES (%s, %s, %s, %s, %s, 'pendiente', %s, %s)""",
                     (codigo, proyecto, promotor, promotor_email, categoria, date.today().isoformat(), uid),
                 )
                 exp_id = cur.lastrowid
@@ -406,7 +405,7 @@ def detalle_expediente(codigo):
     })
 
 
-# ---------- HU-10: Listar aprobaciones de un expediente ----------
+# ---------- Listar aprobaciones ----------
 
 @app.route("/expedientes/<codigo>/aprobaciones", methods=["GET"])
 def listar_aprobaciones(codigo):
@@ -477,13 +476,15 @@ def subir_documento(codigo, carpeta):
                 if u["rol"] == "promotor":
                     return jsonify({"ok": False, "mensaje": "Los promotores no pueden subir documentos."}), 403
 
-                # HU-10: bloqueo permanente si el expediente está aprobado
                 cur.execute("SELECT estado FROM expedientes WHERE codigo=%s", (codigo,))
                 exp_check = cur.fetchone()
-                if exp_check and exp_check["estado"] == "aprobado":
+                if not exp_check:
+                    return jsonify({"ok": False, "mensaje": "Expediente no encontrado."}), 404
+
+                if exp_check["estado"] != "pendiente":
                     return jsonify({
                         "ok": False,
-                        "mensaje": "Este expediente está aprobado y no se puede modificar."
+                        "mensaje": "Solo se pueden subir documentos cuando el expediente está en estado pendiente."
                     }), 403
 
                 if "archivo" not in request.files:
@@ -501,7 +502,6 @@ def subir_documento(codigo, carpeta):
                         "mensaje": f"Extension no permitida: {ext}. Solo se aceptan archivos PDF y ZIP."
                     }), 400
 
-                # Validar Magic Bytes
                 if not es_contenido_valido(archivo.stream):
                     return jsonify({
                         "ok": False,
@@ -618,14 +618,78 @@ def descargar_documento(codigo, carpeta):
     )
 
 
-# ---------- HU-06: Descargar expediente completo en ZIP ----------
+# ---------- Eliminar documento ----------
+
+@app.route("/expedientes/<codigo>/documentos/<carpeta>/eliminar", methods=["DELETE", "POST"])
+def eliminar_documento(codigo, carpeta):
+    email = usuario_actual()
+    if not email:
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+
+    try:
+        conn = get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT rol FROM usuarios WHERE email=%s", (email,))
+                u = cur.fetchone()
+                if not u:
+                    return jsonify({"ok": False, "mensaje": "Usuario no encontrado."}), 404
+                if u["rol"] == "promotor":
+                    return jsonify({"ok": False, "mensaje": "Los promotores no pueden modificar documentos."}), 403
+
+                cur.execute("SELECT id, estado FROM expedientes WHERE codigo=%s", (codigo,))
+                exp = cur.fetchone()
+                if not exp:
+                    return jsonify({"ok": False, "mensaje": "Expediente no encontrado."}), 404
+
+                if exp["estado"] != "pendiente":
+                    return jsonify({
+                        "ok": False,
+                        "mensaje": "Solo se pueden eliminar documentos cuando el expediente está en estado pendiente."
+                    }), 403
+
+                cur.execute(
+                    """SELECT id, archivo_ruta FROM documentos
+                       WHERE expediente_id=%s AND carpeta=%s""",
+                    (exp["id"], carpeta),
+                )
+                doc = cur.fetchone()
+                if not doc:
+                    return jsonify({"ok": False, "mensaje": "Documento no encontrado."}), 404
+
+                if not doc["archivo_ruta"]:
+                    return jsonify({"ok": False, "mensaje": "Este documento no tiene archivo subido."}), 400
+
+                ruta = doc["archivo_ruta"]
+                if ".." not in ruta and not ruta.startswith("/") and not ruta.startswith("\\"):
+                    ruta_fisica = os.path.join(UPLOADS_DIR, ruta)
+                    if os.path.exists(ruta_fisica):
+                        try:
+                            os.remove(ruta_fisica)
+                        except OSError:
+                            pass
+
+                cur.execute(
+                    """UPDATE documentos
+                       SET estado='pendiente', archivo_nombre=NULL, archivo_ruta=NULL,
+                           archivo_tamano=NULL, fecha_subida=NULL
+                       WHERE id=%s""",
+                    (doc["id"],),
+                )
+            conn.commit()
+        finally:
+            conn.close()
+    except pymysql.MySQLError as e:
+        return jsonify({"ok": False, "mensaje": f"Error de base de datos: {str(e)}"}), 500
+
+    return jsonify({"ok": True, "mensaje": "Documento eliminado correctamente."}), 200
+
+
+# ---------- Descargar ZIP completo ----------
 
 @app.route("/expedientes/<codigo>/descargar-todo", methods=["GET"])
 def descargar_zip_expediente(codigo):
-    """
-    Agrupa todos los archivos subidos del expediente en un ZIP dinámico
-    respetando la jerarquía de carpetas. Incluye un Indice_Expediente.txt.
-    """
+    """Genera un ZIP con los archivos respetando la jerarquía de carpetas."""
     memory_file = io.BytesIO()
 
     try:
@@ -649,7 +713,6 @@ def descargar_zip_expediente(codigo):
         return jsonify({"error": "Error de base de datos"}), 500
 
     with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
-        # Índice
         indice_txt = f"ÍNDICE DEL EXPEDIENTE: {codigo}\n"
         indice_txt += f"Proyecto: {exp['proyecto']}\n"
         indice_txt += f"Promotor: {exp['promotor']}\n"
@@ -661,13 +724,11 @@ def descargar_zip_expediente(codigo):
         if not docs:
             indice_txt += "- (Sin documentos recibidos)\n"
 
-        # Archivos respetando jerarquía de carpetas
         for d in docs:
             indice_txt += f"- [{d['carpeta']}] {d['archivo_nombre']}\n"
             if d['archivo_ruta']:
                 ruta_completa = os.path.join(UPLOADS_DIR, d['archivo_ruta'])
                 if os.path.exists(ruta_completa):
-                    # HU-06: respetar jerarquía de carpetas dentro del ZIP
                     carpeta_limpia = d['carpeta'].replace(' ', '_').replace('í', 'i').replace('á', 'a')
                     nombre_archivo = d['archivo_nombre']
                     arcname = f"{carpeta_limpia}/{nombre_archivo}"
@@ -684,7 +745,7 @@ def descargar_zip_expediente(codigo):
     )
 
 
-# ---------- HU-05 / HU-08: Alertas y plazos legales ----------
+# ---------- Alertas y plazos legales ----------
 
 @app.route("/expedientes/<codigo>/alertas", methods=["GET"])
 def obtener_alertas(codigo):
@@ -736,7 +797,7 @@ def obtener_alertas(codigo):
         return jsonify({"error": f"Error: {str(e)}"}), 500
 
 
-# ---------- Aprobaciones y sometimiento ----------
+# ---------- Aprobación interna ----------
 
 @app.route("/expedientes/<codigo>/aprobar", methods=["POST"])
 def aprobar_expediente(codigo):
@@ -758,27 +819,46 @@ def aprobar_expediente(codigo):
                 if not u or u["rol"] == "promotor":
                     return jsonify({"ok": False, "mensaje": "No autorizado para aprobar."}), 403
 
-                cur.execute("SELECT id, estado FROM expedientes WHERE codigo=%s", (codigo,))
+                cur.execute("SELECT id, categoria, estado FROM expedientes WHERE codigo=%s", (codigo,))
                 exp = cur.fetchone()
                 if not exp:
                     return jsonify({"ok": False, "mensaje": "Expediente no encontrado."}), 404
 
-                if exp["estado"] == "aprobado":
-                    return jsonify({"ok": False, "mensaje": "Este expediente ya fue aprobado."}), 400
+                if exp["estado"] != "pendiente":
+                    return jsonify({
+                        "ok": False,
+                        "mensaje": "Solo se puede aprobar internamente un expediente en estado pendiente."
+                    }), 400
+
+                cur.execute(
+                    "SELECT carpeta, estado FROM documentos WHERE expediente_id=%s",
+                    (exp["id"],),
+                )
+                docs = cur.fetchall()
+
+                verif = calcular_verificacion(exp["categoria"], docs)
+                if not verif["puede_someter"]:
+                    return jsonify({
+                        "ok": False,
+                        "mensaje": f"No se puede aprobar. Faltan documentos obligatorios: {', '.join(verif['faltantes'])}",
+                        "verificacion": verif,
+                    }), 400
 
                 cur.execute(
                     "INSERT INTO aprobaciones (expediente_id, motivo, aprobado_por) VALUES (%s, %s, %s)",
                     (exp["id"], motivo, u["id"]),
                 )
-                cur.execute("UPDATE expedientes SET estado='aprobado' WHERE id=%s", (exp["id"],))
+                cur.execute("UPDATE expedientes SET estado='aprobado_interno' WHERE id=%s", (exp["id"],))
             conn.commit()
         finally:
             conn.close()
     except pymysql.MySQLError:
         return jsonify({"ok": False, "mensaje": "Error al aprobar."}), 500
 
-    return jsonify({"ok": True, "mensaje": "Expediente aprobado."}), 200
+    return jsonify({"ok": True, "mensaje": "Expediente aprobado internamente."}), 200
 
+
+# ---------- Someter a MiAmbiente ----------
 
 @app.route("/expedientes/<codigo>/someter", methods=["POST"])
 def someter_expediente(codigo):
@@ -803,27 +883,13 @@ def someter_expediente(codigo):
                 if not exp:
                     return jsonify({"ok": False, "mensaje": "Expediente no encontrado."}), 404
 
-                if exp["estado"] != "evaluacion":
+                if exp["estado"] != "aprobado_interno":
                     return jsonify({
                         "ok": False,
-                        "mensaje": "Este expediente ya fue sometido o no esta en evaluacion."
+                        "mensaje": "El expediente debe estar aprobado internamente antes de someterlo."
                     }), 400
 
-                cur.execute(
-                    "SELECT carpeta, estado FROM documentos WHERE expediente_id=%s",
-                    (exp["id"],),
-                )
-                docs = cur.fetchall()
-
-                verif = calcular_verificacion(exp["categoria"], docs)
-                if not verif["puede_someter"]:
-                    return jsonify({
-                        "ok": False,
-                        "mensaje": f"Faltan documentos obligatorios: {', '.join(verif['faltantes'])}",
-                        "verificacion": verif,
-                    }), 400
-
-                cur.execute("UPDATE expedientes SET estado='pendiente' WHERE id=%s", (exp["id"],))
+                cur.execute("UPDATE expedientes SET estado='evaluacion' WHERE id=%s", (exp["id"],))
             conn.commit()
         finally:
             conn.close()
@@ -831,6 +897,48 @@ def someter_expediente(codigo):
         return jsonify({"ok": False, "mensaje": "Error al someter."}), 500
 
     return jsonify({"ok": True, "mensaje": "Expediente sometido a MiAmbiente."}), 200
+
+
+# ---------- Simular aprobación de MiAmbiente (para demo) ----------
+
+@app.route("/expedientes/<codigo>/aprobar-miambiente", methods=["POST"])
+def aprobar_miambiente(codigo):
+    """
+    Endpoint de demostración que simula la respuesta de MiAmbiente.
+    En producción, esto vendría de un sistema externo.
+    """
+    email = usuario_actual()
+    if not email:
+        return jsonify({"ok": False, "mensaje": "No autenticado"}), 401
+
+    try:
+        conn = get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT id, rol FROM usuarios WHERE email=%s", (email,))
+                u = cur.fetchone()
+                if not u or u["rol"] == "promotor":
+                    return jsonify({"ok": False, "mensaje": "No autorizado."}), 403
+
+                cur.execute("SELECT id, estado FROM expedientes WHERE codigo=%s", (codigo,))
+                exp = cur.fetchone()
+                if not exp:
+                    return jsonify({"ok": False, "mensaje": "Expediente no encontrado."}), 404
+
+                if exp["estado"] != "evaluacion":
+                    return jsonify({
+                        "ok": False,
+                        "mensaje": "Solo se puede aprobar por MiAmbiente un expediente en evaluación."
+                    }), 400
+
+                cur.execute("UPDATE expedientes SET estado='aprobado' WHERE id=%s", (exp["id"],))
+            conn.commit()
+        finally:
+            conn.close()
+    except pymysql.MySQLError:
+        return jsonify({"ok": False, "mensaje": "Error."}), 500
+
+    return jsonify({"ok": True, "mensaje": "Expediente aprobado por MiAmbiente."}), 200
 
 
 # ---------- Consulta pública ----------

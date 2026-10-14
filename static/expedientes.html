@@ -58,16 +58,16 @@
       <p class="content-lede">Expedientes que gestionas actualmente, con su categoría de impacto y estado de trámite.</p>
 
       <div class="panel" style="padding:0; overflow-x:auto;">
-        <table class="ledger" style="margin:0;">
+        <table class="ledger" style="margin:0; width:100%; table-layout:auto;">
           <thead>
             <tr>
-              <th style="padding-left:24px;">Código</th>
-              <th>Proyecto</th>
-              <th>Promotor</th>
-              <th>Categoría</th>
-              <th>Estado</th>
-              <th>Fecha</th>
-              <th></th>
+              <th style="padding-left:24px; white-space:nowrap; width:140px;">Código</th>
+              <th style="width:180px;">Proyecto</th>
+              <th style="width:180px;">Promotor</th>
+              <th style="white-space:nowrap; width:130px;">Categoría</th>
+              <th style="white-space:nowrap; width:210px;">Estado</th>
+              <th style="white-space:nowrap; width:110px;">Fecha</th>
+              <th style="white-space:nowrap; width:100px;"></th>
             </tr>
           </thead>
           <tbody id="tabla-expedientes"></tbody>
@@ -79,11 +79,11 @@
 
 <script src="js/api.js"></script>
 <script>
-// HU-07: Semáforo visual con LED de color
 function ledEstado(estado) {
   const colores = {
     'aprobado': '#2e7d4f',
-    'evaluacion': '#b3812f',
+    'evaluacion': '#3b5b8a',
+    'aprobado_interno': '#b3812f',
     'pendiente': '#a23b2e',
     'rechazado': '#a23b2e'
   };
@@ -112,13 +112,13 @@ if (usuario) {
     d.expedientes.forEach(e => {
       tbody.innerHTML += `
         <tr>
-          <td style="padding-left:24px;"><span class="case-tag">${e.codigo}</span></td>
+          <td style="padding-left:24px; white-space:nowrap;"><span class="case-tag">${e.codigo}</span></td>
           <td>${e.proyecto}</td>
           <td>${e.promotor}</td>
-          <td>${fichaTier(e.categoria)}</td>
-          <td>${ledEstado(e.estado)}<span class="${claseEstado(e.estado)}">${textoEstado(e.estado)}</span></td>
-          <td>${e.fecha_ingreso}</td>
-          <td><a href="expediente-detalle.html?codigo=${e.codigo}">Ver detalle →</a></td>
+          <td style="white-space:nowrap;">${fichaTier(e.categoria)}</td>
+          <td style="white-space:nowrap;">${ledEstado(e.estado)}<span class="${claseEstado(e.estado)}">${textoEstado(e.estado)}</span></td>
+          <td style="white-space:nowrap; font-family:var(--mono); font-size:12.5px;">${e.fecha_ingreso}</td>
+          <td style="white-space:nowrap;"><a href="expediente-detalle.html?codigo=${e.codigo}">Ver detalle →</a></td>
         </tr>
       `;
     });

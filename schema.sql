@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS expedientes (
     promotor VARCHAR(150) NOT NULL,
     promotor_email VARCHAR(255) NULL,
     categoria ENUM('I','II','III') NOT NULL,
-    estado ENUM('evaluacion','pendiente','aprobado','rechazado') NOT NULL DEFAULT 'evaluacion',
+    estado ENUM('pendiente','aprobado_interno','evaluacion','aprobado','rechazado') NOT NULL DEFAULT 'pendiente',
     fecha_ingreso DATE NOT NULL,
     usuario_id INT NOT NULL,
     acceso_publico BOOLEAN NOT NULL DEFAULT TRUE,

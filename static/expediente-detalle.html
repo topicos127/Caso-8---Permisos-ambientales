@@ -62,6 +62,7 @@
         <a href="expedientes.html" class="btn btn-brass mt-3" style="display:inline-block;">Volver a mis expedientes</a>
       </div>
 
+      <!-- 1. RESUMEN -->
       <div class="panel" id="panel-resumen">
         <div class="fact-row">
           <div class="fact"><span class="k">ESTADO DEL TRÁMITE</span><span id="fact-estado"></span></div>
@@ -71,6 +72,7 @@
         </div>
       </div>
 
+      <!-- 2. DOCUMENTOS -->
       <div class="panel" id="panel-docs">
         <h3>Documentos del expediente</h3>
         <p class="panel-note" id="panel-note-docs">
@@ -81,17 +83,7 @@
         <button type="button" id="btnZip" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line);">Descargar expediente completo (.zip)</button>
       </div>
 
-      <div class="panel" id="panel-verificacion" style="display:none;">
-        <h3>Verificación de requisitos</h3>
-        <p class="panel-note" id="verif-resumen"></p>
-        <ul class="checklist" id="verif-lista" style="margin-top:14px;"></ul>
-        <div class="checklist-warn" id="verif-warn" style="display:none;">
-          El expediente no puede someterse a MiAmbiente mientras falten documentos obligatorios.
-        </div>
-        <div class="doc-msg" id="verif-ok" style="margin-top:14px;"></div>
-        <button class="btn btn-brass mt-3" id="btnSometer" style="display:none;">Someter a MiAmbiente</button>
-      </div>
-
+      <!-- 3. PLAZO LEGAL -->
       <div class="panel" id="panel-plazos" style="display:none;">
         <h3>Plazo legal de respuesta</h3>
         <p class="panel-note">Según la Ley 41 de 1998, MiAmbiente tiene un plazo máximo de respuesta según la categoría del proyecto.</p>
@@ -114,15 +106,58 @@
         </div>
       </div>
 
+      <!-- 4. APROBACIÓN INTERNA -->
       <div class="panel" id="panel-aprobacion">
         <h3>Aprobación interna</h3>
-        <p class="panel-note">Como jefe de la consultora, aprueba este expediente antes de someterlo a MiAmbiente.</p>
-        <div class="doc-field">
-          <label>Motivo de aprobación</label>
-          <textarea id="input-motivo" rows="3" placeholder="Ej. Documentación verificada y completa..."></textarea>
+        <p class="panel-note" id="aprobacion-note">
+          Aprueba internamente el expediente antes de someterlo a MiAmbiente. Solo puedes aprobarlo cuando todos los documentos estén completos.
+        </p>
+
+        <!-- Formulario de aprobación (visible solo en estado pendiente con docs completos) -->
+        <div id="aprobacion-form" style="display:none;">
+          <div class="doc-field">
+            <label>Motivo de aprobación</label>
+            <textarea id="input-motivo" rows="3" placeholder="Ej. Documentación verificada y completa..."></textarea>
+          </div>
+          <button class="btn btn-brass" id="btnAprobar">Aprobar internamente</button>
         </div>
-        <button class="btn btn-brass" id="btnAprobar">Aprobar expediente</button>
+
+        <!-- Aviso cuando faltan documentos -->
+        <div id="aprobacion-aviso-faltantes" class="checklist-warn" style="display:none;">
+          No se puede aprobar internamente mientras falten documentos obligatorios.
+        </div>
+
+        <!-- Registro de aprobación cuando ya está aprobado -->
+        <div id="aprobacion-info"></div>
+
+        <!-- Botón someter (solo cuando estado = aprobado_interno) -->
+        <div id="aprobacion-btn-someter" style="display:none; margin-top:16px;">
+          <button class="btn btn-brass" id="btnSometer">Someter a MiAmbiente</button>
+        </div>
+
+        <!-- Botón simular MiAmbiente (solo cuando estado = evaluacion) -->
+        <div id="aprobacion-btn-simular" style="display:none; margin-top:16px;">
+          <button class="btn btn-brass" id="btnSimularMiAmbiente">Simular aprobación de MiAmbiente</button>
+        </div>
+
+        <!-- Aviso cuando ya está aprobado por MiAmbiente -->
+        <div id="aprobacion-completa" style="display:none; margin-top:16px; padding:12px; background:var(--status-ok-bg); border-left:3px solid var(--status-ok);">
+          <strong style="color:var(--status-ok);">✅ Expediente aprobado por MiAmbiente.</strong>
+          <p style="font-size:13.5px; margin-top:4px;">El permiso está listo.</p>
+        </div>
       </div>
+
+      <!-- 5. VERIFICACIÓN DE REQUISITOS (al final, solo información) -->
+      <div class="panel" id="panel-verificacion" style="display:none;">
+        <h3>Verificación de requisitos</h3>
+        <p class="panel-note" id="verif-resumen"></p>
+        <ul class="checklist" id="verif-lista" style="margin-top:14px;"></ul>
+        <div class="checklist-warn" id="verif-warn" style="display:none;">
+          El expediente no puede someterse a MiAmbiente mientras falten documentos obligatorios.
+        </div>
+        <div class="doc-msg" id="verif-ok" style="margin-top:14px;"></div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -138,19 +173,13 @@ if (usuario) {
   const codigo = params.get('codigo') || 'SP-A8-2026-001';
   const esPromotorUsuario = esPromotor();
 
-  // HU-10: estado actual del expediente (para bloqueo)
-  let estadoExpedienteActual = 'evaluacion';
+  let estadoExpedienteActual = 'pendiente';
 
   const CARPETAS_POR_CAT_LOCAL = {
     "I":   ["Línea Base", "Plan de Manejo", "Anexos Legales"],
     "II":  ["Línea Base", "Plan de Manejo", "Anexos Legales", "Cartografía"],
     "III": ["Línea Base", "Plan de Manejo", "Anexos Legales", "Cartografía", "Evidencia Foro Público"],
   };
-
-  if (esPromotorUsuario) {
-    const panelAprob = document.getElementById('panel-aprobacion');
-    if (panelAprob) panelAprob.style.display = 'none';
-  }
 
   function mensaje(texto, tipo) {
     const el = document.getElementById('upload-status');
@@ -172,8 +201,7 @@ if (usuario) {
 
     docs.forEach(doc => {
       const recibido = doc.estado === 'recibido' && doc.archivo_nombre;
-      // HU-10: bloqueo permanente si el expediente está aprobado
-      const bloqueado = estadoExpedienteActual === 'aprobado';
+      const editable = estadoExpedienteActual === 'pendiente' && !esPromotorUsuario;
 
       const li = document.createElement('li');
       li.style.display = 'block';
@@ -231,7 +259,7 @@ if (usuario) {
         });
         acciones.appendChild(btnDesc);
 
-        if (!esPromotorUsuario && !bloqueado) {
+        if (editable) {
           const inputReempl = document.createElement('input');
           inputReempl.type = 'file';
           inputReempl.accept = '.pdf,.zip';
@@ -248,6 +276,36 @@ if (usuario) {
 
           acciones.appendChild(btnReemp);
           acciones.appendChild(inputReempl);
+
+          const btnElim = document.createElement('button');
+          btnElim.className = 'btn btn-ghost';
+          btnElim.style.padding = '6px 12px';
+          btnElim.style.fontSize = '12.5px';
+          btnElim.style.border = '1px solid var(--status-bad)';
+          btnElim.style.color = 'var(--status-bad)';
+          btnElim.textContent = 'Eliminar';
+          btnElim.addEventListener('click', async () => {
+            if (!confirm(`¿Eliminar el archivo de "${doc.carpeta}"?`)) return;
+            try {
+              const resp = await fetch(
+                `/expedientes/${codigo}/documentos/${encodeURIComponent(doc.carpeta)}/eliminar`,
+                {
+                  method: 'POST',
+                  headers: { 'X-Usuario-Email': (usuario && usuario.email) || '' }
+                }
+              );
+              const data = await resp.json();
+              if (data.ok) {
+                mensaje(`✔ Archivo eliminado de "${doc.carpeta}".`, 'ok');
+                await cargarExpediente();
+              } else {
+                mensaje(data.mensaje || 'Error al eliminar.', 'error');
+              }
+            } catch (err) {
+              mensaje('Error de red al eliminar.', 'error');
+            }
+          });
+          acciones.appendChild(btnElim);
         }
       } else {
         const tagMissing = document.createElement('span');
@@ -255,7 +313,7 @@ if (usuario) {
         tagMissing.textContent = 'Pendiente';
         acciones.appendChild(tagMissing);
 
-        if (!esPromotorUsuario && !bloqueado) {
+        if (editable) {
           const inputSubir = document.createElement('input');
           inputSubir.type = 'file';
           inputSubir.accept = '.pdf,.zip';
@@ -292,13 +350,12 @@ if (usuario) {
     });
   }
 
-  function renderVerificacion(verif, estadoExpediente) {
+  function renderVerificacion(verif) {
     const panel = document.getElementById('panel-verificacion');
     const resumen = document.getElementById('verif-resumen');
     const lista = document.getElementById('verif-lista');
     const warn = document.getElementById('verif-warn');
     const ok = document.getElementById('verif-ok');
-    const btn = document.getElementById('btnSometer');
 
     panel.style.display = 'block';
     lista.innerHTML = '';
@@ -319,27 +376,81 @@ if (usuario) {
     if (verif.puede_someter) {
       warn.style.display = 'none';
       ok.className = 'doc-msg show ok';
-      ok.textContent = '✔ Expediente completo. Listo para someter a MiAmbiente.';
-
-      if (estadoExpediente === 'evaluacion' && !esPromotorUsuario) {
-        btn.style.display = 'inline-block';
-      } else {
-        btn.style.display = 'none';
-      }
+      ok.textContent = '✔ Todos los documentos obligatorios están completos.';
     } else {
       warn.style.display = 'block';
       ok.className = 'doc-msg';
       ok.textContent = '';
-      btn.style.display = 'none';
     }
+  }
 
-    if (estadoExpediente !== 'evaluacion') {
-      btn.style.display = 'none';
-    }
+  async function renderAprobacion(estado, verif) {
+    const panel = document.getElementById('panel-aprobacion');
+    const note = document.getElementById('aprobacion-note');
+    const formDiv = document.getElementById('aprobacion-form');
+    const avisoFaltantes = document.getElementById('aprobacion-aviso-faltantes');
+    const infoDiv = document.getElementById('aprobacion-info');
+    const btnSometerDiv = document.getElementById('aprobacion-btn-someter');
+    const btnSimularDiv = document.getElementById('aprobacion-btn-simular');
+    const completaDiv = document.getElementById('aprobacion-completa');
+
+    formDiv.style.display = 'none';
+    avisoFaltantes.style.display = 'none';
+    infoDiv.innerHTML = '';
+    btnSometerDiv.style.display = 'none';
+    btnSimularDiv.style.display = 'none';
+    completaDiv.style.display = 'none';
 
     if (esPromotorUsuario) {
-      btn.style.display = 'none';
+      if (estado === 'pendiente') {
+        note.textContent = 'El consultor aún no ha completado los documentos.';
+      } else if (estado === 'aprobado_interno') {
+        note.textContent = 'El expediente fue aprobado internamente. Pronto será sometido a MiAmbiente.';
+      } else if (estado === 'evaluacion') {
+        note.textContent = 'El expediente está en evaluación por MiAmbiente.';
+      } else if (estado === 'aprobado') {
+        note.textContent = 'El expediente fue aprobado por MiAmbiente.';
+        completaDiv.style.display = 'block';
+      }
+      await cargarRegistroAprobaciones(infoDiv);
+      return;
     }
+
+    if (estado === 'pendiente') {
+      if (verif && verif.puede_someter) {
+        note.textContent = 'Todos los documentos están completos. Puedes aprobar internamente el expediente.';
+        formDiv.style.display = 'block';
+      } else {
+        note.textContent = 'Aprueba internamente el expediente antes de someterlo a MiAmbiente.';
+        avisoFaltantes.style.display = 'block';
+      }
+    } else if (estado === 'aprobado_interno') {
+      note.innerHTML = '<span style="color:var(--status-ok);">✔ Expediente aprobado internamente.</span> Listo para someter a MiAmbiente.';
+      btnSometerDiv.style.display = 'block';
+      await cargarRegistroAprobaciones(infoDiv);
+    } else if (estado === 'evaluacion') {
+      note.textContent = 'El expediente fue sometido a MiAmbiente. Está en evaluación.';
+      btnSimularDiv.style.display = 'block';
+      await cargarRegistroAprobaciones(infoDiv);
+    } else if (estado === 'aprobado') {
+      note.textContent = 'Expediente aprobado por MiAmbiente.';
+      completaDiv.style.display = 'block';
+      await cargarRegistroAprobaciones(infoDiv);
+    }
+  }
+
+  async function cargarRegistroAprobaciones(infoDiv) {
+    try {
+      const ap = await apiFetch('/expedientes/' + codigo + '/aprobaciones');
+      if (ap.aprobaciones && ap.aprobaciones.length) {
+        infoDiv.innerHTML = ap.aprobaciones.map(a =>
+          `<div style="margin-top:10px; padding:12px; background:var(--paper); border-left:3px solid var(--status-ok);">
+            <div style="font-family:var(--mono); font-size:11px; color:var(--ink-faint);">${a.fecha} · ${a.aprobado_por_nombre || 'Usuario'}</div>
+            <div style="margin-top:4px; font-size:14px;">${a.motivo}</div>
+          </div>`
+        ).join('');
+      }
+    } catch (err) { /* ignorar */ }
   }
 
   function renderPlazos(alertas) {
@@ -377,7 +488,6 @@ if (usuario) {
       const d = await apiFetch('/expedientes/' + codigo);
       const e = d.expediente;
 
-      // HU-10: guardar estado actual para el bloqueo
       estadoExpedienteActual = e.estado;
 
       document.getElementById('titulo-exp').innerHTML =
@@ -391,8 +501,10 @@ if (usuario) {
       renderDocumentos(d.documentos);
 
       if (d.verificacion) {
-        renderVerificacion(d.verificacion, e.estado);
+        renderVerificacion(d.verificacion);
       }
+
+      await renderAprobacion(e.estado, d.verificacion);
 
       try {
         const alertas = await apiFetch('/expedientes/' + codigo + '/alertas');
@@ -405,42 +517,12 @@ if (usuario) {
         document.getElementById('panel-note-docs').textContent =
           'Consulta el estado de los documentos y descarga los que ya fueron subidos.';
       }
-
-      // HU-10: mostrar aprobación con detalle completo si está aprobado
-      if (d.aprobacion || e.estado === 'aprobado') {
-        const panel = document.getElementById('panel-aprobacion');
-
-        let infoAprobaciones = '';
-        try {
-          const ap = await apiFetch('/expedientes/' + codigo + '/aprobaciones');
-          if (ap.aprobaciones && ap.aprobaciones.length) {
-            infoAprobaciones = ap.aprobaciones.map(a =>
-              `<div style="margin-top:10px; padding:12px; background:var(--paper); border-left:3px solid var(--status-ok);">
-                <div style="font-family:var(--mono); font-size:11px; color:var(--ink-faint);">${a.fecha} · ${a.aprobado_por_nombre || 'Usuario'}</div>
-                <div style="margin-top:4px; font-size:14px;">${a.motivo}</div>
-              </div>`
-            ).join('');
-          }
-        } catch (err) { /* ignorar */ }
-
-        panel.innerHTML = `
-          <h3>Aprobación interna</h3>
-          <p class="panel-note" style="color:var(--status-ok);">✔ Este expediente fue aprobado. Ya no se puede modificar.</p>
-          ${infoAprobaciones}
-        `;
-        panel.style.borderTopColor = 'var(--status-ok)';
-      }
     } catch (e) {
-      const panelResumen = document.getElementById('panel-resumen');
-      const panelDocs = document.getElementById('panel-docs');
-      const panelAprob = document.getElementById('panel-aprobacion');
-      const panelVerif = document.getElementById('panel-verificacion');
-      const panelPlazos = document.getElementById('panel-plazos');
-      if (panelResumen) panelResumen.style.display = 'none';
-      if (panelDocs) panelDocs.style.display = 'none';
-      if (panelAprob) panelAprob.style.display = 'none';
-      if (panelVerif) panelVerif.style.display = 'none';
-      if (panelPlazos) panelPlazos.style.display = 'none';
+      const panels = ['panel-resumen', 'panel-docs', 'panel-aprobacion', 'panel-verificacion', 'panel-plazos'];
+      panels.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
 
       const panelDenegado = document.getElementById('panel-denegado');
       if (panelDenegado) panelDenegado.style.display = 'block';
@@ -495,7 +577,6 @@ if (usuario) {
     }
   }
 
-  // Descargar ZIP completo (usa el endpoint del servidor que respeta jerarquía)
   document.getElementById('btnZip').addEventListener('click', async () => {
     try {
       const resp = await fetch(`/expedientes/${codigo}/descargar-todo`, {
@@ -527,7 +608,7 @@ if (usuario) {
         body: JSON.stringify({ motivo })
       });
       if (r.ok) {
-        alert('Aprobado. El expediente queda bloqueado.');
+        alert('Expediente aprobado internamente.');
         location.reload();
       } else {
         alert(r.mensaje || 'Error.');
@@ -539,22 +620,32 @@ if (usuario) {
   if (btnSometer) {
     btnSometer.addEventListener('click', async () => {
       if (!confirm('¿Confirmas que quieres someter este expediente a MiAmbiente?')) return;
-
-      btnSometer.disabled = true;
-      btnSometer.textContent = 'Sometiendo...';
-
       const r = await apiFetch(`/expedientes/${codigo}/someter`, {
         method: 'POST',
         body: JSON.stringify({})
       });
-
       if (r.ok) {
         alert('Expediente sometido a MiAmbiente.');
         location.reload();
       } else {
         alert(r.mensaje || 'Error al someter.');
-        btnSometer.disabled = false;
-        btnSometer.textContent = 'Someter a MiAmbiente';
+      }
+    });
+  }
+
+  const btnSimularMiAmbiente = document.getElementById('btnSimularMiAmbiente');
+  if (btnSimularMiAmbiente) {
+    btnSimularMiAmbiente.addEventListener('click', async () => {
+      if (!confirm('¿Simular que MiAmbiente aprobó el expediente?')) return;
+      const r = await apiFetch(`/expedientes/${codigo}/aprobar-miambiente`, {
+        method: 'POST',
+        body: JSON.stringify({})
+      });
+      if (r.ok) {
+        alert('Expediente aprobado por MiAmbiente.');
+        location.reload();
+      } else {
+        alert(r.mensaje || 'Error.');
       }
     });
   }

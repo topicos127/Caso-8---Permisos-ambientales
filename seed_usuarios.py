@@ -1,5 +1,5 @@
 """
-Sistema de Permisos Ambientales - Seed completo (Sprint 4)
+Sistema de Permisos Ambientales - Seed completo (Sprint 5)
 """
 import os
 import pymysql
@@ -20,9 +20,9 @@ USUARIOS = [
 
 # codigo, proyecto, promotor, promotor_email, categoria, estado, fecha, email_consultor
 EXPEDIENTES = [
-    ("SP-A8-2026-001", "Planta Solar Azuero",  "Energía Verde S.A.",     "promotor1@ejemplo.com", "II",  "evaluacion", "2026-09-10", "consultor1@ejemplo.com"),
-    ("SP-A8-2026-002", "Hotel Costero Bocas",  "Inversiones del Caribe", "promotor1@ejemplo.com", "III", "pendiente",  "2026-09-05", "consultor1@ejemplo.com"),
-    ("SP-A8-2026-003", "Reforestación Darién", "ONG Ambiental",          None,                    "I",   "aprobado",   "2026-08-28", "consultor1@ejemplo.com"),
+    ("SP-A8-2026-001", "Planta Solar Azuero",  "Energía Verde S.A.",     "promotor1@ejemplo.com", "II",  "pendiente",        "2026-09-10", "consultor1@ejemplo.com"),
+    ("SP-A8-2026-002", "Hotel Costero Bocas",  "Inversiones del Caribe", "promotor1@ejemplo.com", "III", "pendiente",        "2026-09-05", "consultor1@ejemplo.com"),
+    ("SP-A8-2026-003", "Reforestación Darién", "ONG Ambiental",          None,                    "I",   "aprobado",         "2026-08-28", "consultor1@ejemplo.com"),
 ]
 
 DOCS_POR_CAT = {

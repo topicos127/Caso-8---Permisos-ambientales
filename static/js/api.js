@@ -39,15 +39,17 @@ async function apiFetch(url, opciones = {}) {
 
 function claseEstado(estado) {
   if (estado === 'aprobado') return 'status status-ok';
-  if (estado === 'evaluacion') return 'status status-warn';
+  if (estado === 'evaluacion') return 'status status-info';
+  if (estado === 'aprobado_interno') return 'status status-warn';
   if (estado === 'pendiente') return 'status status-bad';
   return 'status status-info';
 }
 
 function textoEstado(estado) {
-  if (estado === 'aprobado') return 'Aprobado';
-  if (estado === 'evaluacion') return 'En evaluación';
-  if (estado === 'pendiente') return 'Pendiente';
+  if (estado === 'aprobado') return 'Aprobado por MiAmbiente';
+  if (estado === 'evaluacion') return 'En evaluación (MiAmbiente)';
+  if (estado === 'aprobado_interno') return 'Aprobado internamente';
+  if (estado === 'pendiente') return 'Pendiente de documentos';
   return estado;
 }
 

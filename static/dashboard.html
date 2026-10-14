@@ -41,7 +41,7 @@
         Consulta pública
       </a>
     </nav>
-    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 3</div>
+    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 5</div>
   </aside>
 
   <div class="main">
@@ -57,9 +57,9 @@
 
       <div class="stat-row">
         <div class="stat"><div class="num">—</div><div class="lbl">Expedientes activos</div></div>
-        <div class="stat"><div class="num">—</div><div class="lbl">Pendiente de subsanación</div></div>
-        <div class="stat"><div class="num">—</div><div class="lbl">Documentos por vencer</div></div>
-        <div class="stat"><div class="num">—</div><div class="lbl">Aprobado este mes</div></div>
+        <div class="stat"><div class="num">—</div><div class="lbl">Pendiente de documentos</div></div>
+        <div class="stat"><div class="num">—</div><div class="lbl">Alertas próximas</div></div>
+        <div class="stat"><div class="num">—</div><div class="lbl">Aprobados por MiAmbiente</div></div>
       </div>
 
       <div class="panel">
@@ -106,7 +106,7 @@ if (usuario) {
     ulA.innerHTML = '';
     if (d.alertas && d.alertas.length) {
       d.alertas.forEach(a => {
-        ulA.innerHTML += `<li>${a.descripcion} <a href="#">Renovar</a></li>`;
+        ulA.innerHTML += `<li>${a.descripcion}</li>`;
       });
     } else {
       ulA.innerHTML = '<li style="color:var(--ink-faint);">Sin alertas próximas.</li>';
