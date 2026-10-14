@@ -84,7 +84,7 @@ jobs:
 
       - name: Run Robot Framework tests
         run: |
-          robot --outputdir tests tests/test_sprint4.robot
+          run: robot --outputdir tests tests/sprint5/Test_Sprint5.robot
 
       - name: Upload test report
         if: always()
