@@ -56,10 +56,9 @@
         <h2 id="titulo-exp"></h2>
       </div>
 
-      <!-- Panel de acceso denegado -->
       <div class="panel" id="panel-denegado" style="display:none; border-top-color: var(--status-bad);">
         <h3 style="color: var(--status-bad);">Acceso denegado</h3>
-        <p style="font-size:14px; margin-top:8px;">No tienes acceso a este expediente o no existe. Si crees que es un error, verifica el código del expediente o contacta al consultor responsable.</p>
+        <p style="font-size:14px; margin-top:8px;">No tienes acceso a este expediente o no existe.</p>
         <a href="expedientes.html" class="btn btn-brass mt-3" style="display:inline-block;">Volver a mis expedientes</a>
       </div>
 
@@ -79,7 +78,7 @@
         </p>
         <ul class="checklist" id="lista-docs" style="margin-top:14px;"></ul>
         <div id="upload-status" class="doc-msg" style="margin-top:14px;"></div>
-        <button type="button" id="btnZip" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line);">Descargar índice del expediente (.zip)</button>
+        <button type="button" id="btnZip" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line);">Descargar expediente completo (.zip)</button>
       </div>
 
       <div class="panel" id="panel-verificacion" style="display:none;">
@@ -93,11 +92,9 @@
         <button class="btn btn-brass mt-3" id="btnSometer" style="display:none;">Someter a MiAmbiente</button>
       </div>
 
-      <!-- NUEVO: Panel de plazos legales (HU-05 / HU-08) -->
       <div class="panel" id="panel-plazos" style="display:none;">
         <h3>Plazo legal de respuesta</h3>
         <p class="panel-note">Según la Ley 41 de 1998, MiAmbiente tiene un plazo máximo de respuesta según la categoría del proyecto.</p>
-
         <div style="margin-top:16px;">
           <div class="fact-row">
             <div class="fact"><span class="k">CATEGORÍA</span><span class="v" id="plazo-categoria">—</span></div>
@@ -106,7 +103,6 @@
             <div class="fact"><span class="k">ESTADO</span><span id="plazo-estado">—</span></div>
           </div>
         </div>
-
         <div style="margin-top:20px;">
           <div style="height:10px; background:#e8e1cf; border-radius:5px; overflow:hidden;">
             <div id="plazo-barra" style="height:100%; width:0%; background:#2e7d4f; transition:width 0.5s;"></div>
@@ -142,13 +138,15 @@ if (usuario) {
   const codigo = params.get('codigo') || 'SP-A8-2026-001';
   const esPromotorUsuario = esPromotor();
 
+  // HU-10: estado actual del expediente (para bloqueo)
+  let estadoExpedienteActual = 'evaluacion';
+
   const CARPETAS_POR_CAT_LOCAL = {
     "I":   ["Línea Base", "Plan de Manejo", "Anexos Legales"],
     "II":  ["Línea Base", "Plan de Manejo", "Anexos Legales", "Cartografía"],
     "III": ["Línea Base", "Plan de Manejo", "Anexos Legales", "Cartografía", "Evidencia Foro Público"],
   };
 
-  // Ocultar panel de aprobación por defecto para promotores
   if (esPromotorUsuario) {
     const panelAprob = document.getElementById('panel-aprobacion');
     if (panelAprob) panelAprob.style.display = 'none';
@@ -174,6 +172,9 @@ if (usuario) {
 
     docs.forEach(doc => {
       const recibido = doc.estado === 'recibido' && doc.archivo_nombre;
+      // HU-10: bloqueo permanente si el expediente está aprobado
+      const bloqueado = estadoExpedienteActual === 'aprobado';
+
       const li = document.createElement('li');
       li.style.display = 'block';
       li.style.padding = '14px 0';
@@ -230,7 +231,7 @@ if (usuario) {
         });
         acciones.appendChild(btnDesc);
 
-        if (!esPromotorUsuario) {
+        if (!esPromotorUsuario && !bloqueado) {
           const inputReempl = document.createElement('input');
           inputReempl.type = 'file';
           inputReempl.accept = '.pdf,.zip';
@@ -254,7 +255,7 @@ if (usuario) {
         tagMissing.textContent = 'Pendiente';
         acciones.appendChild(tagMissing);
 
-        if (!esPromotorUsuario) {
+        if (!esPromotorUsuario && !bloqueado) {
           const inputSubir = document.createElement('input');
           inputSubir.type = 'file';
           inputSubir.accept = '.pdf,.zip';
@@ -341,7 +342,6 @@ if (usuario) {
     }
   }
 
-  // NUEVA función: render de plazos legales (HU-05 / HU-08)
   function renderPlazos(alertas) {
     const panel = document.getElementById('panel-plazos');
     panel.style.display = 'block';
@@ -377,6 +377,9 @@ if (usuario) {
       const d = await apiFetch('/expedientes/' + codigo);
       const e = d.expediente;
 
+      // HU-10: guardar estado actual para el bloqueo
+      estadoExpedienteActual = e.estado;
+
       document.getElementById('titulo-exp').innerHTML =
         `<span class="case-tag" style="font-size:16px; margin-right:10px; vertical-align:2px;">${e.codigo}</span>${e.proyecto}`;
       document.getElementById('fact-estado').innerHTML =
@@ -391,7 +394,6 @@ if (usuario) {
         renderVerificacion(d.verificacion, e.estado);
       }
 
-      // Cargar plazos legales (HU-05 / HU-08)
       try {
         const alertas = await apiFetch('/expedientes/' + codigo + '/alertas');
         renderPlazos(alertas);
@@ -404,13 +406,29 @@ if (usuario) {
           'Consulta el estado de los documentos y descarga los que ya fueron subidos.';
       }
 
-      if (d.aprobacion) {
+      // HU-10: mostrar aprobación con detalle completo si está aprobado
+      if (d.aprobacion || e.estado === 'aprobado') {
         const panel = document.getElementById('panel-aprobacion');
+
+        let infoAprobaciones = '';
+        try {
+          const ap = await apiFetch('/expedientes/' + codigo + '/aprobaciones');
+          if (ap.aprobaciones && ap.aprobaciones.length) {
+            infoAprobaciones = ap.aprobaciones.map(a =>
+              `<div style="margin-top:10px; padding:12px; background:var(--paper); border-left:3px solid var(--status-ok);">
+                <div style="font-family:var(--mono); font-size:11px; color:var(--ink-faint);">${a.fecha} · ${a.aprobado_por_nombre || 'Usuario'}</div>
+                <div style="margin-top:4px; font-size:14px;">${a.motivo}</div>
+              </div>`
+            ).join('');
+          }
+        } catch (err) { /* ignorar */ }
+
         panel.innerHTML = `
           <h3>Aprobación interna</h3>
-          <p class="panel-note">Aprobado el ${d.aprobacion.fecha}.</p>
-          <p style="font-size:14px;">${d.aprobacion.motivo}</p>
+          <p class="panel-note" style="color:var(--status-ok);">✔ Este expediente fue aprobado. Ya no se puede modificar.</p>
+          ${infoAprobaciones}
         `;
+        panel.style.borderTopColor = 'var(--status-ok)';
       }
     } catch (e) {
       const panelResumen = document.getElementById('panel-resumen');
@@ -477,26 +495,25 @@ if (usuario) {
     }
   }
 
+  // Descargar ZIP completo (usa el endpoint del servidor que respeta jerarquía)
   document.getElementById('btnZip').addEventListener('click', async () => {
     try {
-      const d = await apiFetch('/expedientes/' + codigo);
-      const e = d.expediente;
-      const zip = new JSZip();
-      let txt = `EXPEDIENTE ${e.codigo}\nProyecto: ${e.proyecto}\nPromotor: ${e.promotor}\nCategoría: ${e.categoria}\nEstado: ${textoEstado(e.estado)}\n\nDocumentos:\n`;
-      d.documentos.forEach(doc => {
-        txt += `- ${doc.carpeta}: ${doc.estado}`;
-        if (doc.archivo_nombre) txt += ` (${doc.archivo_nombre}, ${formatearTamano(doc.archivo_tamano)})`;
-        txt += '\n';
+      const resp = await fetch(`/expedientes/${codigo}/descargar-todo`, {
+        headers: { 'X-Usuario-Email': (usuario && usuario.email) || '' }
       });
-      zip.file("indice.txt", txt);
-      const blob = await zip.generateAsync({ type: "blob" });
+      if (!resp.ok) {
+        mensaje('No se pudo descargar el expediente.', 'error');
+        return;
+      }
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = e.codigo + '-indice.zip';
+      a.href = url;
+      a.download = codigo + '_completo.zip';
       a.click();
-      URL.revokeObjectURL(a.href);
+      URL.revokeObjectURL(url);
     } catch (err) {
-      mensaje('Error al generar el índice.', 'error');
+      mensaje('Error al descargar el ZIP.', 'error');
     }
   });
 
@@ -510,7 +527,7 @@ if (usuario) {
         body: JSON.stringify({ motivo })
       });
       if (r.ok) {
-        alert('Aprobado.');
+        alert('Aprobado. El expediente queda bloqueado.');
         location.reload();
       } else {
         alert(r.mensaje || 'Error.');

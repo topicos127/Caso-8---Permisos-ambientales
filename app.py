@@ -1,14 +1,14 @@
 """
-Sistema de Permisos Ambientales - API completa (Sprint 4 Integrado)
+Sistema de Permisos Ambientales - API completa (Sprint 5)
 """
 import os
-import io
 import uuid
+import io
 import zipfile
-import pymysql
 from datetime import date, datetime
-from flask import Flask, request, jsonify, send_from_directory, send_file
 from werkzeug.utils import secure_filename
+import pymysql
+from flask import Flask, request, jsonify, send_from_directory, send_file
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
@@ -54,11 +54,11 @@ CATEGORIAS_DOCS = {
     "III": ["Línea Base", "Plan de Manejo", "Anexos Legales", "Cartografía", "Evidencia Foro Público"],
 }
 
-# Plazos legales en días según la Ley 41 de 1998 para Panamá
+# Plazos legales en días según la Ley 41 de 1998
 PLAZOS_LEGALES = {
     "I": 20,
     "II": 40,
-    "III": 80
+    "III": 80,
 }
 
 
@@ -93,7 +93,7 @@ def index():
 
 @app.route("/api", methods=["GET"])
 def api_info():
-    return jsonify({"servicio": "Permisos Ambientales - API", "version": "0.5", "estado": "activo"}), 200
+    return jsonify({"servicio": "Permisos Ambientales - API", "version": "0.6", "estado": "activo"}), 200
 
 
 @app.route("/health", methods=["GET"])
@@ -406,7 +406,59 @@ def detalle_expediente(codigo):
     })
 
 
-# ---------- SUBIR DOCUMENTO (Con Validación Magic Bytes) ----------
+# ---------- HU-10: Listar aprobaciones de un expediente ----------
+
+@app.route("/expedientes/<codigo>/aprobaciones", methods=["GET"])
+def listar_aprobaciones(codigo):
+    email = usuario_actual()
+    if not email:
+        return jsonify({"error": "No autenticado"}), 401
+
+    try:
+        conn = get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT id, usuario_id, promotor_email, categoria, estado FROM expedientes WHERE codigo=%s", (codigo,))
+                exp = cur.fetchone()
+                if not exp:
+                    return jsonify({"error": "Expediente no encontrado"}), 404
+
+                cur.execute("SELECT id, rol FROM usuarios WHERE email=%s", (email,))
+                u = cur.fetchone()
+                permitido = False
+                if u["rol"] == "promotor":
+                    permitido = exp["promotor_email"] and exp["promotor_email"] == email
+                else:
+                    permitido = exp["usuario_id"] == u["id"]
+                if not permitido:
+                    return jsonify({"error": "Sin acceso"}), 403
+
+                cur.execute(
+                    """SELECT a.id, a.motivo, a.fecha, u.nombre AS aprobado_por_nombre
+                       FROM aprobaciones a
+                       LEFT JOIN usuarios u ON u.id = a.aprobado_por
+                       WHERE a.expediente_id = %s
+                       ORDER BY a.fecha DESC""",
+                    (exp["id"],),
+                )
+                aprobaciones = cur.fetchall()
+        finally:
+            conn.close()
+    except pymysql.MySQLError as e:
+        return jsonify({"error": f"Error de base de datos: {str(e)}"}), 500
+
+    for a in aprobaciones:
+        if a["fecha"]:
+            a["fecha"] = a["fecha"].strftime("%d/%m/%Y %H:%M")
+
+    return jsonify({
+        "expediente_codigo": codigo,
+        "estado": exp["estado"],
+        "aprobaciones": aprobaciones,
+    })
+
+
+# ---------- Subir documento ----------
 
 @app.route("/expedientes/<codigo>/documentos/<carpeta>/subir", methods=["POST"])
 def subir_documento(codigo, carpeta):
@@ -424,6 +476,15 @@ def subir_documento(codigo, carpeta):
                     return jsonify({"ok": False, "mensaje": "Usuario no encontrado."}), 404
                 if u["rol"] == "promotor":
                     return jsonify({"ok": False, "mensaje": "Los promotores no pueden subir documentos."}), 403
+
+                # HU-10: bloqueo permanente si el expediente está aprobado
+                cur.execute("SELECT estado FROM expedientes WHERE codigo=%s", (codigo,))
+                exp_check = cur.fetchone()
+                if exp_check and exp_check["estado"] == "aprobado":
+                    return jsonify({
+                        "ok": False,
+                        "mensaje": "Este expediente está aprobado y no se puede modificar."
+                    }), 403
 
                 if "archivo" not in request.files:
                     return jsonify({"ok": False, "mensaje": "No se recibio ningun archivo."}), 400
@@ -557,62 +618,60 @@ def descargar_documento(codigo, carpeta):
     )
 
 
-# ---------- NUEVO SPRINT 4: DESCARGAR EXPEDIENTE COMPLETO EN ZIP ----------
+# ---------- HU-06: Descargar expediente completo en ZIP ----------
 
 @app.route("/expedientes/<codigo>/descargar-todo", methods=["GET"])
 def descargar_zip_expediente(codigo):
     """
     Agrupa todos los archivos subidos del expediente en un ZIP dinámico
-    e incluye un archivo Indice_Expediente.txt como manifest.
+    respetando la jerarquía de carpetas. Incluye un Indice_Expediente.txt.
     """
     memory_file = io.BytesIO()
-    
+
     try:
         conn = get_connection()
         try:
             with conn.cursor() as cur:
-                cur.execute("SELECT id, proyecto FROM expedientes WHERE codigo=%s", (codigo,))
+                cur.execute("SELECT id, proyecto, promotor, categoria FROM expedientes WHERE codigo=%s", (codigo,))
                 exp = cur.fetchone()
-                
-                if not exp:
-                    # Si no está en BD (ej. pruebas automatizadas rápidas), se usa mock básico
-                    exp_id = None
-                    proyecto_nombre = "Proyecto General"
-                else:
-                    exp_id = exp["id"]
-                    proyecto_nombre = exp["proyecto"]
 
-                docs = []
-                if exp_id:
-                    cur.execute(
-                        "SELECT carpeta, archivo_nombre, archivo_ruta FROM documentos WHERE expediente_id=%s AND estado='recibido'",
-                        (exp_id,)
-                    )
-                    docs = cur.fetchall()
+                if not exp:
+                    return jsonify({"error": "Expediente no encontrado"}), 404
+
+                cur.execute(
+                    "SELECT carpeta, archivo_nombre, archivo_ruta FROM documentos WHERE expediente_id=%s AND estado='recibido'",
+                    (exp["id"],)
+                )
+                docs = cur.fetchall()
         finally:
             conn.close()
     except Exception:
-        docs = []
-        proyecto_nombre = "Proyecto General"
+        return jsonify({"error": "Error de base de datos"}), 500
 
     with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
-        # 1. Crear el índice
+        # Índice
         indice_txt = f"ÍNDICE DEL EXPEDIENTE: {codigo}\n"
-        indice_txt += f"Proyecto: {proyecto_nombre}\n"
+        indice_txt += f"Proyecto: {exp['proyecto']}\n"
+        indice_txt += f"Promotor: {exp['promotor']}\n"
+        indice_txt += f"Categoría: {exp['categoria']}\n"
         indice_txt += f"Fecha de empaquetado: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
         indice_txt += "----------------------------------------\n"
         indice_txt += "Archivos Adjuntos:\n"
 
         if not docs:
-            indice_txt += "- (Sin documentos físicamente guardados o expediente en demostración)\n"
-            zf.writestr("Linea_Base.pdf", b"%PDF-1.4 Mock Document Content")
-        else:
-            for d in docs:
-                indice_txt += f"- [{d['carpeta']}] {d['archivo_nombre']}\n"
-                if d['archivo_ruta']:
-                    ruta_completa = os.path.join(UPLOADS_DIR, d['archivo_ruta'])
-                    if os.path.exists(ruta_completa):
-                        zf.write(ruta_completa, arcname=f"{d['carpeta']}_{d['archivo_nombre']}")
+            indice_txt += "- (Sin documentos recibidos)\n"
+
+        # Archivos respetando jerarquía de carpetas
+        for d in docs:
+            indice_txt += f"- [{d['carpeta']}] {d['archivo_nombre']}\n"
+            if d['archivo_ruta']:
+                ruta_completa = os.path.join(UPLOADS_DIR, d['archivo_ruta'])
+                if os.path.exists(ruta_completa):
+                    # HU-06: respetar jerarquía de carpetas dentro del ZIP
+                    carpeta_limpia = d['carpeta'].replace(' ', '_').replace('í', 'i').replace('á', 'a')
+                    nombre_archivo = d['archivo_nombre']
+                    arcname = f"{carpeta_limpia}/{nombre_archivo}"
+                    zf.write(ruta_completa, arcname=arcname)
 
         zf.writestr('Indice_Expediente.txt', indice_txt)
 
@@ -625,13 +684,11 @@ def descargar_zip_expediente(codigo):
     )
 
 
-# ---------- NUEVO SPRINT 4: ALERTAS Y PLAZOS LEGALES ----------
+# ---------- HU-05 / HU-08: Alertas y plazos legales ----------
 
 @app.route("/expedientes/<codigo>/alertas", methods=["GET"])
 def obtener_alertas(codigo):
-    """
-    Calcula los días transcurridos y restantes según los plazos legales de Ley 41.
-    """
+    """Calcula los días transcurridos y restantes según los plazos legales de Ley 41."""
     try:
         conn = get_connection()
         try:
@@ -643,18 +700,12 @@ def obtener_alertas(codigo):
                 exp = cur.fetchone()
 
                 if not exp:
-                    return jsonify({
-                        "expediente": codigo,
-                        "categoria": "II",
-                        "dias_transcurridos": 15,
-                        "dias_restantes_legales": 25,
-                        "alerta_vencimiento": "Dentro del plazo legal (40 días máximo)"
-                    }), 200
+                    return jsonify({"error": "Expediente no encontrado"}), 404
 
                 cat = exp.get("categoria") or "II"
                 limite = PLAZOS_LEGALES.get(cat, 40)
                 fecha_ingreso = exp.get("fecha_ingreso")
-                
+
                 if isinstance(fecha_ingreso, str):
                     fecha_ingreso = datetime.strptime(fecha_ingreso, "%Y-%m-%d").date()
                 elif isinstance(fecha_ingreso, datetime):
@@ -681,15 +732,8 @@ def obtener_alertas(codigo):
                 }), 200
         finally:
             conn.close()
-    except Exception:
-        # Fallback seguro para pruebas automatizadas si no hay conexión a BD
-        return jsonify({
-            "expediente": codigo,
-            "categoria": "II",
-            "dias_transcurridos": 15,
-            "dias_restantes_legales": 25,
-            "alerta_vencimiento": "Dentro del plazo legal (40 días máximo)"
-        }), 200
+    except Exception as e:
+        return jsonify({"error": f"Error: {str(e)}"}), 500
 
 
 # ---------- Aprobaciones y sometimiento ----------
@@ -714,10 +758,13 @@ def aprobar_expediente(codigo):
                 if not u or u["rol"] == "promotor":
                     return jsonify({"ok": False, "mensaje": "No autorizado para aprobar."}), 403
 
-                cur.execute("SELECT id FROM expedientes WHERE codigo=%s", (codigo,))
+                cur.execute("SELECT id, estado FROM expedientes WHERE codigo=%s", (codigo,))
                 exp = cur.fetchone()
                 if not exp:
                     return jsonify({"ok": False, "mensaje": "Expediente no encontrado."}), 404
+
+                if exp["estado"] == "aprobado":
+                    return jsonify({"ok": False, "mensaje": "Este expediente ya fue aprobado."}), 400
 
                 cur.execute(
                     "INSERT INTO aprobaciones (expediente_id, motivo, aprobado_por) VALUES (%s, %s, %s)",
@@ -795,7 +842,7 @@ def consulta_publica(codigo):
         try:
             with conn.cursor() as cur:
                 cur.execute(
-                                        """SELECT codigo, proyecto, promotor, categoria, estado, acceso_publico
+                    """SELECT codigo, proyecto, promotor, categoria, estado, acceso_publico
                        FROM expedientes WHERE codigo=%s""",
                     (codigo,),
                 )
