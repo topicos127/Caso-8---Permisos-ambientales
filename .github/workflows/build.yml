@@ -83,8 +83,7 @@ jobs:
           curl -f http://127.0.0.1:5000/health || (cat flask.log && exit 1)
 
       - name: Run Robot Framework tests
-        run: |
-          run: robot --outputdir tests tests/sprint5/Test_Sprint5.robot
+        run: robot --outputdir tests tests/sprint5/Test_Sprint5.robot
 
       - name: Upload test report
         if: always()
