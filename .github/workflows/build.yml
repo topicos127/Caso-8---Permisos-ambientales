@@ -90,6 +90,10 @@ jobs:
         run: |
           robot --outputdir tests/sprint5 tests/sprint5/Test_Sprint5.robot
 
+      - name: Run Robot Framework tests (Sprint 6)
+        run: |
+          robot --outputdir tests/sprint6 tests/sprint6/Test_Sprint6.robot
+
       - name: Upload Sprint 4 test report
         if: always()
         uses: actions/upload-artifact@v5
@@ -103,6 +107,13 @@ jobs:
         with:
           name: robot-report-sprint5
           path: tests/sprint5/
+
+      - name: Upload Sprint 6 test report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: robot-report-sprint6
+          path: tests/sprint6/
 
   build:
     name: Build and Push Docker Image
