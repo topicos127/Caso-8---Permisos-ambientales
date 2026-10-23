@@ -20,3 +20,8 @@ Thumbs.db
 
 # Tilt
 .tiltignore
+
+# Docker Compose volumes
+mysql_data/
+uploads_data/
+uploads/
