@@ -16,10 +16,6 @@
     <path d="M-50 120 C 250 60, 450 180, 700 110 S 1150 60, 1650 140" opacity="0.05"/>
     <path d="M-50 220 C 300 170, 500 280, 780 210 S 1200 160, 1650 250" opacity="0.06"/>
     <path d="M-50 330 C 260 260, 520 380, 800 310 S 1250 270, 1650 360" opacity="0.05"/>
-    <path d="M-50 470 C 280 410, 560 520, 830 450 S 1280 400, 1650 500" opacity="0.06"/>
-    <path d="M-50 600 C 300 540, 540 650, 820 580 S 1220 540, 1650 630" opacity="0.05"/>
-    <path d="M-50 740 C 260 680, 520 800, 810 720 S 1260 680, 1650 770" opacity="0.06"/>
-    <path d="M-50 850 C 300 800, 560 900, 840 830 S 1260 790, 1650 870" opacity="0.05"/>
   </g>
 </svg>
 
@@ -80,45 +76,54 @@
       <div id="mensaje" class="doc-msg"></div>
 
       <div class="doc-footnote">
-        <span>El registro es un prototipo de maquetación</span>
-        <span>¿Ya tienes cuenta? <a href="index.html">Inicia sesión</a></span>
+        <span>El registro creará tu cuenta en la base de datos</span>
+        <span>¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a></span>
       </div>
     </div>
   </div>
 </div>
 
-<script src="js/api.js"></script>
 <script>
-document.getElementById('formRegistro').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const m = document.getElementById('mensaje');
-  const nombre = document.getElementById('nombre').value.trim();
-  const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value;
-  const password2 = document.getElementById('password2').value;
-  const rol = document.getElementById('tipo').value;
+  document.getElementById('formRegistro').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const m = document.getElementById('mensaje');
+    m.className = 'doc-msg';
+    m.textContent = '';
 
-  if (password !== password2) {
-    m.className = 'doc-msg show error';
-    m.textContent = 'Las contraseñas no coinciden.';
-    return;
-  }
+    const nombre = document.getElementById('nombre').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const password2 = document.getElementById('password2').value;
+    const rol = document.getElementById('tipo').value;
 
-  try {
-    const r = await fetch('/registro', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, email, password, rol })
-    });
-    const d = await r.json();
-    m.className = 'doc-msg show ' + (d.ok ? 'ok' : 'error');
-    m.textContent = d.mensaje;
-    if (d.ok) setTimeout(() => window.location.href = 'index.html', 1400);
-  } catch {
-    m.className = 'doc-msg show error';
-    m.textContent = 'No se pudo conectar con el servidor.';
-  }
-});
+    if (password !== password2) {
+      m.className = 'doc-msg show error';
+      m.textContent = 'Las contraseñas no coinciden.';
+      return;
+    }
+
+    try {
+      const resp = await fetch('/registro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, email, password, rol })
+      });
+      
+      const data = await resp.json();
+      
+      if (data.ok) {
+        m.className = 'doc-msg show ok';
+        m.textContent = 'Usuario registrado correctamente. Redirigiendo al login...';
+        setTimeout(() => window.location.href = 'login.html', 1500);
+      } else {
+        m.className = 'doc-msg show error';
+        m.textContent = data.mensaje || 'Error al registrar usuario.';
+      }
+    } catch (err) {
+      m.className = 'doc-msg show error';
+      m.textContent = 'Error de conexión con el servidor.';
+    }
+  });
 </script>
 </body>
 </html>
