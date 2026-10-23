@@ -33,6 +33,7 @@ services:
       - UPLOADS_DIR=/app/uploads
     volumes:
       - uploads_data:/app/uploads
+      - ./static:/app/static
     depends_on:
       db:
         condition: service_healthy
