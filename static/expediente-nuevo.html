@@ -41,7 +41,7 @@
         Consulta pública
       </a>
     </nav>
-    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 4</div>
+    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 6</div>
   </aside>
 
   <div class="main">
@@ -178,7 +178,6 @@ sel.addEventListener('change', () => {
   renderChecklist(categoriaActual);
 });
 
-// Estado inicial
 renderCarpetas(categoriaActual);
 renderChecklist(categoriaActual);
 
@@ -188,7 +187,7 @@ document.getElementById('btnGuardar').addEventListener('click', async () => {
   const promotor_email = (document.getElementById('promotor_email').value || '').trim();
 
   if (!proyecto || !promotor) {
-    alert('Completa el nombre del proyecto y el promotor.');
+    mostrarToast('Completa el nombre del proyecto y el promotor.', 'error');
     return;
   }
 
@@ -208,15 +207,15 @@ document.getElementById('btnGuardar').addEventListener('click', async () => {
     });
 
     if (r.ok) {
-      alert(`Expediente ${r.codigo} creado. Ahora puedes subir los documentos.`);
-      window.location.href = 'expediente-detalle.html?codigo=' + r.codigo;
+      mostrarToast(`Expediente ${r.codigo} creado correctamente.`, 'exito');
+      setTimeout(() => window.location.href = 'expediente-detalle.html?codigo=' + r.codigo, 1500);
     } else {
-      alert(r.mensaje || 'Error al crear.');
+      mostrarToast(r.mensaje || 'Error al crear.', 'error');
       btn.disabled = false;
       btn.textContent = 'Guardar expediente';
     }
   } catch (err) {
-    alert('Error de red al guardar.');
+    mostrarToast('Error de red al guardar.', 'error');
     btn.disabled = false;
     btn.textContent = 'Guardar expediente';
   }

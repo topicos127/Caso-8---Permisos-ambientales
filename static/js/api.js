@@ -71,3 +71,29 @@ function pintarTopbar() {
     });
   }
 }
+
+// ============== NOTIFICACIONES TOAST ==============
+function mostrarToast(mensaje, tipo = 'exito') {
+  let container = document.getElementById('toast-container');
+  
+  // Si no existe el contenedor, lo creamos
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement('div');
+  toast.className = `toast ${tipo}`;
+  
+  const icon = tipo === 'exito' ? '✅' : '⚠️';
+  toast.innerHTML = `<span>${icon}</span> <span>${mensaje}</span>`;
+  
+  container.appendChild(toast);
+
+  // Desaparece después de 3 segundos
+  setTimeout(() => {
+    toast.classList.add('fade-out');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}

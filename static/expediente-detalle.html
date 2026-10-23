@@ -41,7 +41,7 @@
         Consulta pública
       </a>
     </nav>
-    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 5</div>
+    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 6</div>
   </aside>
 
   <div class="main">
@@ -61,41 +61,31 @@
         <p style="font-size:14px; margin-top:8px;">No tienes acceso a este expediente o no existe.</p>
         <a href="expedientes.html" class="btn btn-brass mt-3" style="display:inline-block;">Volver a mis expedientes</a>
       </div>
+
       <!-- LÍNEA DE TIEMPO (TIMELINE) -->
       <div class="panel" id="panel-timeline" style="padding: 24px;">
         <h3 style="margin-bottom: 20px;">Estado del trámite</h3>
         <div style="display: flex; align-items: center; justify-content: space-between; position: relative;">
-          
-          <!-- Línea de fondo -->
           <div style="position: absolute; top: 15px; left: 0; width: 100%; height: 4px; background: #e8e1cf; z-index: 1;"></div>
-          
-          <!-- Paso 1: Creado -->
           <div style="position: relative; z-index: 2; text-align: center; width: 100px;">
             <div id="step-creado" style="width: 34px; height: 34px; border-radius: 50%; background: #e8e1cf; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: bold; border: 2px solid white; box-shadow: 0 0 0 2px #e8e1cf;">1</div>
             <div style="font-size: 12.5px; font-weight: 600; color: var(--ink-soft);">Creado</div>
           </div>
-
-          <!-- Paso 2: Aprobado Interno -->
           <div style="position: relative; z-index: 2; text-align: center; width: 100px;">
             <div id="step-interno" style="width: 34px; height: 34px; border-radius: 50%; background: #e8e1cf; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: bold; border: 2px solid white; box-shadow: 0 0 0 2px #e8e1cf;">2</div>
             <div style="font-size: 12.5px; font-weight: 600; color: var(--ink-soft);">Aprobado internamente</div>
           </div>
-
-          <!-- Paso 3: En Evaluación -->
           <div style="position: relative; z-index: 2; text-align: center; width: 100px;">
             <div id="step-evaluacion" style="width: 34px; height: 34px; border-radius: 50%; background: #e8e1cf; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: bold; border: 2px solid white; box-shadow: 0 0 0 2px #e8e1cf;">3</div>
             <div style="font-size: 12.5px; font-weight: 600; color: var(--ink-soft);">En evaluación</div>
           </div>
-
-          <!-- Paso 4: Aprobado -->
           <div style="position: relative; z-index: 2; text-align: center; width: 100px;">
             <div id="step-aprobado" style="width: 34px; height: 34px; border-radius: 50%; background: #e8e1cf; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: bold; border: 2px solid white; box-shadow: 0 0 0 2px #e8e1cf;">4</div>
             <div style="font-size: 12.5px; font-weight: 600; color: var(--ink-soft);">Aprobado por MiAmbiente</div>
           </div>
-
         </div>
       </div>
-      <!-- 1. RESUMEN -->
+
       <div class="panel" id="panel-resumen">
         <div class="fact-row">
           <div class="fact"><span class="k">ESTADO DEL TRÁMITE</span><span id="fact-estado"></span></div>
@@ -105,7 +95,6 @@
         </div>
       </div>
 
-      <!-- 2. DOCUMENTOS -->
       <div class="panel" id="panel-docs">
         <h3>Documentos del expediente</h3>
         <p class="panel-note" id="panel-note-docs">
@@ -114,10 +103,43 @@
         <ul class="checklist" id="lista-docs" style="margin-top:14px;"></ul>
         <div id="upload-status" class="doc-msg" style="margin-top:14px;"></div>
         <button type="button" id="btnZip" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line);">Descargar expediente completo (.zip)</button>
-<button type="button" id="btnPdf" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line); margin-left: 8px;">Descargar resumen (PDF)</button>
+        <button type="button" id="btnPdf" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line); margin-left: 8px;">Descargar resumen (PDF)</button>
       </div>
 
-      <!-- 3. PLAZO LEGAL -->
+      <div class="panel" id="panel-aprobacion">
+        <h3>Aprobación interna</h3>
+        <p class="panel-note" id="aprobacion-note">
+          Aprueba internamente el expediente antes de someterlo a MiAmbiente. Solo puedes aprobarlo cuando todos los documentos estén completos.
+        </p>
+
+        <div id="aprobacion-form" style="display:none;">
+          <div class="doc-field">
+            <label>Motivo de aprobación</label>
+            <textarea id="input-motivo" rows="3" placeholder="Ej. Documentación verificada y completa..."></textarea>
+          </div>
+          <button class="btn btn-brass" id="btnAprobar">Aprobar internamente</button>
+        </div>
+
+        <div id="aprobacion-aviso-faltantes" class="checklist-warn" style="display:none;">
+          No se puede aprobar internamente mientras falten documentos obligatorios.
+        </div>
+
+        <div id="aprobacion-info"></div>
+
+        <div id="aprobacion-btn-someter" style="display:none; margin-top:16px;">
+          <button class="btn btn-brass" id="btnSometer">Someter a MiAmbiente</button>
+        </div>
+
+        <div id="aprobacion-btn-simular" style="display:none; margin-top:16px;">
+          <button class="btn btn-brass" id="btnSimularMiAmbiente">Simular aprobación de MiAmbiente</button>
+        </div>
+
+        <div id="aprobacion-completa" style="display:none; margin-top:16px; padding:12px; background:var(--status-ok-bg); border-left:3px solid var(--status-ok);">
+          <strong style="color:var(--status-ok);">✅ Expediente aprobado por MiAmbiente.</strong>
+          <p style="font-size:13.5px; margin-top:4px;">El permiso está listo.</p>
+        </div>
+      </div>
+
       <div class="panel" id="panel-plazos" style="display:none;">
         <h3>Plazo legal de respuesta</h3>
         <p class="panel-note">Según la Ley 41 de 1998, MiAmbiente tiene un plazo máximo de respuesta según la categoría del proyecto.</p>
@@ -140,48 +162,6 @@
         </div>
       </div>
 
-      <!-- 4. APROBACIÓN INTERNA -->
-      <div class="panel" id="panel-aprobacion">
-        <h3>Aprobación interna</h3>
-        <p class="panel-note" id="aprobacion-note">
-          Aprueba internamente el expediente antes de someterlo a MiAmbiente. Solo puedes aprobarlo cuando todos los documentos estén completos.
-        </p>
-
-        <!-- Formulario de aprobación (visible solo en estado pendiente con docs completos) -->
-        <div id="aprobacion-form" style="display:none;">
-          <div class="doc-field">
-            <label>Motivo de aprobación</label>
-            <textarea id="input-motivo" rows="3" placeholder="Ej. Documentación verificada y completa..."></textarea>
-          </div>
-          <button class="btn btn-brass" id="btnAprobar">Aprobar internamente</button>
-        </div>
-
-        <!-- Aviso cuando faltan documentos -->
-        <div id="aprobacion-aviso-faltantes" class="checklist-warn" style="display:none;">
-          No se puede aprobar internamente mientras falten documentos obligatorios.
-        </div>
-
-        <!-- Registro de aprobación cuando ya está aprobado -->
-        <div id="aprobacion-info"></div>
-
-        <!-- Botón someter (solo cuando estado = aprobado_interno) -->
-        <div id="aprobacion-btn-someter" style="display:none; margin-top:16px;">
-          <button class="btn btn-brass" id="btnSometer">Someter a MiAmbiente</button>
-        </div>
-
-        <!-- Botón simular MiAmbiente (solo cuando estado = evaluacion) -->
-        <div id="aprobacion-btn-simular" style="display:none; margin-top:16px;">
-          <button class="btn btn-brass" id="btnSimularMiAmbiente">Simular aprobación de MiAmbiente</button>
-        </div>
-
-        <!-- Aviso cuando ya está aprobado por MiAmbiente -->
-        <div id="aprobacion-completa" style="display:none; margin-top:16px; padding:12px; background:var(--status-ok-bg); border-left:3px solid var(--status-ok);">
-          <strong style="color:var(--status-ok);">✅ Expediente aprobado por MiAmbiente.</strong>
-          <p style="font-size:13.5px; margin-top:4px;">El permiso está listo.</p>
-        </div>
-      </div>
-
-      <!-- 5. VERIFICACIÓN DE REQUISITOS (al final, solo información) -->
       <div class="panel" id="panel-verificacion" style="display:none;">
         <h3>Verificación de requisitos</h3>
         <p class="panel-note" id="verif-resumen"></p>
@@ -532,6 +512,7 @@ if (usuario) {
       document.getElementById('fact-categoria').innerHTML = fichaTier(e.categoria);
       document.getElementById('fact-promotor').textContent = e.promotor;
       document.getElementById('fact-fecha').textContent = e.fecha_ingreso;
+
       // Pintar la Línea de Tiempo (Timeline)
       const pasos = {
         'pendiente': ['step-creado'],
@@ -569,7 +550,7 @@ if (usuario) {
           'Consulta el estado de los documentos y descarga los que ya fueron subidos.';
       }
     } catch (e) {
-      const panels = ['panel-resumen', 'panel-docs', 'panel-aprobacion', 'panel-verificacion', 'panel-plazos'];
+      const panels = ['panel-resumen', 'panel-docs', 'panel-aprobacion', 'panel-verificacion', 'panel-plazos', 'panel-timeline'];
       panels.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
@@ -648,7 +629,7 @@ if (usuario) {
       mensaje('Error al descargar el ZIP.', 'error');
     }
   });
-  // Generar PDF con el resumen del expediente
+
   document.getElementById('btnPdf').addEventListener('click', async () => {
     try {
       const d = await apiFetch('/expedientes/' + codigo);
@@ -658,7 +639,6 @@ if (usuario) {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
 
-      // Encabezado
       doc.setFont("helvetica", "bold");
       doc.setFontSize(18);
       doc.text("Resumen de Expediente", 20, 25);
@@ -666,7 +646,6 @@ if (usuario) {
       doc.setFontSize(12);
       doc.setFont("helvetica", "normal");
       
-      // Datos generales
       doc.text("Codigo: " + e.codigo, 20, 40);
       doc.text("Proyecto: " + e.proyecto, 20, 50);
       doc.text("Promotor: " + e.promotor, 20, 60);
@@ -674,7 +653,6 @@ if (usuario) {
       doc.text("Estado: " + textoEstado(e.estado), 20, 80);
       doc.text("Fecha de Ingreso: " + e.fecha_ingreso, 20, 90);
 
-      // Lista de documentos
       doc.setFont("helvetica", "bold");
       doc.text("Documentos del expediente:", 20, 105);
       
@@ -696,16 +674,16 @@ if (usuario) {
   if (btnAprobar) {
     btnAprobar.addEventListener('click', async () => {
       const motivo = document.getElementById('input-motivo').value.trim();
-      if (!motivo) { alert('Escribe un motivo.'); return; }
+      if (!motivo) { mostrarToast('Escribe un motivo.', 'error'); return; }
       const r = await apiFetch(`/expedientes/${codigo}/aprobar`, {
         method: 'POST',
         body: JSON.stringify({ motivo })
       });
       if (r.ok) {
-        alert('Expediente aprobado internamente.');
-        location.reload();
+        mostrarToast('Expediente aprobado internamente.', 'exito');
+        setTimeout(() => location.reload(), 1500);
       } else {
-        alert(r.mensaje || 'Error.');
+        mostrarToast(r.mensaje || 'Error al aprobar.', 'error');
       }
     });
   }
@@ -719,10 +697,10 @@ if (usuario) {
         body: JSON.stringify({})
       });
       if (r.ok) {
-        alert('Expediente sometido a MiAmbiente.');
-        location.reload();
+        mostrarToast('Expediente sometido a MiAmbiente.', 'exito');
+        setTimeout(() => location.reload(), 1500);
       } else {
-        alert(r.mensaje || 'Error al someter.');
+        mostrarToast(r.mensaje || 'Error al someter.', 'error');
       }
     });
   }
@@ -736,10 +714,10 @@ if (usuario) {
         body: JSON.stringify({})
       });
       if (r.ok) {
-        alert('Expediente aprobado por MiAmbiente.');
-        location.reload();
+        mostrarToast('Expediente aprobado por MiAmbiente.', 'exito');
+        setTimeout(() => location.reload(), 1500);
       } else {
-        alert(r.mensaje || 'Error.');
+        mostrarToast(r.mensaje || 'Error al aprobar.', 'error');
       }
     });
   }
