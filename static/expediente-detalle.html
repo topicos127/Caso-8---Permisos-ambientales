@@ -61,7 +61,40 @@
         <p style="font-size:14px; margin-top:8px;">No tienes acceso a este expediente o no existe.</p>
         <a href="expedientes.html" class="btn btn-brass mt-3" style="display:inline-block;">Volver a mis expedientes</a>
       </div>
+      <!-- LÍNEA DE TIEMPO (TIMELINE) -->
+      <div class="panel" id="panel-timeline" style="padding: 24px;">
+        <h3 style="margin-bottom: 20px;">Estado del trámite</h3>
+        <div style="display: flex; align-items: center; justify-content: space-between; position: relative;">
+          
+          <!-- Línea de fondo -->
+          <div style="position: absolute; top: 15px; left: 0; width: 100%; height: 4px; background: #e8e1cf; z-index: 1;"></div>
+          
+          <!-- Paso 1: Creado -->
+          <div style="position: relative; z-index: 2; text-align: center; width: 100px;">
+            <div id="step-creado" style="width: 34px; height: 34px; border-radius: 50%; background: #e8e1cf; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: bold; border: 2px solid white; box-shadow: 0 0 0 2px #e8e1cf;">1</div>
+            <div style="font-size: 12.5px; font-weight: 600; color: var(--ink-soft);">Creado</div>
+          </div>
 
+          <!-- Paso 2: Aprobado Interno -->
+          <div style="position: relative; z-index: 2; text-align: center; width: 100px;">
+            <div id="step-interno" style="width: 34px; height: 34px; border-radius: 50%; background: #e8e1cf; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: bold; border: 2px solid white; box-shadow: 0 0 0 2px #e8e1cf;">2</div>
+            <div style="font-size: 12.5px; font-weight: 600; color: var(--ink-soft);">Aprobado internamente</div>
+          </div>
+
+          <!-- Paso 3: En Evaluación -->
+          <div style="position: relative; z-index: 2; text-align: center; width: 100px;">
+            <div id="step-evaluacion" style="width: 34px; height: 34px; border-radius: 50%; background: #e8e1cf; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: bold; border: 2px solid white; box-shadow: 0 0 0 2px #e8e1cf;">3</div>
+            <div style="font-size: 12.5px; font-weight: 600; color: var(--ink-soft);">En evaluación</div>
+          </div>
+
+          <!-- Paso 4: Aprobado -->
+          <div style="position: relative; z-index: 2; text-align: center; width: 100px;">
+            <div id="step-aprobado" style="width: 34px; height: 34px; border-radius: 50%; background: #e8e1cf; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: bold; border: 2px solid white; box-shadow: 0 0 0 2px #e8e1cf;">4</div>
+            <div style="font-size: 12.5px; font-weight: 600; color: var(--ink-soft);">Aprobado por MiAmbiente</div>
+          </div>
+
+        </div>
+      </div>
       <!-- 1. RESUMEN -->
       <div class="panel" id="panel-resumen">
         <div class="fact-row">
@@ -497,6 +530,22 @@ if (usuario) {
       document.getElementById('fact-categoria').innerHTML = fichaTier(e.categoria);
       document.getElementById('fact-promotor').textContent = e.promotor;
       document.getElementById('fact-fecha').textContent = e.fecha_ingreso;
+      // Pintar la Línea de Tiempo (Timeline)
+      const pasos = {
+        'pendiente': ['step-creado'],
+        'aprobado_interno': ['step-creado', 'step-interno'],
+        'evaluacion': ['step-creado', 'step-interno', 'step-evaluacion'],
+        'aprobado': ['step-creado', 'step-interno', 'step-evaluacion', 'step-aprobado']
+      };
+      
+      const pasosActivos = pasos[e.estado] || ['step-creado'];
+      pasosActivos.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.style.background = '#b3812f'; // Color bronce
+          el.style.boxShadow = '0 0 0 2px #b3812f';
+        }
+      });
 
       renderDocumentos(d.documentos);
 

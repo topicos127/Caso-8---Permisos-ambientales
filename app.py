@@ -1,5 +1,5 @@
 """
-Sistema de Permisos Ambientales - API completa (Sprint 5)
+Sistema de Permisos Ambientales - API completa (Sprint 6)
 """
 import os
 import uuid
@@ -92,7 +92,7 @@ def index():
 
 @app.route("/api", methods=["GET"])
 def api_info():
-    return jsonify({"servicio": "Permisos Ambientales - API", "version": "0.6", "estado": "activo"}), 200
+    return jsonify({"servicio": "Permisos Ambientales - API", "version": "0.7", "estado": "activo"}), 200
 
 
 @app.route("/health", methods=["GET"])
@@ -201,13 +201,6 @@ def dashboard():
                 cur.execute(f"SELECT COUNT(*) AS n FROM expedientes WHERE {filtro} AND estado='pendiente'", (param,))
                 pendientes = cur.fetchone()["n"]
 
-                cur.execute(
-                    f"""SELECT COUNT(*) AS n FROM alertas a
-                        JOIN expedientes e ON e.id=a.expediente_id WHERE e.{filtro}""",
-                    (param,),
-                )
-                alertas = cur.fetchone()["n"]
-
                 cur.execute(f"SELECT COUNT(*) AS n FROM expedientes WHERE {filtro} AND estado='aprobado'", (param,))
                 aprobados = cur.fetchone()["n"]
 
@@ -218,13 +211,40 @@ def dashboard():
                 )
                 recientes = cur.fetchall()
 
+                # --- ALERTAS REALES (Cálculo basado en fecha de subida) ---
                 cur.execute(
-                    f"""SELECT a.descripcion, a.dias_restantes FROM alertas a
-                        JOIN expedientes e ON e.id=a.expediente_id
-                        WHERE e.{filtro} ORDER BY a.dias_restantes ASC LIMIT 5""",
+                    f"""SELECT d.carpeta, d.fecha_subida, e.codigo 
+                        FROM documentos d
+                        JOIN expedientes e ON e.id = d.expediente_id
+                        WHERE e.{filtro} AND d.estado = 'recibido' AND d.fecha_subida IS NOT NULL""",
                     (param,),
                 )
-                proximas = cur.fetchall()
+                docs_recibidos = cur.fetchall()
+                
+                proximas = []
+                hoy = date.today()
+                
+                for d in docs_recibidos:
+                    fecha_sub = d["fecha_subida"]
+                    if isinstance(fecha_sub, datetime):
+                        fecha_sub = fecha_sub.date()
+                    elif isinstance(fecha_sub, str):
+                        fecha_sub = datetime.strptime(fecha_sub, "%Y-%m-%d").date()
+                        
+                    dias_pasados = (hoy - fecha_sub).days
+                    # Simulamos que los documentos vencen a los 365 días.
+                    dias_restantes = 365 - dias_pasados
+                    
+                    if dias_restantes < 30:
+                        proximas.append({
+                            "codigo": d["codigo"],
+                            "descripcion": f"{d['carpeta']} vence en {dias_restantes} días",
+                            "dias_restantes": dias_restantes
+                        })
+                
+                proximas.sort(key=lambda x: x["dias_restantes"])
+                alertas = len(proximas)
+
         finally:
             conn.close()
     except pymysql.MySQLError as e:

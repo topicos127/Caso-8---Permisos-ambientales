@@ -102,14 +102,17 @@ if (usuario) {
       ulR.innerHTML = '<li style="color:var(--ink-faint);">Sin expedientes registrados.</li>';
     }
 
-    const ulA = document.getElementById('lista-alertas');
+       const ulA = document.getElementById('lista-alertas');
     ulA.innerHTML = '';
     if (d.alertas && d.alertas.length) {
       d.alertas.forEach(a => {
-        ulA.innerHTML += `<li>${a.descripcion}</li>`;
+        ulA.innerHTML += `<li>
+          <span><span class="code">${a.codigo}</span> ${a.descripcion}</span> 
+          <a href="expediente-detalle.html?codigo=${a.codigo}">Ver</a>
+        </li>`;
       });
     } else {
-      ulA.innerHTML = '<li style="color:var(--ink-faint);">Sin alertas próximas.</li>';
+      ulA.innerHTML = '<li style="color:var(--ink-faint);">Sin alertas próximas en este momento.</li>';
     }
   }).catch(console.error);
 }

@@ -55,6 +55,17 @@
         <h2>Mis expedientes</h2>
         <a href="expediente-nuevo.html" class="btn btn-brass" id="btnNuevo">+ Nuevo expediente</a>
       </div>
+      <div class="panel" style="padding: 15px; margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+        <input type="text" id="buscador" placeholder="Buscar por código o proyecto..." style="flex: 1; padding: 10px; border: 1px solid var(--line); border-radius: 4px; font-family: inherit;">
+        
+        <select id="filtro-estado" style="padding: 10px; border: 1px solid var(--line); border-radius: 4px; font-family: inherit;">
+          <option value="">Todos los estados</option>
+          <option value="pendiente">Pendiente de documentos</option>
+          <option value="aprobado_interno">Aprobado internamente</option>
+          <option value="evaluacion">En evaluación (MiAmbiente)</option>
+          <option value="aprobado">Aprobado por MiAmbiente</option>
+        </select>
+      </div>
       <p class="content-lede">Expedientes que gestionas actualmente, con su categoría de impacto y estado de trámite.</p>
 
       <div class="panel" style="padding:0; overflow-x:auto;">
@@ -91,6 +102,45 @@ function ledEstado(estado) {
   return `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${color}; box-shadow:0 0 6px ${color}; margin-right:8px; vertical-align:middle;"></span>`;
 }
 
+let todosLosExpedientes = [];
+
+function renderTabla(expedientes) {
+  const tbody = document.getElementById('tabla-expedientes');
+  tbody.innerHTML = '';
+
+  if (expedientes.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="padding:24px; color:var(--ink-faint); text-align:center;">No se encontraron expedientes con esos filtros.</td></tr>';
+    return;
+  }
+
+  expedientes.forEach(e => {
+    tbody.innerHTML += `
+      <tr>
+        <td style="padding-left:24px; white-space:nowrap;"><span class="case-tag">${e.codigo}</span></td>
+        <td>${e.proyecto}</td>
+        <td>${e.promotor}</td>
+        <td style="white-space:nowrap;">${fichaTier(e.categoria)}</td>
+        <td style="white-space:nowrap;">${ledEstado(e.estado)}<span class="${claseEstado(e.estado)}">${textoEstado(e.estado)}</span></td>
+        <td style="white-space:nowrap; font-family:var(--mono); font-size:12.5px;">${e.fecha_ingreso}</td>
+        <td style="white-space:nowrap;"><a href="expediente-detalle.html?codigo=${e.codigo}">Ver detalle →</a></td>
+      </tr>
+    `;
+  });
+}
+
+function aplicarFiltros() {
+  const texto = document.getElementById('buscador').value.toLowerCase();
+  const estado = document.getElementById('filtro-estado').value;
+
+  const filtrados = todosLosExpedientes.filter(e => {
+    const coincideTexto = e.codigo.toLowerCase().includes(texto) || e.proyecto.toLowerCase().includes(texto);
+    const coincideEstado = estado === '' || e.estado === estado;
+    return coincideTexto && coincideEstado;
+  });
+
+  renderTabla(filtrados);
+}
+
 const usuario = requireAuth();
 if (usuario) {
   pintarTopbar();
@@ -100,30 +150,13 @@ if (usuario) {
     if (btn) btn.style.display = 'none';
   }
 
+  document.getElementById('buscador').addEventListener('input', aplicarFiltros);
+  document.getElementById('filtro-estado').addEventListener('change', aplicarFiltros);
+
   apiFetch('/expedientes').then(d => {
-    const tbody = document.getElementById('tabla-expedientes');
-    tbody.innerHTML = '';
-
-    if (!d.expedientes || !d.expedientes.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="padding:24px; color:var(--ink-faint);">Sin expedientes registrados.</td></tr>';
-      return;
-    }
-
-    d.expedientes.forEach(e => {
-      tbody.innerHTML += `
-        <tr>
-          <td style="padding-left:24px; white-space:nowrap;"><span class="case-tag">${e.codigo}</span></td>
-          <td>${e.proyecto}</td>
-          <td>${e.promotor}</td>
-          <td style="white-space:nowrap;">${fichaTier(e.categoria)}</td>
-          <td style="white-space:nowrap;">${ledEstado(e.estado)}<span class="${claseEstado(e.estado)}">${textoEstado(e.estado)}</span></td>
-          <td style="white-space:nowrap; font-family:var(--mono); font-size:12.5px;">${e.fecha_ingreso}</td>
-          <td style="white-space:nowrap;"><a href="expediente-detalle.html?codigo=${e.codigo}">Ver detalle →</a></td>
-        </tr>
-      `;
-    });
+    todosLosExpedientes = d.expedientes || [];
+    renderTabla(todosLosExpedientes);
   }).catch(console.error);
-}
-</script>
+}</script>
 </body>
 </html>
