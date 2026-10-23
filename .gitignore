@@ -25,3 +25,5 @@ Thumbs.db
 mysql_data/
 uploads_data/
 uploads/
+
+.env
