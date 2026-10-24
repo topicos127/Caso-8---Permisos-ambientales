@@ -2,3 +2,4 @@ Flask==3.0.3
 pymysql==1.1.1
 cryptography==43.0.1
 werkzeug==3.0.4
+fpdf2
