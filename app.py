@@ -5,11 +5,13 @@ import os
 import uuid
 import io
 import zipfile
+import re
 from datetime import date, datetime
 from werkzeug.utils import secure_filename
 import pymysql
 from flask import Flask, request, jsonify, send_from_directory, send_file
 from werkzeug.security import check_password_hash, generate_password_hash
+from fpdf import FPDF
 
 app = Flask(__name__)
 
@@ -136,6 +138,7 @@ def login():
     return jsonify({"acceso": False, "mensaje": "Credenciales incorrectas."}), 401
 
 
+# ---------- Tarea 3 (Sprint 6): Validaciones de Contraseña Reforzadas ----------
 @app.route("/registro", methods=["POST"])
 def registro():
     data = request.get_json(silent=True) or {}
@@ -146,8 +149,14 @@ def registro():
 
     if not nombre or not email or not password:
         return jsonify({"ok": False, "mensaje": "Todos los campos son obligatorios."}), 400
+
+    # Reglas de seguridad exigidas por el Sprint 6
     if len(password) < 8:
         return jsonify({"ok": False, "mensaje": "La contrasena debe tener al menos 8 caracteres."}), 400
+    if not re.search(r"\d", password):
+        return jsonify({"ok": False, "mensaje": "La contrasena debe contener al menos un numero."}), 400
+    if not re.search(r"[A-Z]", password):
+        return jsonify({"ok": False, "mensaje": "La contrasena debe contener al menos una mayuscula."}), 400
 
     try:
         conn = get_connection()
@@ -211,7 +220,6 @@ def dashboard():
                 )
                 recientes = cur.fetchall()
 
-                # --- ALERTAS REALES (Cálculo basado en fecha de subida) ---
                 cur.execute(
                     f"""SELECT d.carpeta, d.fecha_subida, e.codigo 
                         FROM documentos d
@@ -232,7 +240,6 @@ def dashboard():
                         fecha_sub = datetime.strptime(fecha_sub, "%Y-%m-%d").date()
                         
                     dias_pasados = (hoy - fecha_sub).days
-                    # Simulamos que los documentos vencen a los 365 días.
                     dias_restantes = 365 - dias_pasados
                     
                     if dias_restantes < 30:
@@ -257,13 +264,22 @@ def dashboard():
     })
 
 
-# ---------- Expedientes ----------
+# ---------- Tarea 2 (Sprint 6): Búsqueda y Paginación ----------
 
 @app.route("/expedientes", methods=["GET"])
 def listar_expedientes():
     email = usuario_actual()
     if not email:
         return jsonify({"error": "No autenticado"}), 401
+
+    q = request.args.get("q", "").strip()
+    try:
+        page = int(request.args.get("page", 1))
+        per_page = int(request.args.get("per_page", 10))
+    except ValueError:
+        page, per_page = 1, 10
+
+    offset = (page - 1) * per_page
 
     try:
         conn = get_connection()
@@ -274,20 +290,25 @@ def listar_expedientes():
                 if not u:
                     return jsonify({"error": "Usuario no encontrado"}), 404
 
-                if u["rol"] == "promotor":
-                    cur.execute(
-                        """SELECT codigo, proyecto, promotor, categoria, estado, fecha_ingreso
-                           FROM expedientes WHERE promotor_email=%s
-                           ORDER BY fecha_ingreso DESC""",
-                        (email,),
-                    )
-                else:
-                    cur.execute(
-                        """SELECT codigo, proyecto, promotor, categoria, estado, fecha_ingreso
-                           FROM expedientes WHERE usuario_id=%s
-                           ORDER BY fecha_ingreso DESC""",
-                        (u["id"],),
-                    )
+                base_where = "WHERE promotor_email=%s" if u["rol"] == "promotor" else "WHERE usuario_id=%s"
+                param_user = email if u["rol"] == "promotor" else u["id"]
+
+                params = [param_user]
+                if q:
+                    base_where += " AND (codigo LIKE %s OR proyecto LIKE %s OR promotor LIKE %s)"
+                    like_str = f"%{q}%"
+                    params.extend([like_str, like_str, like_str])
+
+                # Total de registros para la paginación
+                cur.execute(f"SELECT COUNT(*) AS total FROM expedientes {base_where}", tuple(params))
+                total = cur.fetchone()["total"]
+
+                # Consulta paginada
+                query = f"""SELECT codigo, proyecto, promotor, categoria, estado, fecha_ingreso
+                           FROM expedientes {base_where}
+                           ORDER BY fecha_ingreso DESC LIMIT %s OFFSET %s"""
+                params.extend([per_page, offset])
+                cur.execute(query, tuple(params))
                 filas = cur.fetchall()
         finally:
             conn.close()
@@ -298,7 +319,15 @@ def listar_expedientes():
         if f["fecha_ingreso"]:
             f["fecha_ingreso"] = f["fecha_ingreso"].strftime("%Y-%m-%d")
 
-    return jsonify({"expedientes": filas})
+    return jsonify({
+        "expedientes": filas,
+        "paginacion": {
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "total_pages": (total + per_page - 1) // per_page if total > 0 else 1
+        }
+    })
 
 
 @app.route("/expedientes", methods=["POST"])
@@ -423,6 +452,69 @@ def detalle_expediente(codigo):
         "aprobacion": aprob,
         "verificacion": verificacion,
     })
+
+
+# ---------- Tarea 1 (Sprint 6): Generación de Reporte PDF ----------
+
+@app.route("/expedientes/<codigo>/pdf", methods=["GET"])
+def descargar_pdf_expediente(codigo):
+    email = usuario_actual()
+    if not email:
+        return jsonify({"error": "No autenticado"}), 401
+
+    try:
+        conn = get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT id, rol FROM usuarios WHERE email=%s", (email,))
+                u = cur.fetchone()
+                if not u:
+                    return jsonify({"error": "Usuario no encontrado"}), 404
+
+                cur.execute(
+                    """SELECT codigo, proyecto, promotor, promotor_email, categoria, estado, fecha_ingreso, usuario_id
+                       FROM expedientes WHERE codigo=%s""",
+                    (codigo,),
+                )
+                exp = cur.fetchone()
+                if not exp:
+                    return jsonify({"error": "Expediente no encontrado"}), 404
+
+                permitido = False
+                if u["rol"] == "promotor":
+                    permitido = exp["promotor_email"] and exp["promotor_email"] == email
+                else:
+                    permitido = exp["usuario_id"] == u["id"]
+                if not permitido:
+                    return jsonify({"error": "Sin acceso"}), 403
+        finally:
+            conn.close()
+    except Exception:
+        return jsonify({"error": "Error de base de datos"}), 500
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(0, 10, f"Reporte Oficial: {exp['codigo']}", ln=True, align="C")
+    pdf.ln(10)
+
+    pdf.set_font("Arial", "", 12)
+    pdf.cell(0, 8, f"Proyecto: {exp['proyecto']}", ln=True)
+    pdf.cell(0, 8, f"Promotor: {exp['promotor']}", ln=True)
+    pdf.cell(0, 8, f"Categoria: {exp['categoria']}", ln=True)
+    pdf.cell(0, 8, f"Estado: {exp['estado']}", ln=True)
+    fecha_str = exp['fecha_ingreso'].strftime("%Y-%m-%d") if exp['fecha_ingreso'] else "N/A"
+    pdf.cell(0, 8, f"Fecha de Ingreso: {fecha_str}", ln=True)
+
+    pdf_output = pdf.output(dest='S').encode('latin-1', errors='replace')
+    buffer = io.BytesIO(pdf_output)
+
+    return send_file(
+        buffer,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"{codigo}_reporte.pdf"
+    )
 
 
 # ---------- Listar aprobaciones ----------
@@ -923,10 +1015,6 @@ def someter_expediente(codigo):
 
 @app.route("/expedientes/<codigo>/aprobar-miambiente", methods=["POST"])
 def aprobar_miambiente(codigo):
-    """
-    Endpoint de demostración que simula la respuesta de MiAmbiente.
-    En producción, esto vendría de un sistema externo.
-    """
     email = usuario_actual()
     if not email:
         return jsonify({"ok": False, "mensaje": "No autenticado"}), 401

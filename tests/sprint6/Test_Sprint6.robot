@@ -8,19 +8,16 @@ ${BASE_URL}       http://localhost:5000
 ${AUTH_HEADER}    consultor1@ejemplo.com
 
 *** Test Cases ***
-01 - Validar Registro De Nuevo Usuario (POST /registro)
-    [Documentation]    Verifica que se pueda registrar un usuario nuevo y devuelva 201.
+01 - Validar Registro De Nuevo Usuario Valido (POST /registro)
+    [Documentation]    Verifica que se pueda registrar un usuario nuevo con clave segura (Mayuscula + Numero) o devuelva 409 si existe.
     Create Session    api    ${BASE_URL}
     ${data}=    Create Dictionary    
     ...    nombre=Usuario Robot
     ...    email=robot_test@ejemplo.com
-    ...    password=clave12345
+    ...    password=Clave12345
     ...    rol=consultor
     
-    # Usamos expected_status=any para que la prueba no falle si el usuario ya existe
     ${response}=    POST On Session    api    /registro    json=${data}    expected_status=any
-    
-    # Si es la primera vez, devuelve 201. Si ya existe, devuelve 409. Ambas son válidas.
     ${status}=    Convert To Integer    ${response.status_code}
     Should Be True    ${status} in [201, 409]    El registro falló con un código inesperado: ${status}
 
@@ -29,14 +26,26 @@ ${AUTH_HEADER}    consultor1@ejemplo.com
     Create Session    api    ${BASE_URL}
     ${data}=    Create Dictionary    
     ...    email=robot_test@ejemplo.com
-    ...    password=clave12345
+    ...    password=Clave12345
     
     ${response}=    POST On Session    api    /login    json=${data}
     Status Should Be    200    ${response}
     Dictionary Should Contain Key    ${response.json()}    acceso
     Should Be True    ${response.json()['acceso']}
 
-03 - Validar Que El Dashboard Devuelve Alertas (HU-05)
+03 - Validar Rechazo De Registro Con Contrasena Debil (Seguridad Sprint 6)
+    [Documentation]    Verifica que un registro con clave sin mayuscula sea rechazado estrictamente con HTTP 400.
+    Create Session    api    ${BASE_URL}
+    ${data}=    Create Dictionary    
+    ...    nombre=Usuario Debil
+    ...    email=debil_test@ejemplo.com
+    ...    password=clave12345
+    ...    rol=consultor
+    
+    ${response}=    POST On Session    api    /registro    json=${data}    expected_status=400
+    Status Should Be    400    ${response}
+
+04 - Validar Que El Dashboard Devuelve Alertas (HU-05)
     [Documentation]    Verifica que el endpoint del dashboard devuelva la estructura de alertas reales.
     ${headers}=    Create Dictionary    X-Usuario-Email=${AUTH_HEADER}
     Create Session    api    ${BASE_URL}    headers=${headers}
@@ -49,8 +58,24 @@ ${AUTH_HEADER}    consultor1@ejemplo.com
     Dictionary Should Contain Key    ${json}    metricas
     Dictionary Should Contain Key    ${json['metricas']}    alertas
 
-04 - Validar Que El Dashboard Requiere Autenticacion
+05 - Validar Que El Dashboard Requiere Autenticacion
     [Documentation]    Verifica que el endpoint del dashboard devuelva 401 si no hay credenciales.
     Create Session    api    ${BASE_URL}
     ${response}=    GET On Session    api    /dashboard    expected_status=401
     Status Should Be    401    ${response}
+
+06 - Validar Paginacion Y Busqueda En Expedientes (Sprint 6)
+    [Documentation]    Verifica que /expedientes soporte parametros q, page y per_page retornando el objeto paginacion.
+    ${headers}=    Create Dictionary    X-Usuario-Email=${AUTH_HEADER}
+    Create Session    api    ${BASE_URL}    headers=${headers}
+    ${response}=    GET On Session    api    /expedientes?q=SP&page=1&per_page=5
+    Status Should Be    200    ${response}
+    Dictionary Should Contain Key    ${response.json()}    paginacion
+
+07 - Validar Generacion De PDF De Expediente (Sprint 6)
+    [Documentation]    Verifica que el endpoint /expedientes/<codigo>/pdf devuelva un documento application/pdf.
+    ${headers}=    Create Dictionary    X-Usuario-Email=${AUTH_HEADER}
+    Create Session    api    ${BASE_URL}    headers=${headers}
+    ${response}=    GET On Session    api    /expedientes/SP-A8-2026-001/pdf
+    Status Should Be    200    ${response}
+    Should Contain    ${response.headers['Content-Type']}    application/pdf
