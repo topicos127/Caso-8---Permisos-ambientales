@@ -68,7 +68,7 @@ ${AUTH_HEADER}    consultor1@ejemplo.com
     [Documentation]    Verifica que /expedientes soporte parametros q, page y per_page retornando el objeto paginacion.
     ${headers}=    Create Dictionary    X-Usuario-Email=${AUTH_HEADER}
     Create Session    api    ${BASE_URL}    headers=${headers}
-    ${response}=    GET On Session    api    /expedientes?q=SP&page=1&per_page=5
+    ${response}=    GET On Session    api    url=/expedientes?q=SP&page=1&per_page=5
     Status Should Be    200    ${response}
     Dictionary Should Contain Key    ${response.json()}    paginacion
 
@@ -76,6 +76,6 @@ ${AUTH_HEADER}    consultor1@ejemplo.com
     [Documentation]    Verifica que el endpoint /expedientes/<codigo>/pdf devuelva un documento application/pdf.
     ${headers}=    Create Dictionary    X-Usuario-Email=${AUTH_HEADER}
     Create Session    api    ${BASE_URL}    headers=${headers}
-    ${response}=    GET On Session    api    /expedientes/SP-A8-2026-001/pdf
+    ${response}=    GET On Session    api    url=/expedientes/SP-A8-2026-001/pdf
     Status Should Be    200    ${response}
     Should Contain    ${response.headers['Content-Type']}    application/pdf

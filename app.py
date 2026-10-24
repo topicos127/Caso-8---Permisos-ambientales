@@ -506,8 +506,9 @@ def descargar_pdf_expediente(codigo):
     fecha_str = exp['fecha_ingreso'].strftime("%Y-%m-%d") if exp['fecha_ingreso'] else "N/A"
     pdf.cell(0, 8, f"Fecha de Ingreso: {fecha_str}", ln=True)
 
-    pdf_output = pdf.output(dest='S').encode('latin-1', errors='replace')
-    buffer = io.BytesIO(pdf_output)
+    # Generación limpia del PDF con fpdf2
+    pdf_bytes = pdf.output()  # fpdf2 ya retorna bytes/bytearray en las versiones recientes
+    buffer = io.BytesIO(bytes(pdf_bytes))
 
     return send_file(
         buffer,
