@@ -561,3 +561,62 @@ button, input, select, textarea { font-family: inherit; }
 @keyframes fadeOut {
     to { opacity: 0; transform: translateX(20px); }
 }
+
+/* ============== RESPONSIVE DESIGN (Móviles) ============== */
+@media (max-width: 768px) {
+    /* Header principal */
+    header {
+        flex-direction: column !important;
+        padding: 15px !important;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    header > div {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    /* El título grande */
+    main h1 {
+        font-size: 28px !important;
+        text-align: center;
+    }
+
+    /* Contenedor de búsqueda */
+    .search-row {
+        flex-direction: column !important;
+        gap: 10px;
+    }
+
+    .search-row input, .search-row button {
+        width: 100% !important;
+    }
+
+    /* Ajustes generales para el layout */
+    .content {
+        padding: 20px 15px !important;
+    }
+
+    .panel {
+        padding: 15px !important;
+    }
+
+    /* Tablas (que no se desborden) */
+    .ledger {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    
+    /* Login y Registro */
+    .layout {
+        grid-template-columns: 1fr !important;
+    }
+    .context {
+        display: none; /* Ocultamos la imagen verde en celular para que el form ocupe todo */
+    }
+    .form-side {
+        padding: 20px !important;
+    }
+}
