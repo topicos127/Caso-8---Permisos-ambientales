@@ -24,6 +24,9 @@ DB_CONFIG = {
     "cursorclass": pymysql.cursors.DictCursor,
 }
 
+# Si estamos en la nube (Aiven exige SSL), configuramos la conexión
+if os.environ.get("DB_HOST") and "aivencloud" in os.environ.get("DB_HOST"):
+    DB_CONFIG["ssl"] = {"ssl": True}
 UPLOADS_DIR = os.environ.get("UPLOADS_DIR", "/app/uploads")
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
 EXTENSIONES_PERMITIDAS = {".pdf", ".zip"}
