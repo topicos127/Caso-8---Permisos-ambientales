@@ -120,7 +120,7 @@ async function buscar() {
   document.getElementById('panelSinAcceso').style.display = 'none';
 
   try {
-    const r = await fetch('/consulta/' + codigo);
+    const r = await fetch('/consulta/' + encodeURIComponent(codigo));
     if (!r.ok) {
       document.getElementById('panelNoEncontrado').style.display = 'block';
       return;

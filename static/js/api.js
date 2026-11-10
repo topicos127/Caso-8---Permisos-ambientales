@@ -1,4 +1,24 @@
 // Helpers de API compartidos por las pantallas internas.
+//
+// Sprint 7: la sesion la lleva una cookie del servidor. sessionStorage solo
+// guarda el nombre y el rol para pintar la barra; el servidor no lo usa.
+
+// Escapa texto antes de meterlo en innerHTML (evita XSS con nombres de
+// proyecto, promotores, motivos, etc.).
+function esc(valor) {
+  return String(valor ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Cabeceras para cualquier fetch propio: el servidor rechaza los POST sin
+// X-Requested-With (proteccion contra CSRF).
+function cabecerasApi(extra) {
+  return Object.assign({ 'X-Requested-With': 'fetch' }, extra || {});
+}
 
 function getUsuario() {
   try { return JSON.parse(sessionStorage.getItem('usuario') || 'null'); }
@@ -22,19 +42,27 @@ function esConsultor() {
 }
 
 async function apiFetch(url, opciones = {}) {
-  const u = getUsuario();
-  const headers = Object.assign(
-    { 'Content-Type': 'application/json' },
-    opciones.headers || {},
-    (u && u.email) ? { 'X-Usuario-Email': u.email } : {}
-  );
-  const r = await fetch(url, Object.assign({}, opciones, { headers }));
+  const esFormulario = opciones.body instanceof FormData;
+  const headers = cabecerasApi(Object.assign(
+    esFormulario ? {} : { 'Content-Type': 'application/json' },
+    opciones.headers || {}
+  ));
+  const r = await fetch(url, Object.assign({}, opciones, { headers, credentials: 'same-origin' }));
   if (r.status === 401) {
     sessionStorage.removeItem('usuario');
     window.location.href = 'login.html';
     throw new Error('No autenticado');
   }
   return r.json();
+}
+
+async function cerrarSesion(ev) {
+  if (ev) ev.preventDefault();
+  try {
+    await fetch('/logout', { method: 'POST', headers: cabecerasApi(), credentials: 'same-origin' });
+  } catch (e) { /* aunque falle la red, se limpia la sesion local */ }
+  sessionStorage.removeItem('usuario');
+  window.location.href = 'login.html';
 }
 
 function claseEstado(estado) {
@@ -50,12 +78,12 @@ function textoEstado(estado) {
   if (estado === 'evaluacion') return 'En evaluación (MiAmbiente)';
   if (estado === 'aprobado_interno') return 'Aprobado internamente';
   if (estado === 'pendiente') return 'Pendiente de documentos';
-  return estado;
+  return esc(estado);
 }
 
 function fichaTier(cat) {
   const t = { 'I': 'Bajo impacto', 'II': 'Impacto moderado', 'III': 'Alto impacto' };
-  return `<span class="tier"><b>${cat}</b> ${t[cat] || ''}</span>`;
+  return `<span class="tier"><b>${esc(cat)}</b> ${t[cat] || ''}</span>`;
 }
 
 function pintarTopbar() {
@@ -63,7 +91,8 @@ function pintarTopbar() {
   const who = document.querySelector('.who');
   if (u && who) {
     const rolTexto = u.rol === 'promotor' ? 'Promotor' : 'Consultor';
-    who.innerHTML = `<span class="tag">${rolTexto}</span> ${u.nombre || u.email} <a href="login.html" onclick="sessionStorage.removeItem('usuario')">Salir</a>`;
+    who.innerHTML = `<span class="tag">${rolTexto}</span> ${esc(u.nombre || u.email)} <a href="login.html" id="link-salir">Salir</a>`;
+    who.querySelector('#link-salir').addEventListener('click', cerrarSesion);
   }
   if (esPromotor()) {
     document.querySelectorAll('a[href="expediente-nuevo.html"]').forEach(a => {
@@ -87,7 +116,7 @@ function mostrarToast(mensaje, tipo = 'exito') {
   toast.className = `toast ${tipo}`;
   
   const icon = tipo === 'exito' ? '✅' : '⚠️';
-  toast.innerHTML = `<span>${icon}</span> <span>${mensaje}</span>`;
+  toast.innerHTML = `<span>${icon}</span> <span>${esc(mensaje)}</span>`;
   
   container.appendChild(toast);
 

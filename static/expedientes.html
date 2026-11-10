@@ -116,13 +116,13 @@ function renderTabla(expedientes) {
   expedientes.forEach(e => {
     tbody.innerHTML += `
       <tr>
-        <td style="padding-left:24px; white-space:nowrap;"><span class="case-tag">${e.codigo}</span></td>
-        <td>${e.proyecto}</td>
-        <td>${e.promotor}</td>
+        <td style="padding-left:24px; white-space:nowrap;"><span class="case-tag">${esc(e.codigo)}</span></td>
+        <td>${esc(e.proyecto)}</td>
+        <td>${esc(e.promotor)}</td>
         <td style="white-space:nowrap;">${fichaTier(e.categoria)}</td>
         <td style="white-space:nowrap;">${ledEstado(e.estado)}<span class="${claseEstado(e.estado)}">${textoEstado(e.estado)}</span></td>
-        <td style="white-space:nowrap; font-family:var(--mono); font-size:12.5px;">${e.fecha_ingreso}</td>
-        <td style="white-space:nowrap;"><a href="expediente-detalle.html?codigo=${e.codigo}">Ver detalle →</a></td>
+        <td style="white-space:nowrap; font-family:var(--mono); font-size:12.5px;">${esc(e.fecha_ingreso)}</td>
+        <td style="white-space:nowrap;"><a href="expediente-detalle.html?codigo=${encodeURIComponent(e.codigo)}">Ver detalle →</a></td>
       </tr>
     `;
   });

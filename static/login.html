@@ -107,7 +107,7 @@
 
       if (data.acceso === true) {
         sessionStorage.setItem('usuario', JSON.stringify({
-          email: email,
+          email: data.email || email,
           rol: data.rol,
           nombre: data.nombre
         }));

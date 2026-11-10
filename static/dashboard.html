@@ -96,7 +96,7 @@ if (usuario) {
     ulR.innerHTML = '';
     if (d.recientes && d.recientes.length) {
       d.recientes.forEach(r => {
-        ulR.innerHTML += `<li><span><span class="code">${r.codigo}</span>${r.proyecto}</span> <span class="${claseEstado(r.estado)}">${textoEstado(r.estado)}</span></li>`;
+        ulR.innerHTML += `<li><span><span class="code">${esc(r.codigo)}</span>${esc(r.proyecto)}</span> <span class="${claseEstado(r.estado)}">${textoEstado(r.estado)}</span></li>`;
       });
     } else {
       ulR.innerHTML = '<li style="color:var(--ink-faint);">Sin expedientes registrados.</li>';
@@ -107,8 +107,8 @@ if (usuario) {
     if (d.alertas && d.alertas.length) {
       d.alertas.forEach(a => {
         ulA.innerHTML += `<li>
-          <span><span class="code">${a.codigo}</span> ${a.descripcion}</span> 
-          <a href="expediente-detalle.html?codigo=${a.codigo}">Ver</a>
+          <span><span class="code">${esc(a.codigo)}</span> ${esc(a.descripcion)}</span> 
+          <a href="expediente-detalle.html?codigo=${encodeURIComponent(a.codigo)}">Ver</a>
         </li>`;
       });
     } else {

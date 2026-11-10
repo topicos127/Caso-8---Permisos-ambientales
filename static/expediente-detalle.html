@@ -159,6 +159,7 @@
             <span>Ingreso</span>
             <span>Plazo máximo</span>
           </div>
+          <p class="panel-note" id="plazo-nota" style="margin-top:10px;"></p>
         </div>
       </div>
 
@@ -255,7 +256,8 @@ if (usuario) {
           ev.preventDefault();
           try {
             const resp = await fetch(btnDesc.href, {
-              headers: { 'X-Usuario-Email': (usuario && usuario.email) || '' }
+              headers: cabecerasApi(),
+              credentials: 'same-origin'
             });
             if (!resp.ok) {
               mensaje('No se pudo descargar el archivo.', 'error');
@@ -306,7 +308,8 @@ if (usuario) {
                 `/expedientes/${codigo}/documentos/${encodeURIComponent(doc.carpeta)}/eliminar`,
                 {
                   method: 'POST',
-                  headers: { 'X-Usuario-Email': (usuario && usuario.email) || '' }
+                  headers: cabecerasApi(),
+                  credentials: 'same-origin'
                 }
               );
               const data = await resp.json();
@@ -375,7 +378,7 @@ if (usuario) {
     panel.style.display = 'block';
     lista.innerHTML = '';
 
-    resumen.innerHTML = `<span class="tier"><b>${verif.categoria}</b> ${verif.completos} de ${verif.total_requeridos} documentos obligatorios completos</span>`;
+    resumen.innerHTML = `<span class="tier"><b>${esc(verif.categoria)}</b> ${esc(verif.completos)} de ${esc(verif.total_requeridos)} documentos obligatorios completos</span>`;
 
     const requeridos = CARPETAS_POR_CAT_LOCAL[verif.categoria] || [];
     requeridos.forEach(carpeta => {
@@ -460,41 +463,50 @@ if (usuario) {
       if (ap.aprobaciones && ap.aprobaciones.length) {
         infoDiv.innerHTML = ap.aprobaciones.map(a =>
           `<div style="margin-top:10px; padding:12px; background:var(--paper); border-left:3px solid var(--status-ok);">
-            <div style="font-family:var(--mono); font-size:11px; color:var(--ink-faint);">${a.fecha} · ${a.aprobado_por_nombre || 'Usuario'}</div>
-            <div style="margin-top:4px; font-size:14px;">${a.motivo}</div>
+            <div style="font-family:var(--mono); font-size:11px; color:var(--ink-faint);">${esc(a.fecha)} · ${esc(a.aprobado_por_nombre || 'Usuario')}</div>
+            <div style="margin-top:4px; font-size:14px;">${esc(a.motivo)}</div>
           </div>`
         ).join('');
       }
     } catch (err) { /* ignorar */ }
   }
 
+  // HU-07: el backend decide el estado del semaforo (en_plazo, por_vencer,
+  // vencido o resuelto) y el limite de la categoria. Aqui solo se pinta.
+  const SEMAFORO = {
+    en_plazo:   { clase: 'status status-ok',   texto: 'En plazo',   color: '#2e7d4f' },
+    por_vencer: { clase: 'status status-warn', texto: 'Por vencer', color: '#b3812f' },
+    vencido:    { clase: 'status status-bad',  texto: 'Vencido',    color: '#a23b2e' },
+    resuelto:   { clase: 'status status-info', texto: 'Resuelto',   color: '#8a8478' },
+  };
+
   function renderPlazos(alertas) {
     const panel = document.getElementById('panel-plazos');
     panel.style.display = 'block';
 
+    const sem = SEMAFORO[alertas.estado_semaforo] || SEMAFORO.en_plazo;
+    const resuelto = alertas.estado_semaforo === 'resuelto';
+    const limite = alertas.limite_dias;
+
     document.getElementById('plazo-categoria').innerHTML = fichaTier(alertas.categoria);
-    document.getElementById('plazo-transcurridos').textContent = alertas.dias_transcurridos + ' días';
+    document.getElementById('plazo-transcurridos').textContent =
+      resuelto ? '—' : alertas.dias_transcurridos + ' días';
+    document.getElementById('plazo-restantes').textContent =
+      resuelto ? '—' : alertas.dias_restantes_legales + ' días';
+    document.getElementById('plazo-estado').innerHTML = `<span class="${sem.clase}">${sem.texto}</span>`;
 
-    const restantes = alertas.dias_restantes_legales;
-    const total = alertas.categoria === 'I' ? 20 : alertas.categoria === 'III' ? 80 : 40;
-    const porcentaje = Math.min(100, Math.max(0, (alertas.dias_transcurridos / total) * 100));
-
-    document.getElementById('plazo-restantes').textContent = restantes + ' días';
-
-    const estadoEl = document.getElementById('plazo-estado');
-    const barra = document.getElementById('plazo-barra');
-
-    if (restantes < 0) {
-      estadoEl.innerHTML = '<span class="status status-bad">Vencido</span>';
-      barra.style.background = '#a23b2e';
-    } else if (restantes <= 5) {
-      estadoEl.innerHTML = '<span class="status status-warn">Por vencer</span>';
-      barra.style.background = '#b3812f';
-    } else {
-      estadoEl.innerHTML = '<span class="status status-ok">En plazo</span>';
-      barra.style.background = '#2e7d4f';
+    const nota = document.getElementById('plazo-nota');
+    if (nota) {
+      nota.textContent = resuelto
+        ? 'El expediente ya fue resuelto: el plazo dejó de correr.'
+        : `Plazo de ${limite} días. Se marca "Por vencer" cuando quedan ${alertas.umbral_por_vencer} días o menos.`;
     }
 
+    const barra = document.getElementById('plazo-barra');
+    const porcentaje = resuelto
+      ? 100
+      : Math.min(100, Math.max(0, (alertas.dias_transcurridos / limite) * 100));
+    barra.style.background = sem.color;
     barra.style.width = porcentaje + '%';
   }
 
@@ -506,7 +518,7 @@ if (usuario) {
       estadoExpedienteActual = e.estado;
 
       document.getElementById('titulo-exp').innerHTML =
-        `<span class="case-tag" style="font-size:16px; margin-right:10px; vertical-align:2px;">${e.codigo}</span>${e.proyecto}`;
+        `<span class="case-tag" style="font-size:16px; margin-right:10px; vertical-align:2px;">${esc(e.codigo)}</span>${esc(e.proyecto)}`;
       document.getElementById('fact-estado').innerHTML =
         `<span class="${claseEstado(e.estado)}">${textoEstado(e.estado)}</span>`;
       document.getElementById('fact-categoria').innerHTML = fichaTier(e.categoria);
@@ -590,7 +602,8 @@ if (usuario) {
         `/expedientes/${codigo}/documentos/${encodeURIComponent(carpeta)}/subir`,
         {
           method: 'POST',
-          headers: { 'X-Usuario-Email': (usuario && usuario.email) || '' },
+          headers: cabecerasApi(),
+          credentials: 'same-origin',
           body: formData,
         }
       );
@@ -612,7 +625,8 @@ if (usuario) {
   document.getElementById('btnZip').addEventListener('click', async () => {
     try {
       const resp = await fetch(`/expedientes/${codigo}/descargar-todo`, {
-        headers: { 'X-Usuario-Email': (usuario && usuario.email) || '' }
+        headers: cabecerasApi(),
+        credentials: 'same-origin'
       });
       if (!resp.ok) {
         mensaje('No se pudo descargar el expediente.', 'error');
