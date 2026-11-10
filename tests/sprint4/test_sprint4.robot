@@ -3,11 +3,11 @@ Documentation     Suite de Pruebas Automatizadas - Sprint 4 (Permisos Ambientale
 Library           RequestsLibrary
 Library           Collections
 Library           OperatingSystem
+Resource          ../recursos/sesion.resource
 
 *** Variables ***
 ${BASE_URL}          http://127.0.0.1:5000
 ${EXPEDIENTE_TEST}    SP-A8-2026-001
-${USER_EMAIL}         consultor@test.com
 
 *** Test Cases ***
 01 - Validar Estado Del Servicio (Health Check)
@@ -20,8 +20,7 @@ ${USER_EMAIL}         consultor@test.com
 
 02 - Validar Descarga De Expediente ZIP Con Indice
     [Documentation]    HU-06: Verifica que la descarga completa de un expediente devuelva un archivo ZIP válido.
-    ${headers}=    Create Dictionary    X-Usuario-Email=${USER_EMAIL}
-    Create Session    api_session    ${BASE_URL}    headers=${headers}
+    Iniciar Sesion Como Consultor    api_session
     ${response}=    GET On Session    api_session    /expedientes/${EXPEDIENTE_TEST}/descargar-todo
     Should Be Equal As Integers    ${response.status_code}    200
     Should Contain    ${response.headers['Content-Type']}    application/zip
@@ -30,8 +29,7 @@ ${USER_EMAIL}         consultor@test.com
 
 03 - Validar Calculo De Alertas Y Plazos Legales
     [Documentation]    HU-05 / HU-08: Verifica la consulta de plazos legales y cálculo de días restantes.
-    ${headers}=    Create Dictionary    X-Usuario-Email=${USER_EMAIL}
-    Create Session    api_session    ${BASE_URL}    headers=${headers}
+    Iniciar Sesion Como Consultor    api_session
     ${response}=    GET On Session    api_session    /expedientes/${EXPEDIENTE_TEST}/alertas
     Should Be Equal As Integers    ${response.status_code}    200
     ${json}=    Set Variable    ${response.json()}

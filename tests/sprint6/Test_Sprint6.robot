@@ -2,10 +2,10 @@
 Documentation     Suite de Pruebas Automatizadas - Sprint 6 (Permisos Ambientales)
 Library           RequestsLibrary
 Library           Collections
+Resource          ../recursos/sesion.resource
 
 *** Variables ***
 ${BASE_URL}       http://localhost:5000
-${AUTH_HEADER}    consultor1@ejemplo.com
 
 *** Test Cases ***
 01 - Validar Registro De Nuevo Usuario Valido (POST /registro)
@@ -47,8 +47,7 @@ ${AUTH_HEADER}    consultor1@ejemplo.com
 
 04 - Validar Que El Dashboard Devuelve Alertas (HU-05)
     [Documentation]    Verifica que el endpoint del dashboard devuelva la estructura de alertas reales.
-    ${headers}=    Create Dictionary    X-Usuario-Email=${AUTH_HEADER}
-    Create Session    api    ${BASE_URL}    headers=${headers}
+    Iniciar Sesion Como Consultor    api
     
     ${response}=    GET On Session    api    /dashboard
     Status Should Be    200    ${response}
@@ -66,16 +65,14 @@ ${AUTH_HEADER}    consultor1@ejemplo.com
 
 06 - Validar Paginacion Y Busqueda En Expedientes (Sprint 6)
     [Documentation]    Verifica que /expedientes soporte parametros q, page y per_page retornando el objeto paginacion.
-    ${headers}=    Create Dictionary    X-Usuario-Email=${AUTH_HEADER}
-    Create Session    api    ${BASE_URL}    headers=${headers}
+    Iniciar Sesion Como Consultor    api
     ${response}=    GET On Session    api    url=/expedientes?q=SP&page=1&per_page=5
     Status Should Be    200    ${response}
     Dictionary Should Contain Key    ${response.json()}    paginacion
 
 07 - Validar Generacion De PDF De Expediente (Sprint 6)
     [Documentation]    Verifica que el endpoint /expedientes/<codigo>/pdf devuelva un documento application/pdf.
-    ${headers}=    Create Dictionary    X-Usuario-Email=${AUTH_HEADER}
-    Create Session    api    ${BASE_URL}    headers=${headers}
+    Iniciar Sesion Como Consultor    api
     ${response}=    GET On Session    api    url=/expedientes/SP-A8-2026-001/pdf
     Status Should Be    200    ${response}
     Should Contain    ${response.headers['Content-Type']}    application/pdf
