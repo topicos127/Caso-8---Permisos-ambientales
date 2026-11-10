@@ -36,6 +36,12 @@ spec:
                   key: DB_PASSWORD
             - name: UPLOADS_DIR
               value: /app/uploads
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-credenciales
+                  key: SECRET_KEY
+                  optional: true
           volumeMounts:
             - name: uploads
               mountPath: /app/uploads

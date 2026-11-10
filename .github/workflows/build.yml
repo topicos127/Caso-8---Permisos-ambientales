@@ -76,11 +76,18 @@ jobs:
           DB_PASSWORD: permisos123
           DB_NAME: permisos_ambientales
           UPLOADS_DIR: /tmp/uploads
+          SECRET_KEY: clave-solo-para-el-ci
         run: |
           mkdir -p /tmp/uploads
           nohup python app.py > flask.log 2>&1 &
           sleep 5
           curl -f http://127.0.0.1:5000/health || (cat flask.log && exit 1)
+
+      - name: Run unit tests (HU-07 semaforo)
+        env:
+          UPLOADS_DIR: /tmp/uploads
+        run: |
+          python -m unittest tests/test_semaforo.py
 
       - name: Run Robot Framework tests (Sprint 4)
         run: |
@@ -93,6 +100,10 @@ jobs:
       - name: Run Robot Framework tests (Sprint 6)
         run: |
           robot --outputdir tests/sprint6 tests/sprint6/Test_Sprint6.robot
+
+      - name: Run Robot Framework tests (Sprint 7)
+        run: |
+          robot --outputdir tests/sprint7 tests/sprint7/Test_Sprint7.robot
 
       - name: Upload Sprint 4 test report
         if: always()
@@ -114,6 +125,13 @@ jobs:
         with:
           name: robot-report-sprint6
           path: tests/sprint6/
+
+      - name: Upload Sprint 7 test report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: robot-report-sprint7
+          path: tests/sprint7/
 
   build:
     name: Build and Push Docker Image

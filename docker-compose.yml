@@ -6,8 +6,10 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
+    # Solo se publica en esta PC (127.0.0.1): la app llega a MySQL por la red
+    # interna de Docker y desde otra maquina el puerto queda cerrado.
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -29,6 +31,8 @@ services:
       - DB_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - DB_NAME=${MYSQL_DATABASE}
       - UPLOADS_DIR=/app/uploads
+      - SECRET_KEY=${SECRET_KEY:-}
+      - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-false}
     volumes:
       - uploads_data:/app/uploads
       - ./static:/app/static
