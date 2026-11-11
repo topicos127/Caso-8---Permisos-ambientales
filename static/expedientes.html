@@ -41,7 +41,7 @@
         Consulta pública
       </a>
     </nav>
-    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 5</div>
+    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 7</div>
   </aside>
 
   <div class="main">
@@ -90,18 +90,6 @@
 
 <script src="js/api.js"></script>
 <script>
-function ledEstado(estado) {
-  const colores = {
-    'aprobado': '#2e7d4f',
-    'evaluacion': '#3b5b8a',
-    'aprobado_interno': '#b3812f',
-    'pendiente': '#a23b2e',
-    'rechazado': '#a23b2e'
-  };
-  const color = colores[estado] || '#8790a6';
-  return `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${color}; box-shadow:0 0 6px ${color}; margin-right:8px; vertical-align:middle;"></span>`;
-}
-
 let todosLosExpedientes = [];
 
 function renderTabla(expedientes) {
@@ -120,7 +108,7 @@ function renderTabla(expedientes) {
         <td>${esc(e.proyecto)}</td>
         <td>${esc(e.promotor)}</td>
         <td style="white-space:nowrap;">${fichaTier(e.categoria)}</td>
-        <td style="white-space:nowrap;">${ledEstado(e.estado)}<span class="${claseEstado(e.estado)}">${textoEstado(e.estado)}</span></td>
+        <td style="white-space:nowrap;"><span class="${claseEstado(e.estado)}">${textoEstado(e.estado)}</span></td>
         <td style="white-space:nowrap; font-family:var(--mono); font-size:12.5px;">${esc(e.fecha_ingreso)}</td>
         <td style="white-space:nowrap;"><a href="expediente-detalle.html?codigo=${encodeURIComponent(e.codigo)}">Ver detalle →</a></td>
       </tr>
