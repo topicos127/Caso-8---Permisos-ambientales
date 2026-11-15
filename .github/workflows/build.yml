@@ -105,6 +105,10 @@ jobs:
         run: |
           robot --outputdir tests/sprint7 tests/sprint7/Test_Sprint7.robot
 
+      - name: Run Robot Framework tests (Sprint 8)
+        run: |
+          robot --outputdir tests/sprint8 tests/sprint8/Test_Sprint8.robot
+
       - name: Upload Sprint 4 test report
         if: always()
         uses: actions/upload-artifact@v5
@@ -132,6 +136,13 @@ jobs:
         with:
           name: robot-report-sprint7
           path: tests/sprint7/
+
+      - name: Upload Sprint 8 test report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: robot-report-sprint8
+          path: tests/sprint8/
 
   build:
     name: Build and Push Docker Image
