@@ -36,12 +36,16 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3.5h9l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z"/><path d="M12 11v6M9 14h6"/></svg>
         Nuevo expediente
       </a>
+      <a href="historial.html" id="nav-historial">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+        Historial
+      </a>
       <a href="consulta-publica.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M19.5 19.5 15 15"/></svg>
         Consulta pública
       </a>
     </nav>
-    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 7</div>
+    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 8</div>
   </aside>
 
   <div class="main">
@@ -104,12 +108,13 @@
         <div id="upload-status" class="doc-msg" style="margin-top:14px;"></div>
         <button type="button" id="btnZip" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line);">Descargar expediente completo (.zip)</button>
         <button type="button" id="btnPdf" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line); margin-left: 8px;">Descargar resumen (PDF)</button>
+        <a id="link-historial" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line); margin-left: 8px; display:none;">Ver historial</a>
       </div>
 
       <div class="panel" id="panel-aprobacion">
         <h3>Aprobación interna</h3>
         <p class="panel-note" id="aprobacion-note">
-          Aprueba internamente el expediente antes de someterlo a MiAmbiente. Solo puedes aprobarlo cuando todos los documentos estén completos.
+          El jefe de la consultora aprueba internamente el expediente antes de someterlo a MiAmbiente, cuando todos los documentos estén completos.
         </p>
 
         <div id="aprobacion-form" style="display:none;">
@@ -188,6 +193,13 @@ if (usuario) {
   const params = new URLSearchParams(window.location.search);
   const codigo = params.get('codigo') || 'SP-A8-2026-001';
   const esPromotorUsuario = esPromotor();
+
+  // HU-14: el jefe y los consultores ven el historial; el promotor no.
+  if (!esPromotorUsuario) {
+    const linkHistorial = document.getElementById('link-historial');
+    linkHistorial.href = 'historial.html?codigo=' + encodeURIComponent(codigo);
+    linkHistorial.style.display = 'inline-block';
+  }
 
   let estadoExpedienteActual = 'pendiente';
 
@@ -435,9 +447,12 @@ if (usuario) {
     }
 
     if (estado === 'pendiente') {
-      if (verif && verif.puede_someter) {
+      if (verif && verif.puede_someter && esJefe()) {
         note.textContent = 'Todos los documentos están completos. Puedes aprobar internamente el expediente.';
         formDiv.style.display = 'block';
+      } else if (verif && verif.puede_someter) {
+        // HU-13: la aprobación interna es solo del jefe de la consultora.
+        note.textContent = 'Todos los documentos están completos. Falta la aprobación interna del jefe de la consultora.';
       } else {
         note.textContent = 'Aprueba internamente el expediente antes de someterlo a MiAmbiente.';
         avisoFaltantes.style.display = 'block';

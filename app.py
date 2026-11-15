@@ -1,5 +1,13 @@
 """
-Sistema de Permisos Ambientales - API (Sprint 7)
+Sistema de Permisos Ambientales - API (Sprint 8)
+
+Sprint 8:
+- HU-13: rol "jefe". Ve todos los expedientes (se asume una sola consultora) y
+  es el unico que aprueba internamente (HU-10). El usuario jefe de prueba se
+  crea al arrancar si no existe.
+- HU-14: tabla historial_expediente (se crea al arrancar si no existe). Se
+  registra quien crea un expediente, sube un documento o lo aprueba. Es de
+  solo lectura: no hay rutas para editar ni borrar entradas.
 
 Sprint 7:
 - La sesion vive en una cookie firmada de Flask (SECRET_KEY). Antes el usuario
@@ -12,6 +20,7 @@ Sprint 7:
 """
 import io
 import math
+import time
 import os
 import re
 import secrets
@@ -85,13 +94,56 @@ CATEGORIAS_DOCS = {
 }
 PLAZOS_LEGALES = {"I": 20, "II": 40, "III": 80}
 ESTADOS_RESUELTOS = {"aprobado", "rechazado"}
-ROLES_REGISTRO = {"consultor", "promotor"}
+ROLES_REGISTRO = {"consultor", "promotor"}  # el jefe no se registra solo
+ROLES_INTERNOS = {"consultor", "jefe"}
+
+# HU-13: usuario jefe de prueba. En Render conviene definir JEFE_PASSWORD.
+JEFE_EMAIL = os.environ.get("JEFE_EMAIL", "jefe1@ejemplo.com").strip().lower()
+JEFE_NOMBRE = os.environ.get("JEFE_NOMBRE", "Jefa de la Consultora")
+JEFE_PASSWORD = os.environ.get("JEFE_PASSWORD", "Jefe2026*")
+
+# HU-14: misma estructura de la revision de tablas del Sprint 8.
+DDL_HISTORIAL = """
+CREATE TABLE IF NOT EXISTS historial_expediente (
+    id INT NOT NULL AUTO_INCREMENT,
+    expediente_id INT NOT NULL,
+    usuario_id INT NOT NULL,
+    accion VARCHAR(50) NOT NULL,
+    fecha DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    FOREIGN KEY (expediente_id) REFERENCES expedientes (id),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
+)
+"""
+ACCION_CREAR = "creó"
+ACCION_SUBIR = "subió documento"
+ACCION_APROBAR = "aprobó"
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 RUTAS_SIN_CABECERA = {"/login", "/registro"}
 
 
 def hoy():
     return datetime.now(ZONA).date()
+
+
+def ahora():
+    # Hora de Panama sin zona: asi se guarda en DATETIME.
+    return datetime.now(ZONA).replace(tzinfo=None, microsecond=0)
+
+
+def problema_de_password(password):
+    """Politica del Sprint 6. Devuelve el mensaje de error o None."""
+    if not isinstance(password, str):
+        return "La contrasena debe ser texto."
+    if len(password) < 8:
+        return "La contrasena debe tener al menos 8 caracteres."
+    if len(password) > 128:
+        return "La contrasena admite hasta 128 caracteres."
+    if not any(c.isdigit() for c in password):
+        return "La contrasena debe incluir al menos un numero."
+    if not any(c.isupper() for c in password):
+        return "La contrasena debe incluir al menos una letra mayuscula."
+    return None
 
 
 # ---------- Errores ----------
@@ -158,6 +210,50 @@ def cursor():
         conn.close()
 
 
+# ---------- Arranque: tabla del historial y usuario jefe ----------
+
+def inicializar_bd():
+    """Crea lo que el Sprint 8 necesita si no existe. Se puede correr
+    muchas veces: no cambia nada si ya esta."""
+    problema = problema_de_password(JEFE_PASSWORD)
+    if problema:
+        raise ValueError(f"JEFE_PASSWORD no cumple la politica: {problema}")
+    with cursor() as cur:
+        cur.execute(DDL_HISTORIAL)
+    with cursor() as cur:
+        cur.execute("SELECT id FROM usuarios WHERE email=%s", (JEFE_EMAIL,))
+        if not cur.fetchone():
+            try:
+                cur.execute("INSERT INTO usuarios (nombre, email, password_hash, rol) VALUES (%s, %s, %s, 'jefe')",
+                            (JEFE_NOMBRE, JEFE_EMAIL, generate_password_hash(JEFE_PASSWORD)))
+                print(f"Sprint 8: usuario jefe creado ({JEFE_EMAIL}).", flush=True)
+            except pymysql.err.IntegrityError:
+                pass  # otro proceso lo creo al mismo tiempo
+
+
+_estado_bd = {"lista": False, "ultimo_intento": 0.0}
+
+
+def asegurar_bd():
+    """Si la base aun no tiene las tablas (por ejemplo, start.ps1 aplica el
+    schema despues de levantar la app), se reintenta cada 30 s."""
+    if _estado_bd["lista"] or time.time() - _estado_bd["ultimo_intento"] < 30:
+        return
+    _estado_bd["ultimo_intento"] = time.time()
+    try:
+        inicializar_bd()
+        _estado_bd["lista"] = True
+        print("Sprint 8: tabla historial_expediente y usuario jefe verificados.", flush=True)
+    except Exception as e:  # noqa: BLE001 - la app sigue; se reintenta luego
+        print(f"AVISO: no se pudo preparar la base para el Sprint 8: {e!r}", flush=True)
+
+
+@app.before_request
+def preparar_bd():
+    if request.path != "/health":
+        asegurar_bd()
+
+
 # ---------- Sesion y permisos ----------
 
 @app.before_request
@@ -208,6 +304,8 @@ def cargar_expediente(cur, codigo):
 
 
 def puede_ver(u, exp):
+    if u["rol"] == "jefe":
+        return True  # HU-13: una sola consultora, el jefe ve todo
     if u["rol"] == "promotor":
         return bool(exp["promotor_email"]) and exp["promotor_email"] == u["email"]
     return u["rol"] == "consultor" and exp["usuario_id"] == u["id"]
@@ -218,9 +316,24 @@ def exigir_lectura(u, exp):
         raise ApiError(403, "Sin acceso a este expediente.")
 
 
-def exigir_consultor_duenio(u, exp):
+def exigir_gestion(u, exp):
+    """Subir, borrar, someter: el consultor duenio o el jefe."""
+    if u["rol"] == "jefe":
+        return
     if u["rol"] != "consultor" or exp["usuario_id"] != u["id"]:
         raise ApiError(403, "No autorizado.")
+
+
+def exigir_jefe(u):
+    if u["rol"] != "jefe":
+        raise ApiError(403, "Solo el jefe de la consultora puede aprobar internamente.")
+
+
+def registrar_historial(cur, expediente_id, usuario_id, accion):
+    """HU-14. Va en la misma transaccion que la accion: si una falla, no
+    queda ninguna."""
+    cur.execute("INSERT INTO historial_expediente (expediente_id, usuario_id, accion, fecha) "
+                "VALUES (%s, %s, %s, %s)", (expediente_id, usuario_id, accion, ahora()))
 
 
 def texto(data, campo, maximo, obligatorio=True):
@@ -394,14 +507,9 @@ def registro():
         return jsonify({"ok": False, "mensaje": "El correo no es valido."}), 400
     if rol not in ROLES_REGISTRO:
         return jsonify({"ok": False, "mensaje": "Rol no permitido. Use consultor o promotor."}), 400
-    if len(password) < 8:
-        return jsonify({"ok": False, "mensaje": "La contrasena debe tener al menos 8 caracteres."}), 400
-    if len(password) > 128:
-        return jsonify({"ok": False, "mensaje": "La contrasena admite hasta 128 caracteres."}), 400
-    if not any(c.isdigit() for c in password):
-        return jsonify({"ok": False, "mensaje": "La contrasena debe incluir al menos un numero."}), 400
-    if not any(c.isupper() for c in password):
-        return jsonify({"ok": False, "mensaje": "La contrasena debe incluir al menos una letra mayuscula."}), 400
+    problema = problema_de_password(password)
+    if problema:
+        return jsonify({"ok": False, "mensaje": problema}), 400
 
     try:
         with cursor() as cur:
@@ -421,29 +529,32 @@ def registro():
 # ---------- Dashboard ----------
 
 def filtro_de(u):
+    """Condicion SQL (sobre el alias e de expedientes) de lo que ve cada rol."""
+    if u["rol"] == "jefe":
+        return "1=1", []
     if u["rol"] == "promotor":
-        return "promotor_email=%s", u["email"]
-    return "usuario_id=%s", u["id"]
+        return "e.promotor_email=%s", [u["email"]]
+    return "e.usuario_id=%s", [u["id"]]
 
 
 @app.route("/dashboard", methods=["GET"])
 @requiere_login
 def dashboard():
-    filtro, param = filtro_de(g.usuario)
+    filtro, params = filtro_de(g.usuario)
     with cursor() as cur:
-        cur.execute(f"SELECT COUNT(*) AS n FROM expedientes WHERE {filtro}", (param,))
+        cur.execute(f"SELECT COUNT(*) AS n FROM expedientes e WHERE {filtro}", params)
         activos = cur.fetchone()["n"]
-        cur.execute(f"SELECT COUNT(*) AS n FROM expedientes WHERE {filtro} AND estado='pendiente'", (param,))
+        cur.execute(f"SELECT COUNT(*) AS n FROM expedientes e WHERE {filtro} AND e.estado='pendiente'", params)
         pendientes = cur.fetchone()["n"]
-        cur.execute(f"SELECT COUNT(*) AS n FROM expedientes WHERE {filtro} AND estado='aprobado'", (param,))
+        cur.execute(f"SELECT COUNT(*) AS n FROM expedientes e WHERE {filtro} AND e.estado='aprobado'", params)
         aprobados = cur.fetchone()["n"]
-        cur.execute(f"SELECT codigo, proyecto, estado FROM expedientes WHERE {filtro} "
-                    f"ORDER BY fecha_ingreso DESC LIMIT 5", (param,))
+        cur.execute(f"SELECT e.codigo, e.proyecto, e.estado FROM expedientes e WHERE {filtro} "
+                    f"ORDER BY e.fecha_ingreso DESC, e.id DESC LIMIT 5", params)
         recientes = cur.fetchall()
         cur.execute(
             f"""SELECT d.carpeta, d.fecha_subida, e.codigo
                 FROM documentos d JOIN expedientes e ON e.id = d.expediente_id
-                WHERE e.{filtro} AND d.estado = 'recibido' AND d.fecha_subida IS NOT NULL""", (param,)
+                WHERE {filtro} AND d.estado = 'recibido' AND d.fecha_subida IS NOT NULL""", params
         )
         docs_recibidos = cur.fetchall()
 
@@ -476,23 +587,30 @@ def listar_expedientes():
     per_page = entero("per_page", 50, 1, 100)
     offset = (page - 1) * per_page
 
-    filtro, param = filtro_de(g.usuario)
+    filtro, params = filtro_de(g.usuario)
     where = f"WHERE {filtro}"
-    params = [param]
+    params = list(params)
     if q:
         patron = "%" + q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
-        where += " AND (codigo LIKE %s OR proyecto LIKE %s OR promotor LIKE %s)"
+        where += " AND (e.codigo LIKE %s OR e.proyecto LIKE %s OR e.promotor LIKE %s)"
         params.extend([patron, patron, patron])
 
     with cursor() as cur:
-        cur.execute(f"SELECT COUNT(*) AS total FROM expedientes {where}", params)
+        cur.execute(f"SELECT COUNT(*) AS total FROM expedientes e {where}", params)
         total = cur.fetchone()["total"]
-        cur.execute(f"SELECT codigo, proyecto, promotor, categoria, estado, fecha_ingreso "
-                    f"FROM expedientes {where} ORDER BY fecha_ingreso DESC, id DESC LIMIT %s OFFSET %s",
+        cur.execute(f"""SELECT e.codigo, e.proyecto, e.promotor, e.categoria, e.estado, e.fecha_ingreso,
+                               u.nombre AS consultor
+                        FROM expedientes e LEFT JOIN usuarios u ON u.id = e.usuario_id
+                        {where} ORDER BY e.fecha_ingreso DESC, e.id DESC LIMIT %s OFFSET %s""",
                     params + [per_page, offset])
         filas = cur.fetchall()
 
     for f in filas:
+        # HU-13: el jefe ve los plazos de cada expediente en la lista.
+        sem = calcular_semaforo(f)
+        f["plazo"] = {"estado_semaforo": sem["estado_semaforo"],
+                      "dias_restantes_legales": sem["dias_restantes_legales"],
+                      "limite_dias": sem["limite_dias"]}
         if f["fecha_ingreso"]:
             f["fecha_ingreso"] = f["fecha_ingreso"].strftime("%Y-%m-%d")
 
@@ -507,8 +625,8 @@ def listar_expedientes():
 @requiere_login
 def crear_expediente():
     u = g.usuario
-    if u["rol"] != "consultor":
-        raise ApiError(403, "Solo un consultor puede crear expedientes.")
+    if u["rol"] not in ROLES_INTERNOS:
+        raise ApiError(403, "Solo un consultor o el jefe pueden crear expedientes.")
 
     data = request.get_json(silent=True) or {}
     proyecto = texto(data, "proyecto", 150, obligatorio=False)
@@ -552,6 +670,7 @@ def crear_expediente():
         for carpeta in CATEGORIAS_DOCS[categoria]:
             cur.execute("INSERT INTO documentos (expediente_id, carpeta, estado) VALUES (%s, %s, 'pendiente')",
                         (exp_id, carpeta))
+        registrar_historial(cur, exp_id, u["id"], ACCION_CREAR)
 
     return jsonify({"ok": True, "codigo": codigo, "mensaje": "Expediente creado."}), 201
 
@@ -607,7 +726,7 @@ def listar_aprobaciones(codigo):
 def subir_documento(codigo, carpeta):
     with cursor() as cur:
         exp = cargar_expediente(cur, codigo)
-        exigir_consultor_duenio(g.usuario, exp)
+        exigir_gestion(g.usuario, exp)
         if exp["estado"] != "pendiente":
             raise ApiError(403, "Expediente no editable.")
 
@@ -641,6 +760,7 @@ def subir_documento(codigo, carpeta):
         cur.execute("""UPDATE documentos SET estado='recibido', archivo_nombre=%s, archivo_ruta=%s,
                        archivo_tamano=%s, fecha_subida=NOW() WHERE id=%s""",
                     (nombre_original, os.path.join(exp["codigo"], nombre_unico), tamano, doc["id"]))
+        registrar_historial(cur, exp["id"], g.usuario["id"], ACCION_SUBIR)
 
     # Al reemplazar, el archivo anterior ya no lo apunta nadie.
     borrar_archivo(doc["archivo_ruta"])
@@ -690,7 +810,7 @@ def descargar_documento(codigo, carpeta):
 def eliminar_documento(codigo, carpeta):
     with cursor() as cur:
         exp = cargar_expediente(cur, codigo)
-        exigir_consultor_duenio(g.usuario, exp)
+        exigir_gestion(g.usuario, exp)
         if exp["estado"] != "pendiente":
             raise ApiError(403, "Expediente no editable.")
         cur.execute("SELECT id, archivo_ruta FROM documentos WHERE expediente_id=%s AND carpeta=%s",
@@ -795,7 +915,7 @@ def aprobar_expediente(codigo):
 
     with cursor() as cur:
         exp = cargar_expediente(cur, codigo)
-        exigir_consultor_duenio(g.usuario, exp)
+        exigir_jefe(g.usuario)  # HU-13: solo el jefe aprueba internamente
         if exp["estado"] != "pendiente":
             raise ApiError(400, "Estado invalido.")
         cur.execute("SELECT carpeta, estado FROM documentos WHERE expediente_id=%s", (exp["id"],))
@@ -809,13 +929,14 @@ def aprobar_expediente(codigo):
                                 (exp["id"],))
         if cambiadas != 1:
             raise ApiError(400, "Estado invalido.")
+        registrar_historial(cur, exp["id"], g.usuario["id"], ACCION_APROBAR)
     return jsonify({"ok": True, "mensaje": "Aprobado internamente."}), 200
 
 
 def cambiar_estado(codigo, desde, hacia, mensaje_error):
     with cursor() as cur:
         exp = cargar_expediente(cur, codigo)
-        exigir_consultor_duenio(g.usuario, exp)
+        exigir_gestion(g.usuario, exp)
         if exp["estado"] != desde:
             raise ApiError(400, mensaje_error)
         cambiadas = cur.execute("UPDATE expedientes SET estado=%s WHERE id=%s AND estado=%s",
@@ -838,6 +959,64 @@ def aprobar_miambiente(codigo):
     return jsonify({"ok": True, "mensaje": "Aprobado por MiAmbiente."}), 200
 
 
+# ---------- Historial (HU-14) ----------
+
+@app.route("/historial", methods=["GET"])
+@app.route("/expedientes/<codigo>/historial", methods=["GET"])
+@requiere_login
+def ver_historial(codigo=None):
+    """Jefe: todo. Consultor: solo sus expedientes. Promotor: 403."""
+    u = g.usuario
+    if u["rol"] not in ROLES_INTERNOS:
+        raise ApiError(403, "El historial solo lo ven el jefe y los consultores.")
+
+    codigo = codigo or request.args.get("codigo", "").strip() or None
+    page = entero("page", 1, 1, 100000)
+    per_page = entero("per_page", 50, 1, 200)
+
+    condiciones, params = [], []
+    with cursor() as cur:
+        if codigo:
+            exp = cargar_expediente(cur, codigo)
+            exigir_lectura(u, exp)
+            condiciones.append("h.expediente_id=%s")
+            params.append(exp["id"])
+        if u["rol"] == "consultor":
+            condiciones.append("e.usuario_id=%s")
+            params.append(u["id"])
+        where = ("WHERE " + " AND ".join(condiciones)) if condiciones else ""
+
+        cur.execute(f"SELECT COUNT(*) AS total FROM historial_expediente h "
+                    f"JOIN expedientes e ON e.id = h.expediente_id {where}", params)
+        total = cur.fetchone()["total"]
+        cur.execute(f"""SELECT h.id, h.fecha, h.accion, e.codigo, e.proyecto,
+                               u.nombre AS usuario, u.email AS usuario_email, u.rol AS usuario_rol
+                        FROM historial_expediente h
+                        JOIN expedientes e ON e.id = h.expediente_id
+                        JOIN usuarios u ON u.id = h.usuario_id
+                        {where}
+                        ORDER BY h.fecha DESC, h.id DESC LIMIT %s OFFSET %s""",
+                    params + [per_page, (page - 1) * per_page])
+        filas = cur.fetchall()
+
+    for f in filas:
+        f["fecha"] = f["fecha"].strftime("%Y-%m-%d %H:%M:%S") if f["fecha"] else None
+    return jsonify({
+        "historial": filas,
+        "paginacion": {"total": total, "page": page, "per_page": per_page,
+                       "pages": (total + per_page - 1) // per_page},
+    })
+
+
+@app.route("/historial", methods=["POST", "PUT", "PATCH", "DELETE"])
+@app.route("/historial/<path:_resto>", methods=["POST", "PUT", "PATCH", "DELETE"])
+@app.route("/expedientes/<codigo>/historial", methods=["POST", "PUT", "PATCH", "DELETE"])
+@app.route("/expedientes/<codigo>/historial/<path:_resto>", methods=["POST", "PUT", "PATCH", "DELETE"])
+def historial_solo_lectura(codigo=None, _resto=None):
+    # HU-14: nadie, ni el jefe, edita ni borra entradas.
+    return respuesta_error(405, "El historial es de solo lectura.")
+
+
 # ---------- Consulta publica (HU-09) ----------
 
 @app.route("/consulta/<codigo>", methods=["GET"])
@@ -855,6 +1034,8 @@ def consulta_publica(codigo):
 def static_files(filename):
     return send_from_directory("static", filename)
 
+
+asegurar_bd()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

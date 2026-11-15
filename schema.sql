@@ -1,4 +1,4 @@
--- Sistema de Permisos Ambientales — Esquema Sprint 5
+-- Sistema de Permisos Ambientales — Esquema Sprint 8
 CREATE DATABASE IF NOT EXISTS permisos_ambientales;
 USE permisos_ambientales;
 
@@ -53,4 +53,17 @@ CREATE TABLE IF NOT EXISTS alertas (
     descripcion VARCHAR(200) NOT NULL,
     dias_restantes INT NOT NULL,
     FOREIGN KEY (expediente_id) REFERENCES expedientes(id)
+);
+
+-- Sprint 8 (HU-14): historial del expediente. La app tambien la crea al
+-- arrancar si no existe, para la base de Aiven.
+CREATE TABLE IF NOT EXISTS historial_expediente (
+    id INT NOT NULL AUTO_INCREMENT,
+    expediente_id INT NOT NULL,
+    usuario_id INT NOT NULL,
+    accion VARCHAR(50) NOT NULL,
+    fecha DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    FOREIGN KEY (expediente_id) REFERENCES expedientes (id),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
 );
