@@ -9,6 +9,8 @@ Resource          ../recursos/sesion.resource
 *** Variables ***
 ${EXP_PENDIENTE}    SP-A8-2026-001
 ${EXP_APROBADO}     SP-A8-2026-003
+@{SEMAFORO_EN_TRAMITE}    en_plazo    por_vencer    vencido
+@{ESTADOS_RESUELTOS}      aprobado    rechazado
 
 *** Test Cases ***
 01 - La Cabecera X-Usuario-Email Ya No Da Acceso
@@ -99,3 +101,32 @@ ${EXP_APROBADO}     SP-A8-2026-003
     Should Be Equal    ${r.json()['estado_semaforo']}    en_plazo
     Should Be Equal As Integers    ${r.json()['dias_transcurridos']}    0
     Should Be Equal As Integers    ${r.json()['dias_restantes_legales']}    20
+
+13 - HU-07 Todo Expediente Muestra Un Estado De Semaforo Valido
+    [Documentation]    Recorre todos los expedientes del consultor (todas las paginas).
+    ...                En tramite: en_plazo, por_vencer o vencido.
+    ...                Aprobado o rechazado: resuelto (el plazo ya no corre).
+    Iniciar Sesion Como Consultor
+    ${r}=    GET On Session    consultor    url=/expedientes?page=1&per_page=100
+    ${paginacion}=    Set Variable    ${r.json()['paginacion']}
+    Should Be True    ${paginacion['total']} > 0    msg=El consultor no tiene expedientes para revisar
+    FOR    ${pagina}    IN RANGE    1    ${paginacion['pages']} + 1
+        ${r}=    GET On Session    consultor    url=/expedientes?page=${pagina}&per_page=100
+        FOR    ${exp}    IN    @{r.json()['expedientes']}
+            Run Keyword And Continue On Failure    Validar Semaforo De Expediente    ${exp}
+        END
+    END
+    Log    Expedientes revisados: ${paginacion['total']}
+
+*** Keywords ***
+Validar Semaforo De Expediente
+    [Documentation]    Compara estado_semaforo de /alertas con el estado del expediente.
+    [Arguments]    ${exp}
+    ${r}=    GET On Session    consultor    /expedientes/${exp['codigo']}/alertas
+    ${semaforo}=    Set Variable    ${r.json()['estado_semaforo']}
+    ${detalle}=    Set Variable    ${exp['codigo']} (estado ${exp['estado']}): estado_semaforo=${semaforo}
+    IF    $exp['estado'] in $ESTADOS_RESUELTOS
+        Should Be Equal    ${semaforo}    resuelto    msg=${detalle}
+    ELSE
+        Should Contain    ${SEMAFORO_EN_TRAMITE}    ${semaforo}    msg=${detalle}
+    END
