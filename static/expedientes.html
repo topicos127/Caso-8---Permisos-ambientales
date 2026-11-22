@@ -69,10 +69,11 @@
         
         <select id="filtro-estado" style="padding: 10px; border: 1px solid var(--line); border-radius: 4px; font-family: inherit;">
           <option value="">Todos los estados</option>
-          <option value="pendiente">Pendiente de documentos</option>
-          <option value="aprobado_interno">Aprobado internamente</option>
-          <option value="evaluacion">En evaluación (MiAmbiente)</option>
-          <option value="aprobado">Aprobado por MiAmbiente</option>
+          <option value="pendiente">Pendiente de subsanación</option>
+          <option value="aprobado_interno" id="opt-aprobado-interno">Aprobado internamente</option>
+          <option value="evaluacion">En evaluación</option>
+          <option value="aprobado">Aprobado</option>
+          <option value="rechazado">Rechazado</option>
         </select>
 
         <select id="orden" aria-label="Ordenar" style="padding: 10px; border: 1px solid var(--line); border-radius: 4px; font-family: inherit; display:none;">
@@ -144,7 +145,9 @@ function aplicarFiltros() {
 
   const filtrados = todosLosExpedientes.filter(e => {
     const coincideTexto = e.codigo.toLowerCase().includes(texto) || e.proyecto.toLowerCase().includes(texto);
-    const coincideEstado = estado === '' || e.estado === estado;
+    // HU-07: el promotor ve "aprobado_interno" como "Pendiente de subsanación".
+    const coincideEstado = estado === '' || e.estado === estado
+      || (!interno && estado === 'pendiente' && e.estado === 'aprobado_interno');
     return coincideTexto && coincideEstado;
   });
 
@@ -158,6 +161,7 @@ if (usuario) {
   if (esPromotor()) {
     const btn = document.getElementById('btnNuevo');
     if (btn) btn.style.display = 'none';
+    document.getElementById('opt-aprobado-interno').remove();
   }
 
   // HU-13: el jefe ve todos los expedientes de la consultora y de quién es cada uno.
