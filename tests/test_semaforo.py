@@ -13,7 +13,7 @@ os.environ.setdefault("UPLOADS_DIR", tempfile.mkdtemp())
 os.environ.setdefault("SECRET_KEY", "pruebas")
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app import calcular_semaforo  # noqa: E402
+from permisos.reglas import calcular_semaforo  # noqa: E402
 
 HOY = date(2026, 11, 10)
 
