@@ -32,7 +32,8 @@ Flask + MySQL, con frontend en HTML y JS. Se corre localmente con Docker Compose
 | `permisos/utiles.py` | Lectura de la petición, formato de salida y archivos subidos |
 | `permisos/rutas/` | Un blueprint por área: `auth`, `dashboard`, `expedientes`, `documentos`, `flujo`, `historial`, `publico` |
 
-El plan de los Sprints 9 y 10 está en [docs/PLAN_SPRINTS_9_10.md](docs/PLAN_SPRINTS_9_10.md).
+Los documentos del proyecto (plan de los Sprints 9 y 10, guía del PO) están en la rama
+[`context`](../../tree/context/docs), separados del código.
 
 ## Variables del `.env`
 

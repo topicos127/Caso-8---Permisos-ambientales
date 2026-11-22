@@ -35,3 +35,6 @@ tests/sprint*/log.html
 tests/sprint*/report.html
 tests/sprint*/output.xml
 results/qa-*/
+
+# Documentos del proyecto: viven en la rama "context", no en las ramas de desarrollo
+docs/
