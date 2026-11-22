@@ -8,9 +8,9 @@ Library           Collections
 *** Variables ***
 ${BASE_URL}              http://localhost:5000
 ${CONSULTOR_EMAIL}       consultor1@ejemplo.com
-${CONSULTOR_PASSWORD}    clave123
+${CONSULTOR_PASSWORD}    Clave123
 ${PROMOTOR_EMAIL}        promotor1@ejemplo.com
-${PROMOTOR_PASSWORD}     clave456
+${PROMOTOR_PASSWORD}     Clave456
 
 *** Keywords ***
 Iniciar Sesion

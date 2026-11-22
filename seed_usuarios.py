@@ -14,8 +14,8 @@ DB_CONFIG = {
 }
 
 USUARIOS = [
-    ("Consultor Uno", "consultor1@ejemplo.com", "clave123", "consultor"),
-    ("Promotor Uno", "promotor1@ejemplo.com", "clave456", "promotor"),
+    ("Consultor Uno", "consultor1@ejemplo.com", "Clave123", "consultor"),
+    ("Promotor Uno", "promotor1@ejemplo.com", "Clave456", "promotor"),
     # Sprint 8: segundo consultor, para probar que cada consultor ve solo lo
     # suyo y el jefe ve todo. El jefe lo crea la app al arrancar (app.py).
     ("Consultor Dos", "consultor2@ejemplo.com", "Clave2026", "consultor"),

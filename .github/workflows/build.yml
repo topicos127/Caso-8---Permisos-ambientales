@@ -83,11 +83,11 @@ jobs:
           sleep 5
           curl -f http://127.0.0.1:5000/health || (cat flask.log && exit 1)
 
-      - name: Run unit tests (HU-07 semaforo)
+      - name: Run unit tests (HU-07 semaforo y Sprint 9)
         env:
           UPLOADS_DIR: /tmp/uploads
         run: |
-          python -m unittest tests/test_semaforo.py
+          python -m unittest tests/test_semaforo.py tests/test_sprint9.py
 
       - name: Run Robot Framework tests (Sprint 4)
         run: |
@@ -108,6 +108,10 @@ jobs:
       - name: Run Robot Framework tests (Sprint 8)
         run: |
           robot --outputdir tests/sprint8 tests/sprint8/Test_Sprint8.robot
+
+      - name: Run Robot Framework tests (Sprint 9)
+        run: |
+          robot --outputdir tests/sprint9 tests/sprint9/Test_Sprint9.robot
 
       - name: Upload Sprint 4 test report
         if: always()
@@ -143,6 +147,13 @@ jobs:
         with:
           name: robot-report-sprint8
           path: tests/sprint8/
+
+      - name: Upload Sprint 9 test report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: robot-report-sprint9
+          path: tests/sprint9/
 
   build:
     name: Build and Push Docker Image

@@ -85,21 +85,50 @@ revisar **Usage** la primera semana.
 ## Credenciales de prueba
 
 - **Jefe:** `jefe1@ejemplo.com` / `Jefe2026*` (lo crea la app al arrancar)
-- **Consultor:** `consultor1@ejemplo.com` / `clave123`
+- **Consultor:** `consultor1@ejemplo.com` / `Clave123`
 - **Consultor 2:** `consultor2@ejemplo.com` / `Clave2026`
-- **Promotor:** `promotor1@ejemplo.com` / `clave456`
+- **Promotor:** `promotor1@ejemplo.com` / `Clave456`
+
+Desde el Sprint 9 todas cumplen la política de contraseñas. Si tu base local se creó
+antes, vuelve a correr el seed (`.\start.ps1` lo hace) para actualizarlas.
 
 ## Pruebas
 
-Con la app corriendo en `http://localhost:5000`:
+Las pruebas unitarias no necesitan base de datos:
 
 ```
 pip install -r requirements-test.txt
-python -m unittest tests/test_semaforo.py
-robot --outputdir resultados tests/sprint4 tests/sprint5 tests/sprint6 tests/sprint7 tests/sprint8
+python -m unittest tests/test_semaforo.py tests/test_sprint9.py
 ```
 
-El pipeline de GitHub Actions corre lo mismo en cada push a `main`.
+Las de Robot Framework necesitan la app corriendo en `http://localhost:5000` con la base
+recién sembrada (registran usuarios y crean expedientes; nunca correrlas contra Railway):
+
+```
+robot --outputdir resultados tests/sprint4 tests/sprint5 tests/sprint6 tests/sprint7 tests/sprint8 tests/sprint9
+```
+
+El pipeline de GitHub Actions corre todo en cada push a `main` y en cada Pull Request
+hacia `main`.
+
+## Correcciones del Sprint 9
+
+- **Consulta pública (HU-09):** si el expediente no tiene acceso público, `/consulta/<codigo>`
+  responde 403 y no entrega ningún dato (tampoco se puede armar el PDF). Si lo tiene,
+  muestra además el consultor responsable y el estado público. Solo el jefe lo cambia:
+  `POST /expedientes/<codigo>/acceso-publico` con `{"acceso_publico": true|false}`.
+- **Cuentas de promotor:** el promotor ya no se registra solo (`/registro` solo crea
+  consultores). El consultor del expediente, o el jefe, crea su acceso con
+  `POST /expedientes/<codigo>/promotor/cuenta`, que devuelve una contraseña temporal
+  una sola vez. Cualquier usuario la cambia en **Mi cuenta** (`POST /cuenta/contrasena`).
+- **Login:** tras 5 intentos fallidos en un minuto para el mismo correo e IP, responde 429
+  (`LOGIN_MAX_FALLOS` y `LOGIN_VENTANA_SEGUNDOS` lo ajustan).
+- **Historial (HU-14):** registra también `eliminó documento`, `sometió`,
+  `registró aprobación de MiAmbiente`, `cambió acceso público` y `creó cuenta del promotor`.
+- **Estados (HU-07):** el promotor y el público ven *Pendiente de subsanación*,
+  *En evaluación* o *Aprobado*; la consultora ve además *Aprobado internamente*.
+- **ZIP (HU-06):** se descarga como `<codigo>_<AAAA-MM-DD>.zip`.
+- Si falla la base al subir un documento, el archivo nuevo ya no queda en disco.
 
 ## Sesión y seguridad (Sprint 7)
 
