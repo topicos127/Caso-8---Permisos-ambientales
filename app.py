@@ -1,5 +1,12 @@
 """
-Sistema de Permisos Ambientales - API (Sprint 8)
+Sistema de Permisos Ambientales - API (Sprint 9)
+
+Sprint 9:
+- HU-15: el jefe da de alta, desactiva, reactiva y reasigna consultores
+  (/consultores). Un consultor desactivado no puede iniciar sesion y sus
+  expedientes y su historial se conservan. Columna usuarios.activo, que la app
+  agrega al arrancar si no existe. /registro ya no crea consultores: solo
+  promotores (el alta de consultores es del jefe).
 
 Sprint 8:
 - HU-13: rol "jefe". Ve todos los expedientes (se asume una sola consultora) y
@@ -94,7 +101,7 @@ CATEGORIAS_DOCS = {
 }
 PLAZOS_LEGALES = {"I": 20, "II": 40, "III": 80}
 ESTADOS_RESUELTOS = {"aprobado", "rechazado"}
-ROLES_REGISTRO = {"consultor", "promotor"}  # el jefe no se registra solo
+ROLES_REGISTRO = {"promotor"}  # HU-15: los consultores los da de alta el jefe
 ROLES_INTERNOS = {"consultor", "jefe"}
 
 # HU-13: usuario jefe de prueba. En Render conviene definir JEFE_PASSWORD.
@@ -118,6 +125,7 @@ CREATE TABLE IF NOT EXISTS historial_expediente (
 ACCION_CREAR = "creó"
 ACCION_SUBIR = "subió documento"
 ACCION_APROBAR = "aprobó"
+ACCION_REASIGNAR = "reasignó"
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 RUTAS_SIN_CABECERA = {"/login", "/registro"}
 
@@ -221,6 +229,15 @@ def inicializar_bd():
     with cursor() as cur:
         cur.execute(DDL_HISTORIAL)
     with cursor() as cur:
+        # HU-15 (Sprint 9): columna activo. MySQL 8 no tiene ADD COLUMN IF NOT
+        # EXISTS, por eso se pregunta primero a information_schema.
+        cur.execute("""SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+                       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'usuarios'
+                         AND COLUMN_NAME = 'activo'""")
+        if cur.fetchone()["n"] == 0:
+            cur.execute("ALTER TABLE usuarios ADD COLUMN activo TINYINT(1) NOT NULL DEFAULT 1")
+            print("Sprint 9: columna usuarios.activo creada.", flush=True)
+    with cursor() as cur:
         cur.execute("SELECT id FROM usuarios WHERE email=%s", (JEFE_EMAIL,))
         if not cur.fetchone():
             try:
@@ -243,9 +260,10 @@ def asegurar_bd():
     try:
         inicializar_bd()
         _estado_bd["lista"] = True
-        print("Sprint 8: tabla historial_expediente y usuario jefe verificados.", flush=True)
+        print("Sprint 8 y 9: tabla historial_expediente, usuario jefe y columna activo verificados.",
+              flush=True)
     except Exception as e:  # noqa: BLE001 - la app sigue; se reintenta luego
-        print(f"AVISO: no se pudo preparar la base para el Sprint 8: {e!r}", flush=True)
+        print(f"AVISO: no se pudo preparar la base para los Sprints 8 y 9: {e!r}", flush=True)
 
 
 @app.before_request
@@ -273,11 +291,18 @@ def usuario_sesion():
     if not uid:
         return None
     with cursor() as cur:
-        cur.execute("SELECT id, email, rol, nombre FROM usuarios WHERE id=%s", (uid,))
+        cur.execute("SELECT * FROM usuarios WHERE id=%s", (uid,))
         u = cur.fetchone()
-    if not u:
+    # HU-15: si el jefe desactiva a un consultor, su sesion abierta deja de valer.
+    if not u or not esta_activo(u):
         session.clear()
-    return u
+        return None
+    return {"id": u["id"], "email": u["email"], "rol": u["rol"], "nombre": u["nombre"]}
+
+
+def esta_activo(u):
+    # SELECT * y .get: si la columna activo aun no existe, todos estan activos.
+    return bool(u.get("activo", 1))
 
 
 def requiere_login(f):
@@ -461,10 +486,14 @@ def login():
         return jsonify({"acceso": False, "mensaje": "Debe ingresar correo y contrasena."}), 401
 
     with cursor() as cur:
-        cur.execute("SELECT id, email, password_hash, rol, nombre FROM usuarios WHERE email=%s", (email,))
+        cur.execute("SELECT * FROM usuarios WHERE email=%s", (email,))
         u = cur.fetchone()
 
     if u and check_password_hash(u["password_hash"], password):
+        if not esta_activo(u):
+            # HU-15: la cuenta existe y la clave es correcta, pero esta desactivada.
+            return jsonify({"acceso": False,
+                            "mensaje": "Tu cuenta está desactivada. Habla con el jefe de la consultora."}), 403
         session.clear()
         session["uid"] = u["id"]
         return jsonify({
@@ -497,7 +526,7 @@ def registro():
     nombre = texto(data, "nombre", 255, obligatorio=False)
     email = texto(data, "email", 255, obligatorio=False).lower()
     password = data.get("password", "")
-    rol = data.get("rol", "consultor")
+    rol = data.get("rol", "promotor")
 
     if not nombre or not email or not password:
         return jsonify({"ok": False, "mensaje": "Todos los campos son obligatorios."}), 400
@@ -505,11 +534,15 @@ def registro():
         return jsonify({"ok": False, "mensaje": "La contrasena debe ser texto."}), 400
     if not EMAIL_RE.match(email):
         return jsonify({"ok": False, "mensaje": "El correo no es valido."}), 400
-    if rol not in ROLES_REGISTRO:
-        return jsonify({"ok": False, "mensaje": "Rol no permitido. Use consultor o promotor."}), 400
+    if rol not in ROLES_REGISTRO and rol != "consultor":
+        return jsonify({"ok": False, "mensaje": "Rol no permitido. Use promotor."}), 400
     problema = problema_de_password(password)
     if problema:
         return jsonify({"ok": False, "mensaje": problema}), 400
+    if rol == "consultor":
+        # HU-15: el alta de consultores es solo del jefe (/consultores).
+        return jsonify({"ok": False,
+                        "mensaje": "Los consultores los da de alta el jefe de la consultora."}), 403
 
     try:
         with cursor() as cur:
@@ -1015,6 +1048,134 @@ def ver_historial(codigo=None):
 def historial_solo_lectura(codigo=None, _resto=None):
     # HU-14: nadie, ni el jefe, edita ni borra entradas.
     return respuesta_error(405, "El historial es de solo lectura.")
+
+
+# ---------- Equipo de consultores (HU-15) ----------
+
+def requiere_jefe(f):
+    @wraps(f)
+    def envoltura(*args, **kwargs):
+        if g.usuario["rol"] != "jefe":
+            raise ApiError(403, "Solo el jefe de la consultora gestiona a los consultores.")
+        return f(*args, **kwargs)
+    return envoltura
+
+
+def cargar_consultor(cur, consultor_id):
+    cur.execute("SELECT * FROM usuarios WHERE id=%s AND rol='consultor'", (consultor_id,))
+    c = cur.fetchone()
+    if not c:
+        raise ApiError(404, "Consultor no encontrado.")
+    return c
+
+
+@app.route("/consultores", methods=["GET"])
+@requiere_login
+@requiere_jefe
+def listar_consultores():
+    with cursor() as cur:
+        cur.execute("""SELECT u.*, (SELECT COUNT(*) FROM expedientes e WHERE e.usuario_id = u.id) AS expedientes
+                       FROM usuarios u WHERE u.rol = 'consultor' ORDER BY u.nombre, u.id""")
+        filas = cur.fetchall()
+    consultores = [{
+        "id": c["id"],
+        "nombre": c["nombre"],
+        "email": c["email"],
+        "activo": esta_activo(c),
+        "expedientes": c["expedientes"],
+        "fecha_creacion": c["fecha_creacion"].strftime("%Y-%m-%d") if c.get("fecha_creacion") else None,
+    } for c in filas]
+    # Activos primero; dentro de cada grupo, por nombre.
+    consultores.sort(key=lambda c: (not c["activo"], c["nombre"].lower()))
+    return jsonify({"consultores": consultores})
+
+
+@app.route("/consultores", methods=["POST"])
+@requiere_login
+@requiere_jefe
+def crear_consultor():
+    data = request.get_json(silent=True) or {}
+    nombre = texto(data, "nombre", 255, obligatorio=False)
+    email = texto(data, "email", 255, obligatorio=False).lower()
+    password = data.get("password", "")
+    if not nombre or not email or not password:
+        raise ApiError(400, "Nombre, correo y contraseña son obligatorios.")
+    if not EMAIL_RE.match(email):
+        raise ApiError(400, "El correo no es valido.")
+    problema = problema_de_password(password)  # politica del Sprint 6
+    if problema:
+        raise ApiError(400, problema)
+    try:
+        with cursor() as cur:
+            cur.execute("SELECT id FROM usuarios WHERE email=%s", (email,))
+            if cur.fetchone():
+                raise ApiError(409, "Ese correo ya está registrado.")
+            cur.execute("INSERT INTO usuarios (nombre, email, password_hash, rol) VALUES (%s, %s, %s, 'consultor')",
+                        (nombre, email, generate_password_hash(password)))
+            nuevo_id = cur.lastrowid
+    except pymysql.err.IntegrityError:
+        raise ApiError(409, "Ese correo ya está registrado.")
+    return jsonify({"ok": True, "id": nuevo_id, "mensaje": f"Se dio de alta a {nombre} como consultor."}), 201
+
+
+def cambiar_activo(consultor_id, activo):
+    with cursor() as cur:
+        c = cargar_consultor(cur, consultor_id)
+        if esta_activo(c) == activo:
+            raise ApiError(409, "El consultor ya está activo." if activo else "El consultor ya está desactivado.")
+        cur.execute("UPDATE usuarios SET activo=%s WHERE id=%s", (1 if activo else 0, consultor_id))
+    return c
+
+
+@app.route("/consultores/<int:consultor_id>/desactivar", methods=["POST"])
+@requiere_login
+@requiere_jefe
+def desactivar_consultor(consultor_id):
+    # Baja logica: el usuario no se borra, asi sus expedientes y su historial se conservan.
+    c = cambiar_activo(consultor_id, False)
+    return jsonify({"ok": True, "mensaje": f"{c['nombre']} quedó desactivado y ya no puede iniciar sesión."}), 200
+
+
+@app.route("/consultores/<int:consultor_id>/activar", methods=["POST"])
+@requiere_login
+@requiere_jefe
+def activar_consultor(consultor_id):
+    c = cambiar_activo(consultor_id, True)
+    return jsonify({"ok": True, "mensaje": f"{c['nombre']} quedó reactivado y puede volver a iniciar sesión."}), 200
+
+
+@app.route("/consultores/<int:consultor_id>/reasignar", methods=["POST"])
+@requiere_login
+@requiere_jefe
+def reasignar_expedientes(consultor_id):
+    data = request.get_json(silent=True) or {}
+    try:
+        destino_id = int(data.get("destino_id"))
+    except (TypeError, ValueError):
+        raise ApiError(400, "Indica el consultor que recibe los expedientes (destino_id).")
+
+    with cursor() as cur:
+        origen = cargar_consultor(cur, consultor_id)
+        if esta_activo(origen):
+            raise ApiError(409, "Primero desactiva al consultor: solo se reasignan los expedientes de consultores dados de baja.")
+        if destino_id == consultor_id:
+            raise ApiError(400, "El consultor de destino debe ser otro.")
+        cur.execute("SELECT * FROM usuarios WHERE id=%s AND rol='consultor'", (destino_id,))
+        destino = cur.fetchone()
+        if not destino:
+            raise ApiError(400, "El consultor de destino no existe.")
+        if not esta_activo(destino):
+            raise ApiError(400, "El consultor de destino está desactivado.")
+
+        cur.execute("SELECT id FROM expedientes WHERE usuario_id=%s", (consultor_id,))
+        ids = [e["id"] for e in cur.fetchall()]
+        if ids:
+            cur.execute("UPDATE expedientes SET usuario_id=%s WHERE usuario_id=%s", (destino_id, consultor_id))
+            for exp_id in ids:
+                registrar_historial(cur, exp_id, g.usuario["id"], ACCION_REASIGNAR)
+
+    return jsonify({"ok": True, "reasignados": len(ids),
+                    "mensaje": f"{len(ids)} expediente(s) de {origen['nombre']} pasaron a {destino['nombre']}."}), 200
 
 
 # ---------- Consulta publica (HU-09) ----------

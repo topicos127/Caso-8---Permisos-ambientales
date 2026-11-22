@@ -1,4 +1,4 @@
--- Sistema de Permisos Ambientales — Esquema Sprint 8
+-- Sistema de Permisos Ambientales — Esquema Sprint 9
 CREATE DATABASE IF NOT EXISTS permisos_ambientales;
 USE permisos_ambientales;
 
@@ -8,7 +8,10 @@ CREATE TABLE IF NOT EXISTS usuarios (
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     rol VARCHAR(50) NOT NULL,
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- Sprint 9 (HU-15): baja logica de consultores. La app la agrega al
+    -- arrancar en bases que ya existian (Aiven).
+    activo TINYINT(1) NOT NULL DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS expedientes (
