@@ -21,6 +21,7 @@ with __import__("contextlib").redirect_stdout(io.StringIO()):
     from app import app  # noqa: E402
 from permisos import bd  # noqa: E402
 from permisos.config import ESTADO_PUBLICO, LOGIN_MAX_FALLOS  # noqa: E402
+from permisos import seguridad  # noqa: E402
 from permisos.rutas import auth, expedientes, publico  # noqa: E402
 
 bd._estado_bd["lista"] = True  # no intentar preparar la base en cada peticion
@@ -123,6 +124,52 @@ class RegistroYCuentas(unittest.TestCase):
         self.assertEqual(len(claves), 50)  # no se repiten
         for c in claves:
             self.assertIsNone(problema_de_password(c), c)
+
+
+class ContrasenaTemporal(unittest.TestCase):
+    """Un promotor con contrasena temporal solo puede ver su sesion y cambiarla."""
+
+    def setUp(self):
+        self.original = seguridad.usuario_sesion
+        self.cliente = app.test_client()
+
+    def tearDown(self):
+        seguridad.usuario_sesion = self.original
+
+    def como(self, debe_cambiar):
+        seguridad.usuario_sesion = lambda: {"id": 7, "email": "p@ejemplo.com", "rol": "promotor",
+                                            "nombre": "Promotor", "debe_cambiar_clave": debe_cambiar}
+
+    def test_bloquea_el_resto_de_la_api(self):
+        self.como(True)
+        for ruta in ("/dashboard", "/expedientes", "/expedientes/SP-A8-2026-001"):
+            r = self.cliente.get(ruta)
+            self.assertEqual(r.status_code, 403, ruta)
+            self.assertTrue(r.get_json()["cambio_clave_obligatorio"], ruta)
+
+    def test_deja_ver_la_sesion_y_avisa_que_debe_cambiarla(self):
+        self.como(True)
+        r = self.cliente.get("/sesion")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.get_json()["debe_cambiar_clave"])
+
+    def test_deja_llegar_al_cambio_de_contrasena(self):
+        self.como(True)
+        r = self.cliente.post("/cuenta/contrasena", json={})  # 400 por datos, no 403: la ruta esta permitida
+        self.assertEqual(r.status_code, 400)
+        self.assertNotIn("cambio_clave_obligatorio", r.get_json())
+
+    def test_la_contrasena_nueva_debe_ser_distinta(self):
+        self.como(True)
+        r = self.cliente.post("/cuenta/contrasena", json={"actual": "Temporal123", "nueva": "Temporal123"})
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("distinta", r.get_json()["mensaje"])
+
+    def test_sin_la_marca_no_se_bloquea(self):
+        self.como(False)
+        r = self.cliente.get("/sesion")
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(r.get_json()["debe_cambiar_clave"])
 
 
 if __name__ == "__main__":

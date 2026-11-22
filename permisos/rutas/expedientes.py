@@ -6,11 +6,11 @@ import pymysql
 from flask import Blueprint, g, jsonify, request
 from werkzeug.security import generate_password_hash
 
-from ..bd import cargar_expediente, cursor, registrar_historial
+from ..bd import _esquema, cargar_expediente, cursor, documentos_de, registrar_historial
 from ..config import (ACCION_ACCESO, ACCION_CREAR, ACCION_CUENTA_PROMOTOR, CATEGORIAS_DOCS, EMAIL_RE,
                       ROLES_INTERNOS)
 from ..errores import ApiError
-from ..reglas import calcular_semaforo, calcular_verificacion, hoy, problema_de_password
+from ..reglas import calcular_ipe, calcular_semaforo, calcular_verificacion, hoy, problema_de_password
 from ..seguridad import exigir_gestion, exigir_jefe, exigir_lectura, filtro_de, requiere_login
 from ..utiles import entero, formatear_fechas, paginacion, texto
 
@@ -23,6 +23,12 @@ def listar_expedientes():
     q = request.args.get("q", "").strip()[:100]
     page = entero("page", 1, 1, 100000)
     per_page = entero("per_page", 50, 1, 100)
+    orden = request.args.get("orden", "").strip()
+    if orden not in ("", "fecha", "ipe"):
+        raise ApiError(400, "'orden' debe ser fecha o ipe.")
+    interno = g.usuario["rol"] in ROLES_INTERNOS
+    # HU-15: el IPE es para la consultora; el promotor no lo ve ni ordena por el.
+    por_ipe = orden == "ipe" and interno
     offset = (page - 1) * per_page
 
     filtro, params = filtro_de(g.usuario)
@@ -36,12 +42,16 @@ def listar_expedientes():
     with cursor() as cur:
         cur.execute(f"SELECT COUNT(*) AS total FROM expedientes e {where}", params)
         total = cur.fetchone()["total"]
-        cur.execute(f"""SELECT e.codigo, e.proyecto, e.promotor, e.categoria, e.estado, e.fecha_ingreso,
+        # Por IPE se ordena en Python (es un valor calculado), asi que se traen
+        # todos los que coinciden y se pagina despues.
+        limite = "" if por_ipe else "LIMIT %s OFFSET %s"
+        cur.execute(f"""SELECT e.id, e.codigo, e.proyecto, e.promotor, e.categoria, e.estado, e.fecha_ingreso,
                                u.nombre AS consultor
                         FROM expedientes e LEFT JOIN usuarios u ON u.id = e.usuario_id
-                        {where} ORDER BY e.fecha_ingreso DESC, e.id DESC LIMIT %s OFFSET %s""",
-                    params + [per_page, offset])
+                        {where} ORDER BY e.fecha_ingreso DESC, e.id DESC {limite}""",
+                    params if por_ipe else params + [per_page, offset])
         filas = cur.fetchall()
+        docs = documentos_de(cur, [f["id"] for f in filas]) if interno else {}
 
     for f in filas:
         # HU-13: el jefe ve los plazos de cada expediente en la lista.
@@ -49,6 +59,15 @@ def listar_expedientes():
         f["plazo"] = {"estado_semaforo": sem["estado_semaforo"],
                       "dias_restantes_legales": sem["dias_restantes_legales"],
                       "limite_dias": sem["limite_dias"]}
+        if interno:
+            r = calcular_ipe(f, docs[f["id"]])
+            f["ipe"] = {"valor": r["ipe"], "banda": r["banda"], "banda_texto": r["banda_texto"]}
+    if por_ipe:
+        # Menor a mayor: primero lo que mas necesita al equipo. Los resueltos al final.
+        filas.sort(key=lambda f: (f["estado"] in ("aprobado", "rechazado"), f["ipe"]["valor"], f["codigo"]))
+        filas = filas[offset:offset + per_page]
+    for f in filas:
+        del f["id"]
     formatear_fechas(filas, "fecha_ingreso", "%Y-%m-%d")
 
     return jsonify({"expedientes": filas, "paginacion": paginacion(total, page, per_page)})
@@ -131,6 +150,7 @@ def detalle_expediente(codigo):
         aprob = cur.fetchone()
 
     verificacion = calcular_verificacion(exp["categoria"], docs)
+    ipe = calcular_ipe(exp, docs) if g.usuario["rol"] in ROLES_INTERNOS else None  # HU-15
     del exp["id"], exp["usuario_id"]
     exp["acceso_publico"] = bool(exp["acceso_publico"])
     if g.usuario["rol"] not in ROLES_INTERNOS:
@@ -139,7 +159,8 @@ def detalle_expediente(codigo):
     formatear_fechas(docs, "fecha_subida", "%d/%m/%Y %H:%M")
     formatear_fechas([aprob], "fecha", "%d/%m/%Y %H:%M")
 
-    return jsonify({"expediente": exp, "documentos": docs, "aprobacion": aprob, "verificacion": verificacion})
+    return jsonify({"expediente": exp, "documentos": docs, "aprobacion": aprob, "verificacion": verificacion,
+                    "ipe": ipe})
 
 
 @bp.route("/expedientes/<codigo>/aprobaciones", methods=["GET"])
@@ -202,7 +223,10 @@ def crear_cuenta_promotor(codigo):
             raise ApiError(409, "Ese correo ya pertenece a otra cuenta.")
         temporal = contrasena_temporal()
         try:
-            cur.execute("INSERT INTO usuarios (nombre, email, password_hash, rol) VALUES (%s, %s, %s, 'promotor')",
+            # Sprint 9: contrasena temporal; el promotor debe cambiarla al entrar.
+            columna, marca = (", debe_cambiar_clave", ", TRUE") if _esquema["cambio_clave"] else ("", "")
+            cur.execute(f"INSERT INTO usuarios (nombre, email, password_hash, rol{columna}) "
+                        f"VALUES (%s, %s, %s, 'promotor'{marca})",
                         (exp["promotor"], email, generate_password_hash(temporal)))
         except pymysql.err.IntegrityError:
             raise ApiError(409, "El promotor ya tiene cuenta.")
@@ -211,7 +235,7 @@ def crear_cuenta_promotor(codigo):
         "ok": True,
         "email": email,
         "password_temporal": temporal,
-        "mensaje": "Entregue esta contraseña al promotor por un canal seguro. Se muestra una sola vez.",
+        "mensaje": "Entregue esta contraseña al promotor por un canal seguro. Se muestra una sola vez y el sistema le exigirá cambiarla en su primer ingreso.",
     }), 201
 
 

@@ -11,9 +11,9 @@ class ApiError(Exception):
         self.mensaje = mensaje
 
 
-def respuesta_error(status, mensaje):
+def respuesta_error(status, mensaje, **extra):
     # "error" y "mensaje" a la vez: las pantallas viejas leen uno u otro.
-    return jsonify({"ok": False, "error": mensaje, "mensaje": mensaje}), status
+    return jsonify({"ok": False, "error": mensaje, "mensaje": mensaje, **extra}), status
 
 
 def registrar(app):

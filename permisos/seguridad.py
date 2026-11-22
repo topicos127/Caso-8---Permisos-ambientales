@@ -3,7 +3,7 @@ from functools import wraps
 
 from flask import g, request, session
 
-from .bd import cursor
+from .bd import col_cambio_clave, cursor
 from .config import RUTAS_SIN_CABECERA
 from .errores import ApiError, respuesta_error
 
@@ -24,11 +24,18 @@ def usuario_sesion():
     if not uid:
         return None
     with cursor() as cur:
-        cur.execute("SELECT id, email, rol, nombre FROM usuarios WHERE id=%s", (uid,))
+        cur.execute(f"SELECT id, email, rol, nombre, {col_cambio_clave()} FROM usuarios WHERE id=%s", (uid,))
         u = cur.fetchone()
     if not u:
         session.clear()
+    else:
+        u["debe_cambiar_clave"] = bool(u["debe_cambiar_clave"])
     return u
+
+
+# Con una contrasena temporal, lo unico permitido es ver la sesion y cambiarla.
+# (/logout no pide login.)
+ENDPOINTS_CON_CLAVE_TEMPORAL = {"auth.sesion_actual", "auth.cambiar_contrasena"}
 
 
 def requiere_login(f):
@@ -37,6 +44,9 @@ def requiere_login(f):
         u = usuario_sesion()
         if not u:
             return respuesta_error(401, "No autenticado")
+        if u["debe_cambiar_clave"] and request.endpoint not in ENDPOINTS_CON_CLAVE_TEMPORAL:
+            return respuesta_error(403, "Debe cambiar su contraseña temporal antes de continuar.",
+                                   cambio_clave_obligatorio=True)
         g.usuario = u
         return f(*args, **kwargs)
     return envoltura

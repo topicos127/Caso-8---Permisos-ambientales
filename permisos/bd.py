@@ -39,6 +39,19 @@ def cargar_expediente(cur, codigo):
     return exp
 
 
+def documentos_de(cur, expediente_ids):
+    """Documentos de varios expedientes en una sola consulta: {id: [docs]}."""
+    por_expediente = {i: [] for i in expediente_ids}
+    if not expediente_ids:
+        return por_expediente
+    marcas = ", ".join(["%s"] * len(expediente_ids))
+    cur.execute(f"SELECT expediente_id, carpeta, estado, fecha_subida FROM documentos "
+                f"WHERE expediente_id IN ({marcas})", list(expediente_ids))
+    for d in cur.fetchall():
+        por_expediente[d["expediente_id"]].append(d)
+    return por_expediente
+
+
 def registrar_historial(cur, expediente_id, usuario_id, accion):
     """HU-14. Va en la misma transaccion que la accion: si una falla, no
     queda ninguna."""
@@ -63,14 +76,35 @@ CREATE TABLE IF NOT EXISTS historial_expediente (
 """
 
 
+# Sprint 9: el promotor recibe una contrasena temporal y debe cambiarla. La
+# columna se agrega al arrancar si la base es anterior; mientras no exista, las
+# consultas la reemplazan por un 0 constante y la regla simplemente no aplica.
+_esquema = {"cambio_clave": False}
+
+
+def col_cambio_clave():
+    return "debe_cambiar_clave" if _esquema["cambio_clave"] else "0 AS debe_cambiar_clave"
+
+
+def _asegurar_columna_cambio_clave(cur):
+    cur.execute("SELECT COUNT(*) AS n FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() "
+                "AND TABLE_NAME = 'usuarios' AND COLUMN_NAME = 'debe_cambiar_clave'")
+    if cur.fetchone()["n"] == 0:
+        cur.execute("ALTER TABLE usuarios ADD COLUMN debe_cambiar_clave BOOLEAN NOT NULL DEFAULT FALSE")
+        print("Sprint 9: columna usuarios.debe_cambiar_clave agregada.", flush=True)
+    _esquema["cambio_clave"] = True
+
+
 def inicializar_bd():
-    """Crea lo que el Sprint 8 necesita si no existe. Se puede correr
+    """Crea lo que los Sprints 8 y 9 necesitan si no existe. Se puede correr
     muchas veces: no cambia nada si ya esta."""
     problema = problema_de_password(JEFE_PASSWORD)
     if problema:
         raise ValueError(f"JEFE_PASSWORD no cumple la politica: {problema}")
     with cursor() as cur:
         cur.execute(DDL_HISTORIAL)
+    with cursor() as cur:
+        _asegurar_columna_cambio_clave(cur)
     with cursor() as cur:
         cur.execute("SELECT id FROM usuarios WHERE email=%s", (JEFE_EMAIL,))
         if not cur.fetchone():
@@ -94,6 +128,6 @@ def asegurar_bd():
     try:
         inicializar_bd()
         _estado_bd["lista"] = True
-        print("Sprint 8: tabla historial_expediente y usuario jefe verificados.", flush=True)
+        print("Sprints 8 y 9: historial, usuario jefe y columna de cambio de contrasena verificados.", flush=True)
     except Exception as e:  # noqa: BLE001 - la app sigue; se reintenta luego
         print(f"AVISO: no se pudo preparar la base para el Sprint 8: {e!r}", flush=True)

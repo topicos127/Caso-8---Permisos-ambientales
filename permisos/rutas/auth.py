@@ -7,7 +7,7 @@ import pymysql
 from flask import Blueprint, g, jsonify, request, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from ..bd import cursor
+from ..bd import _esquema, col_cambio_clave, cursor
 from ..config import EMAIL_RE, LOGIN_MAX_FALLOS, LOGIN_VENTANA_SEGUNDOS, ROLES_REGISTRO
 from ..errores import ApiError
 from ..reglas import problema_de_password
@@ -56,7 +56,8 @@ def login():
                             "Demasiados intentos fallidos. Espere un minuto e intente de nuevo."}), 429
 
     with cursor() as cur:
-        cur.execute("SELECT id, email, password_hash, rol, nombre FROM usuarios WHERE email=%s", (email,))
+        cur.execute(f"SELECT id, email, password_hash, rol, nombre, {col_cambio_clave()} FROM usuarios "
+                    "WHERE email=%s", (email,))
         u = cur.fetchone()
 
     if u and check_password_hash(u["password_hash"], password):
@@ -70,6 +71,7 @@ def login():
             "rol": u["rol"],
             "nombre": u["nombre"],
             "email": u["email"],
+            "debe_cambiar_clave": bool(u["debe_cambiar_clave"]),
         }), 200
 
     with _candado:
@@ -87,7 +89,8 @@ def logout():
 @requiere_login
 def sesion_actual():
     u = g.usuario
-    return jsonify({"email": u["email"], "rol": u["rol"], "nombre": u["nombre"]}), 200
+    return jsonify({"email": u["email"], "rol": u["rol"], "nombre": u["nombre"],
+                    "debe_cambiar_clave": u["debe_cambiar_clave"]}), 200
 
 
 @bp.route("/registro", methods=["POST"])
@@ -141,12 +144,18 @@ def cambiar_contrasena():
     problema = problema_de_password(nueva)
     if problema:
         raise ApiError(400, problema)
+    if nueva == actual:
+        raise ApiError(400, "La contrasena nueva debe ser distinta de la actual.")
 
     with cursor() as cur:
         cur.execute("SELECT password_hash FROM usuarios WHERE id=%s", (g.usuario["id"],))
         fila = cur.fetchone()
         if not fila or not check_password_hash(fila["password_hash"], actual):
             raise ApiError(400, "La contrasena actual no es correcta.")
-        cur.execute("UPDATE usuarios SET password_hash=%s WHERE id=%s",
-                    (generate_password_hash(nueva), g.usuario["id"]))
+        if _esquema["cambio_clave"]:
+            cur.execute("UPDATE usuarios SET password_hash=%s, debe_cambiar_clave=FALSE WHERE id=%s",
+                        (generate_password_hash(nueva), g.usuario["id"]))
+        else:
+            cur.execute("UPDATE usuarios SET password_hash=%s WHERE id=%s",
+                        (generate_password_hash(nueva), g.usuario["id"]))
     return jsonify({"ok": True, "mensaje": "Contrasena actualizada."}), 200
