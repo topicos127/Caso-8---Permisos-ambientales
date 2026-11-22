@@ -45,7 +45,7 @@
         Consulta pública
       </a>
     </nav>
-    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 8</div>
+    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 9</div>
   </aside>
 
   <div class="main">
@@ -71,6 +71,7 @@
           <div class="fact"><span class="k">CÓDIGO</span><span class="v"><span class="case-tag" id="rCodigo"></span></span></div>
           <div class="fact"><span class="k">PROYECTO</span><span class="v" id="rProyecto"></span></div>
           <div class="fact"><span class="k">PROMOTOR</span><span class="v" id="rPromotor"></span></div>
+          <div class="fact"><span class="k">CONSULTOR RESPONSABLE</span><span class="v" id="rConsultor"></span></div>
           <div class="fact"><span class="k">CATEGORÍA</span><span id="rCategoria"></span></div>
           <div class="fact"><span class="k">ESTADO</span><span id="rEstado"></span></div>
         </div>
@@ -79,6 +80,10 @@
 
       <div class="panel" id="panelNoEncontrado" style="display:none; border-left:3px solid var(--status-bad);">
         <p style="color:var(--status-bad); font-size:14px;">No se encontró ningún expediente con ese código.</p>
+      </div>
+
+      <div class="panel" id="panelSinAcceso" style="display:none; border-left:3px solid var(--status-warn);">
+        <p style="color:var(--status-warn); font-size:14px;">Este proyecto no está disponible para consulta pública. El jefe de la consultora puede habilitarlo desde el detalle del expediente.</p>
       </div>
     </div>
   </div>
@@ -98,9 +103,16 @@ if (usuario) {
     if (!codigo) return;
     document.getElementById('panelResultado').style.display = 'none';
     document.getElementById('panelNoEncontrado').style.display = 'none';
+    document.getElementById('panelSinAcceso').style.display = 'none';
     try {
-      const d = await apiFetch('/consulta/' + codigo);
-      if (!d.expediente) {
+      const r = await fetch('/consulta/' + encodeURIComponent(codigo), { credentials: 'same-origin' });
+      // HU-09: sin acceso público el servidor responde 403 y no entrega datos.
+      if (r.status === 403) {
+        document.getElementById('panelSinAcceso').style.display = 'block';
+        return;
+      }
+      const d = await r.json();
+      if (!r.ok || !d.expediente) {
         document.getElementById('panelNoEncontrado').style.display = 'block';
         return;
       }
@@ -108,8 +120,9 @@ if (usuario) {
       document.getElementById('rCodigo').textContent = expActual.codigo;
       document.getElementById('rProyecto').textContent = expActual.proyecto;
       document.getElementById('rPromotor').textContent = expActual.promotor;
+      document.getElementById('rConsultor').textContent = expActual.consultor || '—';
       document.getElementById('rCategoria').innerHTML = fichaTier(expActual.categoria);
-      document.getElementById('rEstado').innerHTML = `<span class="${claseEstado(expActual.estado)}">${textoEstado(expActual.estado)}</span>`;
+      document.getElementById('rEstado').innerHTML = `<span class="${claseEstado(expActual.estado)}">${esc(expActual.estado_publico)}</span>`;
       document.getElementById('panelResultado').style.display = 'block';
     } catch (e) {
       document.getElementById('panelNoEncontrado').style.display = 'block';
@@ -132,8 +145,9 @@ if (usuario) {
       "Código: " + expActual.codigo,
       "Proyecto: " + expActual.proyecto,
       "Promotor: " + expActual.promotor,
+      "Consultor responsable: " + (expActual.consultor || "—"),
       "Categoría: " + expActual.categoria,
-      "Estado: " + textoEstado(expActual.estado),
+      "Estado: " + expActual.estado_publico,
     ];
     let y = 34;
     lineas.forEach(l => { doc.text(l, 20, y); y += 8; });

@@ -66,6 +66,7 @@
         <div class="fact"><span class="k">CÓDIGO</span><span class="v"><span class="case-tag" id="rCodigo"></span></span></div>
         <div class="fact"><span class="k">PROYECTO</span><span class="v" id="rProyecto"></span></div>
         <div class="fact"><span class="k">PROMOTOR</span><span class="v" id="rPromotor"></span></div>
+        <div class="fact"><span class="k">CONSULTOR RESPONSABLE</span><span class="v" id="rConsultor"></span></div>
         <div class="fact"><span class="k">CATEGORÍA</span><span id="rCategoria"></span></div>
         <div class="fact"><span class="k">ESTADO</span><span id="rEstado"></span></div>
       </div>
@@ -77,7 +78,7 @@
     </div>
 
     <div class="panel" id="panelSinAcceso" style="display:none; border-left:3px solid var(--status-warn);">
-      <p style="color:var(--status-warn); font-size:14px;">Este expediente no tiene habilitada la descarga pública del resumen ejecutivo.</p>
+      <p style="color:var(--status-warn); font-size:14px;">Este proyecto no está disponible para consulta pública. La consultora responsable no ha habilitado su publicación.</p>
     </div>
 
     <p class="small" style="margin-top:40px; max-width:56ch;">
@@ -94,15 +95,9 @@
 <script>
 function claseEstado(estado) {
   if (estado === 'aprobado') return 'status status-ok';
-  if (estado === 'evaluacion') return 'status status-warn';
-  if (estado === 'pendiente') return 'status status-bad';
-  return 'status status-info';
-}
-function textoEstado(estado) {
-  if (estado === 'aprobado') return 'Aprobado';
-  if (estado === 'evaluacion') return 'En evaluación';
-  if (estado === 'pendiente') return 'Pendiente';
-  return estado;
+  if (estado === 'evaluacion') return 'status status-info';
+  if (estado === 'rechazado') return 'status status-bad';
+  return 'status status-warn';
 }
 function fichaTier(cat) {
   const t = { 'I': 'Bajo impacto', 'II': 'Impacto moderado', 'III': 'Alto impacto' };
@@ -121,6 +116,12 @@ async function buscar() {
 
   try {
     const r = await fetch('/consulta/' + encodeURIComponent(codigo));
+    // HU-09: si la consultora no habilitó el acceso público, el servidor
+    // responde 403 y no entrega ningún dato (ni resumen ni PDF).
+    if (r.status === 403) {
+      document.getElementById('panelSinAcceso').style.display = 'block';
+      return;
+    }
     if (!r.ok) {
       document.getElementById('panelNoEncontrado').style.display = 'block';
       return;
@@ -131,16 +132,12 @@ async function buscar() {
     document.getElementById('rCodigo').textContent = expActual.codigo;
     document.getElementById('rProyecto').textContent = expActual.proyecto;
     document.getElementById('rPromotor').textContent = expActual.promotor;
+    document.getElementById('rConsultor').textContent = expActual.consultor || '—';
     document.getElementById('rCategoria').innerHTML = fichaTier(expActual.categoria);
-    document.getElementById('rEstado').innerHTML = `<span class="${claseEstado(expActual.estado)}">${textoEstado(expActual.estado)}</span>`;
-
-    const btnPdf = document.getElementById('btnPdf');
-    if (expActual.acceso_publico) {
-      btnPdf.style.display = 'inline-block';
-    } else {
-      btnPdf.style.display = 'none';
-      document.getElementById('panelSinAcceso').style.display = 'block';
-    }
+    const estado = document.createElement('span');
+    estado.className = claseEstado(expActual.estado);
+    estado.textContent = expActual.estado_publico;
+    document.getElementById('rEstado').replaceChildren(estado);
 
     document.getElementById('panelResultado').style.display = 'block';
   } catch (e) {
@@ -164,8 +161,9 @@ document.getElementById('btnPdf').addEventListener('click', () => {
     "Código: " + expActual.codigo,
     "Proyecto: " + expActual.proyecto,
     "Promotor: " + expActual.promotor,
+    "Consultor responsable: " + (expActual.consultor || "—"),
     "Categoría: " + expActual.categoria,
-    "Estado: " + textoEstado(expActual.estado),
+    "Estado: " + expActual.estado_publico,
     "",
     "Documento generado desde el portal público de consulta.",
     "No contiene información personal de los solicitantes."

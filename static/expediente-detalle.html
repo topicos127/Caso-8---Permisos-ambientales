@@ -45,7 +45,7 @@
         Consulta pública
       </a>
     </nav>
-    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 8</div>
+    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 9</div>
   </aside>
 
   <div class="main">
@@ -142,6 +142,17 @@
         <div id="aprobacion-completa" style="display:none; margin-top:16px; padding:12px; background:var(--status-ok-bg); border-left:3px solid var(--status-ok);">
           <strong style="color:var(--status-ok);">✅ Expediente aprobado por MiAmbiente.</strong>
           <p style="font-size:13.5px; margin-top:4px;">El permiso está listo.</p>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-acceso" style="display:none;">
+        <h3>Acceso público y cuenta del promotor</h3>
+        <p class="panel-note" id="acceso-estado"></p>
+        <button type="button" class="btn btn-ghost mt-3" id="btnAcceso" style="border:1.5px solid var(--line); display:none;"></button>
+        <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--line);">
+          <p class="panel-note" id="promotor-nota"></p>
+          <button type="button" class="btn btn-brass mt-3" id="btnCuentaPromotor" style="display:none;">Crear acceso del promotor</button>
+          <div id="promotor-resultado" class="doc-msg" style="margin-top:12px;"></div>
         </div>
       </div>
 
@@ -472,6 +483,66 @@ if (usuario) {
     }
   }
 
+  // Sprint 9 (HU-09 y opción a del registro): el jefe publica o retira el
+  // proyecto de la consulta pública; el consultor o el jefe crean la cuenta
+  // del promotor con una contraseña temporal que se muestra una sola vez.
+  function renderAcceso(e) {
+    if (esPromotorUsuario) return;
+    document.getElementById('panel-acceso').style.display = 'block';
+
+    document.getElementById('acceso-estado').textContent = e.acceso_publico
+      ? 'Visible en la consulta pública: proyecto, promotor, categoría, estado y consultor responsable.'
+      : 'No visible en la consulta pública: el sistema no entrega ningún dato del proyecto.';
+    const btnAcceso = document.getElementById('btnAcceso');
+    if (esJefe()) {
+      btnAcceso.style.display = 'inline-block';
+      btnAcceso.textContent = e.acceso_publico ? 'Retirar de la consulta pública' : 'Publicar en la consulta pública';
+      btnAcceso.onclick = async () => {
+        const r = await apiFetch(`/expedientes/${codigo}/acceso-publico`, {
+          method: 'POST',
+          body: JSON.stringify({ acceso_publico: !e.acceso_publico })
+        });
+        if (r.ok) {
+          mostrarToast(r.acceso_publico ? 'Proyecto publicado.' : 'Proyecto retirado de la consulta pública.', 'exito');
+          setTimeout(() => location.reload(), 1200);
+        } else {
+          mostrarToast(r.mensaje || 'No se pudo cambiar el acceso.', 'error');
+        }
+      };
+    }
+
+    const nota = document.getElementById('promotor-nota');
+    const btnCuenta = document.getElementById('btnCuentaPromotor');
+    if (!e.promotor_email) {
+      nota.textContent = 'El expediente no tiene correo de promotor, así que no se le puede dar acceso.';
+      return;
+    }
+    nota.textContent = `El promotor entra con ${e.promotor_email}. Su cuenta no se crea por registro público: la crea su consultor desde aquí.`;
+    btnCuenta.style.display = 'inline-block';
+    btnCuenta.onclick = async () => {
+      if (!confirm(`¿Crear el acceso de ${e.promotor_email}? Verás una contraseña temporal una sola vez.`)) return;
+      const r = await apiFetch(`/expedientes/${codigo}/promotor/cuenta`, { method: 'POST', body: '{}' });
+      const salida = document.getElementById('promotor-resultado');
+      salida.replaceChildren();
+      if (r.ok) {
+        salida.className = 'doc-msg show ok';
+        const titulo = document.createElement('div');
+        titulo.textContent = 'Acceso creado. Entregue estos datos al promotor por un canal seguro; se muestran una sola vez:';
+        const datos = document.createElement('div');
+        datos.style.cssText = 'margin-top:8px; font-family:var(--mono);';
+        datos.textContent = `${r.email} · ${r.password_temporal}`;
+        const aviso = document.createElement('div');
+        aviso.style.marginTop = '8px';
+        aviso.textContent = 'El promotor debe cambiarla en «Mi cuenta» al entrar.';
+        salida.append(titulo, datos, aviso);
+        btnCuenta.style.display = 'none';
+      } else {
+        salida.className = 'doc-msg show error';
+        salida.textContent = r.mensaje || 'No se pudo crear el acceso.';
+      }
+    };
+  }
+
   async function cargarRegistroAprobaciones(infoDiv) {
     try {
       const ap = await apiFetch('/expedientes/' + codigo + '/aprobaciones');
@@ -564,6 +635,7 @@ if (usuario) {
       }
 
       await renderAprobacion(e.estado, d.verificacion);
+      renderAcceso(e);
 
       try {
         const alertas = await apiFetch('/expedientes/' + codigo + '/alertas');
@@ -577,7 +649,7 @@ if (usuario) {
           'Consulta el estado de los documentos y descarga los que ya fueron subidos.';
       }
     } catch (e) {
-      const panels = ['panel-resumen', 'panel-docs', 'panel-aprobacion', 'panel-verificacion', 'panel-plazos', 'panel-timeline'];
+      const panels = ['panel-resumen', 'panel-docs', 'panel-aprobacion', 'panel-verificacion', 'panel-plazos', 'panel-timeline', 'panel-acceso'];
       panels.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';

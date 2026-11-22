@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi cuenta — Permisos Ambientales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<div class="shell">
+  <aside class="rail">
+    <div class="rail-brand">
+      <div class="seal">
+        <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.1">
+          <circle cx="20" cy="20" r="17"/>
+          <path d="M6 24c4-4 8 4 12 0s8-6 12 0" opacity="0.6"/>
+          <path d="M7 16c4-3 8 3 12 0s8-5 12 0" opacity="0.45"/>
+          <circle cx="20" cy="20" r="2.2" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+      <div><b>Permisos<br>Ambientales</b><span>Caso 8 · MiAmbiente</span></div>
+    </div>
+    <nav>
+      <a href="dashboard.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="7" height="7"/><rect x="13.5" y="3.5" width="7" height="7"/><rect x="3.5" y="13.5" width="7" height="7"/><rect x="13.5" y="13.5" width="7" height="7"/></svg>
+        Panel
+      </a>
+      <a href="expedientes.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6.5a1.5 1.5 0 0 1 1.5-1.5H10l2 2.5h6.5A1.5 1.5 0 0 1 20 9v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18z"/></svg>
+        Mis expedientes
+      </a>
+      <a href="expediente-nuevo.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3.5h9l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z"/><path d="M12 11v6M9 14h6"/></svg>
+        Nuevo expediente
+      </a>
+      <a href="historial.html" id="nav-historial">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+        Historial
+      </a>
+      <a href="consulta-publica.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M19.5 19.5 15 15"/></svg>
+        Consulta pública
+      </a>
+    </nav>
+    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 9</div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="crumb">MI CUENTA</span>
+      <div class="who"></div>
+    </div>
+
+    <div class="content">
+      <div class="content-head"><h2>Mi cuenta</h2></div>
+      <p class="content-lede">Cambie su contraseña. Si recibió una contraseña temporal de su consultor, reemplácela aquí la primera vez que entre.</p>
+
+      <div class="panel" style="max-width:520px;">
+        <h3>Cambiar contraseña</h3>
+        <form id="formClave" style="margin-top:14px;">
+          <div class="doc-field">
+            <label for="actual">Contraseña actual</label>
+            <input type="password" id="actual" autocomplete="current-password" required>
+          </div>
+          <div class="doc-field">
+            <label for="nueva">Contraseña nueva</label>
+            <input type="password" id="nueva" autocomplete="new-password" placeholder="Mínimo 8 caracteres, un número y una mayúscula" required>
+          </div>
+          <div class="doc-field">
+            <label for="nueva2">Repetir la contraseña nueva</label>
+            <input type="password" id="nueva2" autocomplete="new-password" required>
+          </div>
+          <button type="submit" class="btn btn-brass">Guardar contraseña</button>
+        </form>
+        <div id="mensaje" class="doc-msg" style="margin-top:14px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+const usuario = requireAuth();
+if (usuario) {
+  pintarTopbar();
+  if (esPromotor()) {
+    document.querySelectorAll('a[href="expediente-nuevo.html"], #nav-historial').forEach(a => { a.style.display = 'none'; });
+  }
+
+  document.getElementById('formClave').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const m = document.getElementById('mensaje');
+    const actual = document.getElementById('actual').value;
+    const nueva = document.getElementById('nueva').value;
+    if (nueva !== document.getElementById('nueva2').value) {
+      m.className = 'doc-msg show error';
+      m.textContent = 'Las contraseñas nuevas no coinciden.';
+      return;
+    }
+    const r = await apiFetch('/cuenta/contrasena', { method: 'POST', body: JSON.stringify({ actual, nueva }) });
+    m.className = 'doc-msg show ' + (r.ok ? 'ok' : 'error');
+    m.textContent = r.ok ? 'Contraseña actualizada.' : (r.mensaje || 'No se pudo cambiar la contraseña.');
+    if (r.ok) document.getElementById('formClave').reset();
+  });
+}
+</script>
+</body>
+</html>

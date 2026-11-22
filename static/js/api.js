@@ -93,16 +93,27 @@ function claseEstado(estado) {
   if (estado === 'aprobado') return 'status status-ok';
   if (estado === 'evaluacion') return 'status status-info';
   if (estado === 'aprobado_interno') return 'status status-warn';
-  if (estado === 'pendiente') return 'status status-bad';
+  if (estado === 'pendiente') return 'status status-warn';
+  if (estado === 'rechazado') return 'status status-bad';
   return 'status status-info';
 }
 
+// HU-07: el promotor y el publico ven solo tres estados (Aprobado, En
+// evaluacion, Pendiente de subsanacion). La consultora ve ademas el paso
+// interno "Aprobado internamente".
+const ESTADO_PUBLICO = {
+  pendiente: 'Pendiente de subsanación',
+  aprobado_interno: 'Pendiente de subsanación',
+  evaluacion: 'En evaluación',
+  aprobado: 'Aprobado',
+  rechazado: 'Rechazado',
+};
+
 function textoEstado(estado) {
-  if (estado === 'aprobado') return 'Aprobado por MiAmbiente';
-  if (estado === 'evaluacion') return 'En evaluación (MiAmbiente)';
-  if (estado === 'aprobado_interno') return 'Aprobado internamente';
-  if (estado === 'pendiente') return 'Pendiente de documentos';
-  return esc(estado);
+  const u = getUsuario();
+  const interno = u && (u.rol === 'consultor' || u.rol === 'jefe');
+  if (interno && estado === 'aprobado_interno') return 'Aprobado internamente';
+  return ESTADO_PUBLICO[estado] || esc(estado);
 }
 
 function fichaTier(cat) {
@@ -115,7 +126,7 @@ function pintarTopbar() {
   const who = document.querySelector('.who');
   if (u && who) {
     const rolTexto = ROL_TEXTO[u.rol] || u.rol;
-    who.innerHTML = `<span class="tag">${rolTexto}</span> ${esc(u.nombre || u.email)} <a href="login.html" id="link-salir">Salir</a>`;
+    who.innerHTML = `<span class="tag">${rolTexto}</span> ${esc(u.nombre || u.email)} <a href="cuenta.html">Mi cuenta</a> <a href="login.html" id="link-salir">Salir</a>`;
     who.querySelector('#link-salir').addEventListener('click', cerrarSesion);
   }
   if (esPromotor()) {
