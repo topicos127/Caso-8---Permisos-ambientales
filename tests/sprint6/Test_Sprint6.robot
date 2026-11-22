@@ -15,8 +15,9 @@ ${BASE_URL}       http://localhost:5000
     ...    nombre=Usuario Robot
     ...    email=robot_test@ejemplo.com
     ...    password=Clave12345
-    ...    rol=consultor
-    
+    ...    rol=promotor
+    # Sprint 9 (HU-15): /registro ya no crea consultores; los da de alta el jefe.
+
     ${response}=    POST On Session    api    /registro    json=${data}    expected_status=any
     ${status}=    Convert To Integer    ${response.status_code}
     Should Be True    ${status} in [201, 409]    El registro falló con un código inesperado: ${status}

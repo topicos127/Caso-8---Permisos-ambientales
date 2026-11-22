@@ -86,3 +86,29 @@ El pipeline de GitHub Actions corre lo mismo en cada push a `main`.
 | `GET /historial` y `GET /historial?codigo=X` | todo | solo los suyos | 403 | 401 |
 | `GET /expedientes/<codigo>/historial` | 200 | 200 si es suyo, si no 403 | 403 | 401 |
 | `POST /expedientes/<codigo>/aprobar` | 200 | 403 | 403 | 401 |
+
+## Equipo de consultores y uso en el celular (Sprint 9)
+
+- **HU-15.** El jefe gestiona su equipo en **Equipo** (menú lateral, solo lo ve el jefe):
+  - **Alta:** crea consultores con la política de contraseñas del Sprint 6.
+  - **Baja:** desactiva a un consultor. Ya no puede iniciar sesión (el login responde
+    403 y su sesión abierta deja de valer), pero el usuario no se borra: sus
+    expedientes y su historial se conservan. También se puede reactivar.
+  - **Reasignar:** pasa los expedientes de un consultor desactivado a otro activo.
+    Cada expediente reasignado queda en el historial como `reasignó`, a nombre del jefe.
+  - `/registro` ya no crea consultores (responde 403): solo promotores.
+  - La columna `usuarios.activo` la agrega la app al arrancar si no existe. Plan B:
+    `sql/sprint9_manual.sql`.
+- **HU-12.** En pantallas de 820 px o menos, el menú lateral se abre y se cierra con el
+  botón **Menú** de la barra de arriba. En celular, las tablas (Mis expedientes,
+  Historial y Equipo) se muestran como tarjetas, sin desplazamiento horizontal.
+
+| Endpoint | Jefe | Consultor | Promotor | Sin sesión |
+|---|---|---|---|---|
+| `GET /consultores` | 200 | 403 | 403 | 401 |
+| `POST /consultores` (`nombre`, `email`, `password`) | 201 (400 clave débil, 409 correo repetido) | 403 | 403 | 401 |
+| `POST /consultores/<id>/desactivar` | 200 (409 si ya lo está) | 403 | 403 | 401 |
+| `POST /consultores/<id>/activar` | 200 (409 si ya lo está) | 403 | 403 | 401 |
+| `POST /consultores/<id>/reasignar` (`destino_id`) | 200 (409 si el consultor sigue activo) | 403 | 403 | 401 |
+| `POST /login` de un consultor desactivado | — | 403 | — | — |
+| `POST /registro` con `rol=consultor` | — | — | — | 403 |
