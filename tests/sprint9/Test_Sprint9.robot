@@ -8,6 +8,8 @@ Documentation     Suite de Pruebas Automatizadas - Sprint 9 (Permisos Ambientale
 ...               - Login: limite de intentos fallidos (429).
 ...               - HU-14: el historial registra eliminar, someter y la resolucion.
 ...               - HU-06: el ZIP lleva el codigo y la fecha.
+...               - La contrasena temporal del promotor solo permite cambiarla.
+...               - HU-15: Indice de Preparacion del Expediente (IPE).
 Library           RequestsLibrary
 Library           Collections
 Resource          ../recursos/sesion.resource
@@ -71,10 +73,18 @@ ${CLAVE_NUEVA}           Nueva2026x
     ${r}=    POST On Session    consultor    /expedientes/${COD_PROM}/promotor/cuenta    expected_status=201
     Should Be Equal    ${r.json()['email']}    ${PROMOTOR_NUEVO}
     Set Suite Variable    ${CLAVE_TEMPORAL}    ${r.json()['password_temporal']}
-    Iniciar Sesion    nuevo_promotor    ${PROMOTOR_NUEVO}    ${CLAVE_TEMPORAL}
-    GET On Session    nuevo_promotor    /expedientes/${COD_PROM}    expected_status=200
     ${entradas}=    Historial De    consultor    ${COD_PROM}
     Should Be Equal    ${entradas[0]['accion']}    creó cuenta del promotor
+
+07b - Con La Contrasena Temporal Solo Se Puede Cambiarla
+    [Documentation]    El login funciona, pero todo lo demas responde 403 hasta cambiar la contrasena.
+    Iniciar Sesion    nuevo_promotor    ${PROMOTOR_NUEVO}    ${CLAVE_TEMPORAL}
+    ${r}=    GET On Session    nuevo_promotor    /sesion    expected_status=200
+    Should Be True    ${r.json()['debe_cambiar_clave']}
+    FOR    ${ruta}    IN    /expedientes/${COD_PROM}    /expedientes    /dashboard
+        ${r}=    GET On Session    nuevo_promotor    ${ruta}    expected_status=403
+        Should Be True    ${r.json()['cambio_clave_obligatorio']}
+    END
 
 08 - La Cuenta Del Promotor No Se Crea Dos Veces
     Iniciar Sesion Como Consultor
@@ -90,9 +100,14 @@ ${CLAVE_NUEVA}           Nueva2026x
     POST On Session    nuevo_promotor    /cuenta/contrasena    json=${mala}    expected_status=400
     ${debil}=    Create Dictionary    actual=${CLAVE_TEMPORAL}    nueva=debil
     POST On Session    nuevo_promotor    /cuenta/contrasena    json=${debil}    expected_status=400
+    ${igual}=    Create Dictionary    actual=${CLAVE_TEMPORAL}    nueva=${CLAVE_TEMPORAL}
+    POST On Session    nuevo_promotor    /cuenta/contrasena    json=${igual}    expected_status=400
     ${buena}=    Create Dictionary    actual=${CLAVE_TEMPORAL}    nueva=${CLAVE_NUEVA}
     POST On Session    nuevo_promotor    /cuenta/contrasena    json=${buena}    expected_status=200
     Iniciar Sesion    nuevo_promotor    ${PROMOTOR_NUEVO}    ${CLAVE_NUEVA}
+    ${r}=    GET On Session    nuevo_promotor    /sesion    expected_status=200
+    Should Not Be True    ${r.json()['debe_cambiar_clave']}
+    GET On Session    nuevo_promotor    /expedientes/${COD_PROM}    expected_status=200
 
 # ---------------- Login ----------------
 
@@ -145,6 +160,77 @@ ${CLAVE_NUEVA}           Nueva2026x
     ...    datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-5))).date().isoformat()
     ...    modules=datetime
     Should Contain    ${r.headers['Content-Disposition']}    ${EXP_C1}_${hoy}.zip
+
+# ---------------- HU-15: Indice de Preparacion del Expediente ----------------
+# Los expedientes del seed dependen de la fecha de hoy; los valores exactos se
+# prueban con expedientes nuevos (plazo en curso: P = 100, V = 100).
+
+15 - HU-15 Un Expediente Nuevo Sin Documentos Vale 50
+    [Documentation]    D = 0, P = 100, V = 100: 0,3 * 100 + 0,2 * 100 = 50, en preparacion.
+    Iniciar Sesion Como Consultor
+    ${codigo}=    Crear Expediente    consultor    I
+    Set Suite Variable    ${COD_IPE}    ${codigo}
+    ${r}=    GET On Session    consultor    /expedientes/${COD_IPE}    expected_status=200
+    ${ipe}=    Set Variable    ${r.json()['ipe']}
+    Should Be Equal As Integers    ${ipe['ipe']}    50
+    Should Be Equal    ${ipe['banda']}    en_preparacion
+    Should Be Equal As Integers    ${ipe['componentes']['documentos']}    0
+    ${textos}=    Evaluate    [a['texto'] for a in $ipe['acciones']]
+    Should Contain    ${textos}    Subir Línea Base
+    Should Contain    ${textos}    Subir Plan de Manejo
+    Should Contain    ${textos}    Subir Anexos Legales
+
+16 - HU-15 Con Todos Los Documentos Vale 100 Y Pide La Aprobacion Del Jefe
+    Iniciar Sesion Como Consultor
+    ${r}=    GET On Session    consultor    /expedientes/${COD_IPE}
+    FOR    ${doc}    IN    @{r.json()['documentos']}
+        Subir PDF    consultor    ${COD_IPE}    ${doc['carpeta']}
+    END
+    ${r}=    GET On Session    consultor    /expedientes/${COD_IPE}    expected_status=200
+    ${ipe}=    Set Variable    ${r.json()['ipe']}
+    Should Be Equal As Integers    ${ipe['ipe']}    100
+    Should Be Equal    ${ipe['banda']}    listo
+    ${textos}=    Evaluate    [a['texto'] for a in $ipe['acciones']]
+    Should Be Equal    ${textos[0]}    Pedir la aprobación interna al jefe
+    Length Should Be    ${textos}    1
+
+17 - HU-15 El Listado Trae El IPE Y Se Ordena De Menor A Mayor
+    Iniciar Sesion Como Jefe
+    ${r}=    GET On Session    jefe    url=/expedientes?orden=ipe&per_page=100    expected_status=200
+    ${lista}=    Set Variable    ${r.json()['expedientes']}
+    ${abiertos}=    Evaluate    [e for e in $lista if e['estado'] not in ('aprobado', 'rechazado')]
+    Should Not Be Empty    ${abiertos}
+    FOR    ${e}    IN    @{abiertos}
+        Dictionary Should Contain Key    ${e['ipe']}    valor
+        Dictionary Should Contain Key    ${e['ipe']}    banda
+    END
+    ${valores}=    Evaluate    [e['ipe']['valor'] for e in $abiertos]
+    ${ordenados}=    Evaluate    sorted($valores)
+    Should Be Equal    ${valores}    ${ordenados}
+    GET On Session    jefe    url=/expedientes?orden=inventado    expected_status=400
+
+18 - HU-15 El Promotor No Recibe El IPE
+    Iniciar Sesion Como Promotor
+    ${r}=    GET On Session    promotor    /expedientes/${EXP_C1}    expected_status=200
+    Should Be Equal    ${r.json()['ipe']}    ${None}
+    ${r}=    GET On Session    promotor    /expedientes    expected_status=200
+    FOR    ${e}    IN    @{r.json()['expedientes']}
+        Dictionary Should Not Contain Key    ${e}    ipe
+    END
+    ${r}=    GET On Session    promotor    /dashboard    expected_status=200
+    Should Be Empty    ${r.json()['prioridades']}
+
+19 - HU-15 El Panel Del Jefe Trae Las Prioridades
+    Iniciar Sesion Como Jefe
+    ${r}=    GET On Session    jefe    /dashboard    expected_status=200
+    ${p}=    Set Variable    ${r.json()['prioridades']}
+    Should Not Be Empty    ${p}
+    ${n}=    Get Length    ${p}
+    Should Be True    ${n} <= 5
+    ${valores}=    Evaluate    [x['ipe'] for x in $p]
+    ${ordenados}=    Evaluate    sorted($valores)
+    Should Be Equal    ${valores}    ${ordenados}
+    Dictionary Should Contain Key    ${p[0]}    proxima_accion
 
 *** Keywords ***
 Preparar Suite

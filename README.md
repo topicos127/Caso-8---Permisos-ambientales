@@ -98,14 +98,14 @@ Las pruebas unitarias no necesitan base de datos:
 
 ```
 pip install -r requirements-test.txt
-python -m unittest tests/test_semaforo.py tests/test_sprint9.py
+python -m unittest tests/test_semaforo.py tests/test_sprint9.py tests/test_ipe.py tests/test_ipe_api.py
 ```
 
 Las de Robot Framework necesitan la app corriendo en `http://localhost:5000` con la base
 recién sembrada (registran usuarios y crean expedientes; nunca correrlas contra Railway):
 
 ```
-robot --outputdir resultados tests/sprint4 tests/sprint5 tests/sprint6 tests/sprint7 tests/sprint8 tests/sprint9
+robot --outputdir resultados tests/login tests/sprint4 tests/sprint5 tests/sprint6 tests/sprint7 tests/sprint8 tests/sprint9
 ```
 
 El pipeline de GitHub Actions corre todo en cada push a `main` y en cada Pull Request
@@ -129,6 +129,41 @@ hacia `main`.
   *En evaluación* o *Aprobado*; la consultora ve además *Aprobado internamente*.
 - **ZIP (HU-06):** se descarga como `<codigo>_<AAAA-MM-DD>.zip`.
 - Si falla la base al subir un documento, el archivo nuevo ya no queda en disco.
+- **Contraseña temporal:** la cuenta que crea el consultor para el promotor queda marcada
+  (`usuarios.debe_cambiar_clave`). Mientras no la cambie, toda la API responde 403 con
+  `cambio_clave_obligatorio: true` salvo `/sesion` y `/cuenta/contrasena`, y las pantallas
+  lo llevan a **Mi cuenta**. La columna se agrega sola al arrancar en bases anteriores.
+- **Nuevo expediente:** casilla para permitir o no la consulta pública desde el inicio.
+
+## Índice de Preparación del Expediente (HU-15, Sprint 9)
+
+`IPE = 0,5 × D + 0,3 × P + 0,2 × V`, de 0 a 100, redondeado con las mitades hacia arriba:
+
+| Componente | Cálculo |
+|---|---|
+| D · documentos | recibidos ÷ requeridos por la categoría × 100 |
+| P · plazo | en plazo o resuelto 100 · por vencer 50 · vencido 0 (el semáforo de HU-07) |
+| V · vigencia | 100 menos 25 por cada documento que vence en menos de 30 días (mínimo 0) |
+
+Bandas: **Listo** desde 80, **En preparación** de 50 a 79, **En riesgo** por debajo de 50.
+Un expediente nuevo sin documentos vale 50. Las reglas están en `permisos/reglas.py`
+(`calcular_ipe`).
+
+- `GET /expedientes/<codigo>` devuelve `ipe` con el valor, la banda, el desglose y las
+  **próximas acciones** (documentos que faltan, plazo, vigencia y el siguiente paso del flujo).
+- `GET /expedientes` trae `ipe` en cada fila; `?orden=ipe` ordena de menor a mayor (los
+  resueltos al final). `GET /dashboard` trae `prioridades`: los 5 abiertos menos preparados.
+- Solo la consultora (jefe y consultor) lo recibe; para el promotor `ipe` es `null` o no existe.
+
+## Ver la aplicación con datos de demostración
+
+`.\start.ps1 -Demo` (Docker Desktop) levanta todo y carga, además de los 3 expedientes de
+prueba, 7 de demostración con fechas relativas a hoy: todos los estados, las tres
+categorías, plazos vencido, por vencer y en plazo, un documento por vencer, uno sin acceso
+público, aprobaciones e historial. Para un expediente en riesgo, abre el `SP-A8-2026-107`.
+Sin Docker: `python seed_usuarios.py --demo` sobre una base MySQL ya creada con `schema.sql`
+(variables `DB_HOST`, `DB_PASSWORD`, `DB_NAME`). El seed normal no incluye los de demostración
+para no alterar las pruebas de Robot.
 
 ## Sesión y seguridad (Sprint 7)
 

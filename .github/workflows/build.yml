@@ -87,7 +87,7 @@ jobs:
         env:
           UPLOADS_DIR: /tmp/uploads
         run: |
-          python -m unittest tests/test_semaforo.py tests/test_sprint9.py
+          python -m unittest tests/test_semaforo.py tests/test_sprint9.py tests/test_ipe.py tests/test_ipe_api.py
 
       - name: Run Robot Framework tests (Login HU-11)
         run: |
