@@ -70,3 +70,23 @@ CREATE TABLE IF NOT EXISTS historial_expediente (
     FOREIGN KEY (expediente_id) REFERENCES expedientes (id),
     FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
 );
+
+-- Sprint 9 (HU-01): cada subida es una version nueva con codigo de trazabilidad
+-- y huella SHA-256. Las versiones no se modifican ni se eliminan.
+CREATE TABLE IF NOT EXISTS documento_versiones (
+    id INT NOT NULL AUTO_INCREMENT,
+    documento_id INT NOT NULL,
+    version INT NOT NULL,
+    codigo_trazabilidad VARCHAR(80) NOT NULL,
+    archivo_nombre VARCHAR(255) NOT NULL,
+    archivo_ruta VARCHAR(500) NULL,
+    archivo_tamano INT NULL,
+    sha256 CHAR(64) NULL,
+    subido_por INT NULL,
+    fecha_subida DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_version_codigo (codigo_trazabilidad),
+    UNIQUE KEY uq_version_documento (documento_id, version),
+    FOREIGN KEY (documento_id) REFERENCES documentos (id),
+    FOREIGN KEY (subido_por) REFERENCES usuarios (id)
+);

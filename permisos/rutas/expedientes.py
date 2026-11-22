@@ -6,7 +6,7 @@ import pymysql
 from flask import Blueprint, g, jsonify, request
 from werkzeug.security import generate_password_hash
 
-from ..bd import _esquema, cargar_expediente, cursor, documentos_de, registrar_historial
+from ..bd import SQL_ULTIMA_VERSION, _esquema, cargar_expediente, cursor, documentos_de, registrar_historial
 from ..config import (ACCION_ACCESO, ACCION_CREAR, ACCION_CUENTA_PROMOTOR, CATEGORIAS_DOCS, EMAIL_RE,
                       ROLES_INTERNOS)
 from ..errores import ApiError
@@ -142,8 +142,8 @@ def detalle_expediente(codigo):
     with cursor() as cur:
         exp = cargar_expediente(cur, codigo)
         exigir_lectura(g.usuario, exp)
-        cur.execute("SELECT id, carpeta, estado, archivo_nombre, archivo_tamano, fecha_subida "
-                    "FROM documentos WHERE expediente_id=%s ORDER BY id", (exp["id"],))
+        cur.execute("SELECT d.id, d.carpeta, d.estado, d.archivo_nombre, d.archivo_tamano, d.fecha_subida, "
+                    f"{SQL_ULTIMA_VERSION} FROM documentos d WHERE d.expediente_id=%s ORDER BY d.id", (exp["id"],))
         docs = cur.fetchall()
         cur.execute("SELECT motivo, fecha FROM aprobaciones WHERE expediente_id=%s ORDER BY fecha DESC LIMIT 1",
                     (exp["id"],))

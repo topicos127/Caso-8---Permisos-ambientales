@@ -12,7 +12,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 UPLOADS_DIR = os.environ.get("UPLOADS_DIR", "/app/uploads")
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
-EXTENSIONES_PERMITIDAS = {".pdf", ".zip"}
+EXTENSIONES_PERMITIDAS = {".pdf", ".zip"}  # HU-01: solo PDF y ZIP (la cartografia va en ZIP)
 ZONA = ZoneInfo("America/Panama")
 
 # ---------- Sesion ----------
@@ -82,7 +82,8 @@ ACCION_CREAR = "creó"
 ACCION_SUBIR = "subió documento"
 ACCION_APROBAR = "aprobó"
 # Sprint 9: el historial cubre todas las acciones que cambian el expediente.
-ACCION_ELIMINAR = "eliminó documento"
+ACCION_ELIMINAR = "eliminó documento"  # ya no ocurre (HU-01 versiona); queda en historiales viejos
+ACCION_VERSION = "subió nueva versión"
 ACCION_SOMETER = "sometió"
 ACCION_RESOLUCION = "registró aprobación de MiAmbiente"
 ACCION_ACCESO = "cambió acceso público"

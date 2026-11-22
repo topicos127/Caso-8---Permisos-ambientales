@@ -39,6 +39,12 @@ def cargar_expediente(cur, codigo):
     return exp
 
 
+# Ultima version de cada documento (alias d), para las consultas de documentos.
+SQL_ULTIMA_VERSION = ("(SELECT MAX(v.version) FROM documento_versiones v WHERE v.documento_id = d.id) AS version, "
+                      "(SELECT v.codigo_trazabilidad FROM documento_versiones v WHERE v.documento_id = d.id "
+                      "ORDER BY v.version DESC LIMIT 1) AS codigo_trazabilidad")
+
+
 def documentos_de(cur, expediente_ids):
     """Documentos de varios expedientes en una sola consulta: {id: [docs]}."""
     por_expediente = {i: [] for i in expediente_ids}
@@ -76,6 +82,29 @@ CREATE TABLE IF NOT EXISTS historial_expediente (
 """
 
 
+# Sprint 9 (HU-01): versiones de cada documento. Nunca se modifican ni se
+# eliminan; documentos.archivo_ruta apunta siempre a la ultima.
+DDL_VERSIONES = """
+CREATE TABLE IF NOT EXISTS documento_versiones (
+    id INT NOT NULL AUTO_INCREMENT,
+    documento_id INT NOT NULL,
+    version INT NOT NULL,
+    codigo_trazabilidad VARCHAR(80) NOT NULL,
+    archivo_nombre VARCHAR(255) NOT NULL,
+    archivo_ruta VARCHAR(500) NULL,
+    archivo_tamano INT NULL,
+    sha256 CHAR(64) NULL,
+    subido_por INT NULL,
+    fecha_subida DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_version_codigo (codigo_trazabilidad),
+    UNIQUE KEY uq_version_documento (documento_id, version),
+    FOREIGN KEY (documento_id) REFERENCES documentos (id),
+    FOREIGN KEY (subido_por) REFERENCES usuarios (id)
+)
+"""
+
+
 # Sprint 9: el promotor recibe una contrasena temporal y debe cambiarla. La
 # columna se agrega al arrancar si la base es anterior; mientras no exista, las
 # consultas la reemplazan por un 0 constante y la regla simplemente no aplica.
@@ -103,6 +132,7 @@ def inicializar_bd():
         raise ValueError(f"JEFE_PASSWORD no cumple la politica: {problema}")
     with cursor() as cur:
         cur.execute(DDL_HISTORIAL)
+        cur.execute(DDL_VERSIONES)
     try:
         with cursor() as cur:
             _asegurar_columna_cambio_clave(cur)
@@ -134,6 +164,6 @@ def asegurar_bd():
     try:
         inicializar_bd()
         _estado_bd["lista"] = True
-        print("Sprints 8 y 9: historial, usuario jefe y columna de cambio de contrasena verificados.", flush=True)
+        print("Sprints 8 y 9: historial, versiones de documentos, usuario jefe y columna de cambio de contrasena verificados.", flush=True)
     except Exception as e:  # noqa: BLE001 - la app sigue; se reintenta luego
         print(f"AVISO: no se pudo preparar la base para el Sprint 8: {e!r}", flush=True)

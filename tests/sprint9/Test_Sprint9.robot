@@ -6,7 +6,9 @@ Documentation     Suite de Pruebas Automatizadas - Sprint 9 (Permisos Ambientale
 ...               - Registro: el promotor ya no se registra solo; su consultor crea
 ...                 la cuenta con una contrasena temporal que el promotor cambia.
 ...               - Login: limite de intentos fallidos (429).
-...               - HU-14: el historial registra eliminar, someter y la resolucion.
+...               - HU-01: los documentos no se eliminan; cada subida es una version con
+...                 codigo de trazabilidad. PDF con scripts y ZIP con ejecutables se rechazan.
+...               - HU-14: el historial registra nuevas versiones, someter y la resolucion.
 ...               - HU-06: el ZIP lleva el codigo y la fecha.
 ...               - La contrasena temporal del promotor solo permite cambiarla.
 ...               - HU-15: Indice de Preparacion del Expediente (IPE).
@@ -123,7 +125,9 @@ ${CLAVE_NUEVA}           Nueva2026x
 
 # ---------------- HU-14: historial completo ----------------
 
-12 - HU-14 Eliminar Un Documento Queda En El Historial
+12 - HU-01 Un Documento No Se Elimina Y Cada Subida Es Una Version Con Codigo
+    [Documentation]    Eliminar responde 405; volver a subir crea la version 2, con un codigo
+    ...                de trazabilidad distinto, y queda en el historial.
     Iniciar Sesion Como Consultor
     ${codigo}=    Crear Expediente    consultor    I
     Set Suite Variable    ${COD_HIST}    ${codigo}
@@ -133,11 +137,38 @@ ${CLAVE_NUEVA}           Nueva2026x
         Subir PDF    consultor    ${COD_HIST}    ${carpeta}
     END
     ${carpeta_url}=    Evaluate    urllib.parse.quote($carpetas[0])    modules=urllib.parse
-    DELETE On Session    consultor    /expedientes/${COD_HIST}/documentos/${carpeta_url}/eliminar    expected_status=200
-    ${entradas}=    Historial De    consultor    ${COD_HIST}
-    Should Be Equal    ${entradas[0]['accion']}    eliminó documento
-    Should Be Equal    ${entradas[0]['usuario_email']}    ${CONSULTOR_EMAIL}
+    ${r}=    DELETE On Session    consultor    /expedientes/${COD_HIST}/documentos/${carpeta_url}/eliminar    expected_status=405
+    Should Contain    ${r.json()['mensaje']}    nueva versión
     Subir PDF    consultor    ${COD_HIST}    ${carpetas[0]}
+    ${entradas}=    Historial De    consultor    ${COD_HIST}
+    Should Be Equal    ${entradas[0]['accion']}    subió nueva versión
+    Should Be Equal    ${entradas[0]['usuario_email']}    ${CONSULTOR_EMAIL}
+    ${r}=    GET On Session    consultor    /expedientes/${COD_HIST}/documentos/${carpeta_url}/versiones    expected_status=200
+    ${versiones}=    Set Variable    ${r.json()['versiones']}
+    Length Should Be    ${versiones}    2
+    Should Be Equal As Integers    ${versiones[0]['version']}    2
+    Should Not Be Equal    ${versiones[0]['codigo_trazabilidad']}    ${versiones[1]['codigo_trazabilidad']}
+    Should Start With    ${versiones[0]['codigo_trazabilidad']}    ${COD_HIST}-D
+    GET On Session    consultor    /expedientes/${COD_HIST}/documentos/${carpeta_url}/versiones/1/descargar    expected_status=200
+    ${r}=    GET On Session    consultor    /documentos/trazabilidad/${versiones[1]['codigo_trazabilidad']}    expected_status=200
+    Should Be Equal    ${r.json()['version']['carpeta']}    ${carpetas[0]}
+    Should Be Equal As Integers    ${r.json()['version']['version']}    1
+    ${r}=    GET On Session    consultor    /expedientes/${COD_HIST}    expected_status=200
+    Should Be Equal    ${r.json()['documentos'][0]['codigo_trazabilidad']}    ${versiones[0]['codigo_trazabilidad']}
+
+12b - HU-01 Un PDF Con Script O Un ZIP Con Ejecutable Se Rechaza
+    Iniciar Sesion Como Consultor
+    ${r}=    GET On Session    consultor    /expedientes/${COD_HIST}
+    ${carpeta_url}=    Evaluate    urllib.parse.quote($r.json()['documentos'][1]['carpeta'])    modules=urllib.parse
+    ${pdf}=    Evaluate    {'archivo': ('malo.pdf', b'%PDF-1.4\\n1 0 obj << /S /JavaScript /JS (app.alert(1)) >> endobj\\n', 'application/pdf')}
+    ${r}=    POST On Session    consultor    /expedientes/${COD_HIST}/documentos/${carpeta_url}/subir
+    ...    files=${pdf}    expected_status=400
+    Should Contain    ${r.json()['mensaje']}    contenido activo
+    ${zip}=    Evaluate    {'archivo': ('malo.zip', __import__('base64').b64decode('UEsDBBQAAAAAALZgdl2AflBYBAAAAAQAAAAJAAAAc2V0dXAuZXhlTVqQAFBLAQIUABQAAAAAALZgdl2AflBYBAAAAAQAAAAJAAAAAAAAAAAAAACAAQAAAABzZXR1cC5leGVQSwUGAAAAAAEAAQA3AAAAKwAAAAAA'), 'application/zip')}
+    ${r}=    POST On Session    consultor    /expedientes/${COD_HIST}/documentos/${carpeta_url}/subir
+    ...    files=${zip}    expected_status=400
+    ${r}=    GET On Session    consultor    /expedientes/${COD_HIST}/documentos/${carpeta_url}/versiones
+    Length Should Be    ${r.json()['versiones']}    1
 
 13 - HU-14 Someter Y La Resolucion Quedan En El Historial
     Iniciar Sesion Como Jefe

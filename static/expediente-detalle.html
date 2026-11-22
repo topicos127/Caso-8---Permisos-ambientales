@@ -324,43 +324,24 @@ if (usuario) {
           btnReemp.style.padding = '6px 12px';
           btnReemp.style.fontSize = '12.5px';
           btnReemp.style.border = '1px solid var(--line)';
-          btnReemp.textContent = 'Reemplazar';
+          btnReemp.textContent = 'Nueva versión';
+          btnReemp.title = 'Los documentos no se eliminan: cada corrección es una versión nueva.';
           btnReemp.addEventListener('click', () => inputReempl.click());
 
           acciones.appendChild(btnReemp);
           acciones.appendChild(inputReempl);
-
-          const btnElim = document.createElement('button');
-          btnElim.className = 'btn btn-ghost';
-          btnElim.style.padding = '6px 12px';
-          btnElim.style.fontSize = '12.5px';
-          btnElim.style.border = '1px solid var(--status-bad)';
-          btnElim.style.color = 'var(--status-bad)';
-          btnElim.textContent = 'Eliminar';
-          btnElim.addEventListener('click', async () => {
-            if (!confirm(`¿Eliminar el archivo de "${doc.carpeta}"?`)) return;
-            try {
-              const resp = await fetch(
-                `/expedientes/${codigo}/documentos/${encodeURIComponent(doc.carpeta)}/eliminar`,
-                {
-                  method: 'POST',
-                  headers: cabecerasApi(),
-                  credentials: 'same-origin'
-                }
-              );
-              const data = await resp.json();
-              if (data.ok) {
-                mensaje(`✔ Archivo eliminado de "${doc.carpeta}".`, 'ok');
-                await cargarExpediente();
-              } else {
-                mensaje(data.mensaje || 'Error al eliminar.', 'error');
-              }
-            } catch (err) {
-              mensaje('Error de red al eliminar.', 'error');
-            }
-          });
-          acciones.appendChild(btnElim);
         }
+
+
+        // HU-01: historial de versiones (nunca se eliminan).
+        const btnVers = document.createElement('button');
+        btnVers.className = 'btn btn-ghost';
+        btnVers.style.padding = '6px 12px';
+        btnVers.style.fontSize = '12.5px';
+        btnVers.style.border = '1px solid var(--line)';
+        btnVers.textContent = 'Versiones';
+        btnVers.addEventListener('click', () => alternarVersiones(doc.carpeta, li));
+        acciones.appendChild(btnVers);
       } else {
         const tagMissing = document.createElement('span');
         tagMissing.className = 'tag-missing';
@@ -398,10 +379,83 @@ if (usuario) {
         info.style.marginTop = '6px';
         info.textContent = `↳ ${doc.archivo_nombre}${doc.archivo_tamano ? ' · ' + formatearTamano(doc.archivo_tamano) : ''}${doc.fecha_subida ? ' · ' + doc.fecha_subida : ''}`;
         li.appendChild(info);
+
+        if (doc.codigo_trazabilidad) {
+          const traza = document.createElement('div');
+          traza.style.fontFamily = 'var(--mono)';
+          traza.style.fontSize = '11.5px';
+          traza.style.color = 'var(--ink-soft)';
+          traza.style.marginTop = '3px';
+          traza.textContent = `Versión ${doc.version} · Código de trazabilidad: ${doc.codigo_trazabilidad}`;
+          li.appendChild(traza);
+        }
       }
 
       ul.appendChild(li);
     });
+  }
+
+  async function descargarArchivo(url, nombre) {
+    try {
+      const resp = await fetch(url, { headers: cabecerasApi(), credentials: 'same-origin' });
+      if (!resp.ok) {
+        mensaje('No se pudo descargar el archivo.', 'error');
+        return;
+      }
+      const blobUrl = URL.createObjectURL(await resp.blob());
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = nombre;
+      a.click();
+      URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+      mensaje('Error de red al descargar.', 'error');
+    }
+  }
+
+  async function alternarVersiones(carpeta, li) {
+    const previo = li.querySelector('.lista-versiones');
+    if (previo) { previo.remove(); return; }
+    const caja = document.createElement('div');
+    caja.className = 'lista-versiones';
+    caja.style.margin = '10px 0 0 14px';
+    caja.style.fontSize = '12.5px';
+    caja.textContent = 'Cargando versiones...';
+    li.appendChild(caja);
+    try {
+      const data = await apiFetch(`/expedientes/${codigo}/documentos/${encodeURIComponent(carpeta)}/versiones`);
+      const versiones = data.versiones || [];
+      if (!versiones.length) {
+        caja.textContent = 'Sin versiones registradas.';
+        return;
+      }
+      caja.innerHTML = '';
+      versiones.forEach((v, i) => {
+        const fila = document.createElement('div');
+        fila.style.display = 'flex';
+        fila.style.flexWrap = 'wrap';
+        fila.style.gap = '10px';
+        fila.style.alignItems = 'center';
+        fila.style.padding = '4px 0';
+        fila.style.borderTop = i ? '1px dashed var(--line)' : 'none';
+        fila.innerHTML = `<b>v${esc(v.version)}</b>${i === 0 ? ' <span class="tag-ok">Vigente</span>' : ''}
+          <span style="font-family:var(--mono);">${esc(v.codigo_trazabilidad)}</span>
+          <span style="color:var(--ink-faint);">${esc(v.archivo_nombre)} · ${esc(formatearTamano(v.archivo_tamano))} · ${esc(v.fecha_subida || '')}${v.subido_por ? ' · ' + esc(v.subido_por) : ''}</span>`;
+        if (v.sha256) fila.title = 'SHA-256: ' + v.sha256;
+        const enlace = document.createElement('a');
+        enlace.href = '#';
+        enlace.textContent = 'Descargar';
+        enlace.addEventListener('click', ev => {
+          ev.preventDefault();
+          descargarArchivo(`/expedientes/${codigo}/documentos/${encodeURIComponent(carpeta)}/versiones/${v.version}/descargar`,
+                           v.archivo_nombre);
+        });
+        fila.appendChild(enlace);
+        caja.appendChild(fila);
+      });
+    } catch (e) {
+      caja.textContent = 'No se pudieron cargar las versiones.';
+    }
   }
 
   function renderVerificacion(verif) {
@@ -726,7 +780,7 @@ if (usuario) {
       const data = await resp.json();
 
       if (data.ok) {
-        mensaje(`✔ ${data.archivo_nombre} subido correctamente.`, 'ok');
+        mensaje(`✔ ${data.archivo_nombre} subido como versión ${data.version} · ${data.codigo_trazabilidad}`, 'ok');
         await cargarExpediente();
       } else {
         mensaje(data.mensaje || 'Error al subir el archivo.', 'error');

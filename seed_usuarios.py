@@ -7,6 +7,7 @@ Uso:
                                      relativas a hoy, para ver el UI/UX con datos
                                      (tambien con SEED_DEMO_RICO=true)
 """
+import hashlib
 import os
 import sys
 from datetime import datetime, timedelta, timezone
@@ -65,6 +66,18 @@ DEMO_EXPEDIENTES = [
 JEFE_EMAIL = os.environ.get("JEFE_EMAIL", "jefe1@ejemplo.com").strip().lower()
 
 
+def borrar_documentos_de_prueba(cur, exp_id):
+    """Reinicio de datos de prueba: el seed rehace los documentos de sus propios
+    expedientes. La app nunca borra versiones (HU-01); solo este script lo hace,
+    y solo para los expedientes que siembra."""
+    try:
+        cur.execute("DELETE v FROM documento_versiones v JOIN documentos d ON d.id = v.documento_id "
+                    "WHERE d.expediente_id=%s", (exp_id,))
+    except pymysql.MySQLError:
+        pass  # base anterior al Sprint 9: la tabla de versiones aun no existe
+    cur.execute("DELETE FROM documentos WHERE expediente_id=%s", (exp_id,))
+
+
 def sembrar_demo(cur):
     ahora = datetime.now(timezone(timedelta(hours=-5))).replace(tzinfo=None, microsecond=0)
 
@@ -103,7 +116,7 @@ def sembrar_demo(cur):
         cur.execute("SELECT id FROM expedientes WHERE codigo=%s", (codigo,))
         exp_id = cur.fetchone()[0]
 
-        cur.execute("DELETE FROM documentos WHERE expediente_id=%s", (exp_id,))
+        borrar_documentos_de_prueba(cur, exp_id)
         subidas = []
         for i, carpeta in enumerate(DOCS_POR_CAT[categoria]):
             if i < recibidos:
@@ -115,6 +128,17 @@ def sembrar_demo(cur):
                     """INSERT INTO documentos (expediente_id, carpeta, estado, archivo_nombre, archivo_tamano, fecha_subida)
                        VALUES (%s, %s, 'recibido', %s, %s, %s)""",
                     (exp_id, carpeta, f"{carpeta.replace(' ', '_')}.pdf", 184320, fecha))
+                # HU-01: version 1 con su codigo de trazabilidad (sin archivo real en disco).
+                doc_id = cur.lastrowid
+                sha = hashlib.sha256(f"{codigo}/{carpeta}/demo".encode("utf-8")).hexdigest()
+                try:
+                    cur.execute("""INSERT INTO documento_versiones (documento_id, version, codigo_trazabilidad,
+                                   archivo_nombre, archivo_tamano, sha256, subido_por, fecha_subida)
+                                   VALUES (%s, 1, %s, %s, %s, %s, %s, %s)""",
+                                (doc_id, f"{codigo}-D{doc_id}-V1-{sha[:8].upper()}",
+                                 f"{carpeta.replace(' ', '_')}.pdf", 184320, sha, consultor, fecha))
+                except pymysql.MySQLError:
+                    pass  # base anterior al Sprint 9
             else:
                 cur.execute("INSERT INTO documentos (expediente_id, carpeta, estado) VALUES (%s, %s, 'pendiente')",
                             (exp_id, carpeta))
@@ -174,7 +198,7 @@ def main(demo=False):
                 cur.execute("SELECT id FROM expedientes WHERE codigo=%s", (codigo,))
                 exp_id = cur.fetchone()[0]
 
-                cur.execute("DELETE FROM documentos WHERE expediente_id=%s", (exp_id,))
+                borrar_documentos_de_prueba(cur, exp_id)
                 docs = DOCS_POR_CAT[categoria]
                 for i, carpeta in enumerate(docs):
                     # Solo los expedientes pendientes dejan el ultimo documento

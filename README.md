@@ -98,7 +98,7 @@ Las pruebas unitarias no necesitan base de datos:
 
 ```
 pip install -r requirements-test.txt
-python -m unittest tests/test_semaforo.py tests/test_sprint9.py tests/test_ipe.py tests/test_ipe_api.py
+python -m unittest tests/test_semaforo.py tests/test_sprint9.py tests/test_ipe.py tests/test_ipe_api.py tests/test_documentos.py
 ```
 
 Las de Robot Framework necesitan la app corriendo en `http://localhost:5000` con la base
@@ -123,7 +123,20 @@ hacia `main`.
   una sola vez. Cualquier usuario la cambia en **Mi cuenta** (`POST /cuenta/contrasena`).
 - **Login:** tras 5 intentos fallidos en un minuto para el mismo correo e IP, responde 429
   (`LOGIN_MAX_FALLOS` y `LOGIN_VENTANA_SEGUNDOS` lo ajustan).
-- **Historial (HU-14):** registra también `eliminó documento`, `sometió`,
+- **Documentos (HU-01): solo PDF y ZIP, revisados y versionados.**
+  - La extensión debe coincidir con el contenido. Un PDF se rechaza si trae JavaScript,
+    acciones `/Launch`, archivos incrustados o multimedia activa (también dentro de
+    objetos comprimidos o con nombres camuflados con `#xx`). Un ZIP se rechaza si trae
+    ejecutables o scripts (por extensión o por su firma), rutas con `..`, enlaces
+    simbólicos, contraseña, otros comprimidos o una compresión anómala; sus PDF se
+    revisan igual. La lógica está en `permisos/inspeccion.py`.
+  - **Un documento nunca se elimina:** `.../eliminar` responde 405. Cada subida es una
+    versión nueva en `documento_versiones`, con su huella SHA-256 y un **código de
+    trazabilidad** único: `<expediente>-D<documento>-V<versión>-<8 primeros del SHA-256>`.
+    Las versiones anteriores se conservan y se descargan:
+    `GET .../documentos/<carpeta>/versiones`, `GET .../versiones/<n>/descargar` y
+    `GET /documentos/trazabilidad/<codigo>`. La tabla se crea sola al arrancar.
+- **Historial (HU-14):** registra también `subió nueva versión`, `sometió`,
   `registró aprobación de MiAmbiente`, `cambió acceso público` y `creó cuenta del promotor`.
 - **Estados (HU-07):** el promotor y el público ven *Pendiente de subsanación*,
   *En evaluación* o *Aprobado*; la consultora ve además *Aprobado internamente*.
