@@ -6,7 +6,7 @@ from flask import Blueprint, g, jsonify, request, send_file
 from fpdf import FPDF
 
 from ..bd import cargar_expediente, cursor, registrar_historial
-from ..config import ACCION_APROBAR
+from ..config import ACCION_APROBAR, ACCION_RESOLUCION, ACCION_SOMETER
 from ..errores import ApiError
 from ..reglas import calcular_verificacion
 from ..seguridad import exigir_gestion, exigir_jefe, exigir_lectura, requiere_login
@@ -43,7 +43,7 @@ def aprobar_expediente(codigo):
     return jsonify({"ok": True, "mensaje": "Aprobado internamente."}), 200
 
 
-def cambiar_estado(codigo, desde, hacia, mensaje_error):
+def cambiar_estado(codigo, desde, hacia, mensaje_error, accion):
     with cursor() as cur:
         exp = cargar_expediente(cur, codigo)
         exigir_gestion(g.usuario, exp)
@@ -53,19 +53,21 @@ def cambiar_estado(codigo, desde, hacia, mensaje_error):
                                 (hacia, exp["id"], desde))
         if cambiadas != 1:
             raise ApiError(400, mensaje_error)
+        registrar_historial(cur, exp["id"], g.usuario["id"], accion)  # Sprint 9
 
 
 @bp.route("/expedientes/<codigo>/someter", methods=["POST"])
 @requiere_login
 def someter_expediente(codigo):
-    cambiar_estado(codigo, "aprobado_interno", "evaluacion", "Debe aprobarse internamente primero.")
+    cambiar_estado(codigo, "aprobado_interno", "evaluacion", "Debe aprobarse internamente primero.",
+                   ACCION_SOMETER)
     return jsonify({"ok": True, "mensaje": "Sometido a MiAmbiente."}), 200
 
 
 @bp.route("/expedientes/<codigo>/aprobar-miambiente", methods=["POST"])
 @requiere_login
 def aprobar_miambiente(codigo):
-    cambiar_estado(codigo, "evaluacion", "aprobado", "Debe estar en evaluacion.")
+    cambiar_estado(codigo, "evaluacion", "aprobado", "Debe estar en evaluacion.", ACCION_RESOLUCION)
     return jsonify({"ok": True, "mensaje": "Aprobado por MiAmbiente."}), 200
 
 

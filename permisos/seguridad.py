@@ -65,9 +65,9 @@ def exigir_gestion(u, exp):
         raise ApiError(403, "No autorizado.")
 
 
-def exigir_jefe(u):
+def exigir_jefe(u, mensaje="Solo el jefe de la consultora puede aprobar internamente."):
     if u["rol"] != "jefe":
-        raise ApiError(403, "Solo el jefe de la consultora puede aprobar internamente.")
+        raise ApiError(403, mensaje)
 
 
 def filtro_de(u):

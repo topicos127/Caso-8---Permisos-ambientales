@@ -3,6 +3,7 @@ y archivos del frontend."""
 from flask import Blueprint, jsonify, send_from_directory
 
 from ..bd import cursor
+from ..config import ESTADO_PUBLICO
 from ..errores import ApiError
 
 bp = Blueprint("publico", __name__)
@@ -25,12 +26,21 @@ def health():
 
 @bp.route("/consulta/<codigo>", methods=["GET"])
 def consulta_publica(codigo):
+    """HU-09. Solo datos publicos y solo si la consultora habilito el acceso
+    publico: si no, el backend no entrega nada del expediente (Ley 81 de 2019).
+    Como el resumen PDF se arma con estos datos, sin acceso tampoco hay PDF."""
     with cursor() as cur:
-        cur.execute("SELECT codigo, proyecto, promotor, categoria, estado, acceso_publico "
-                    "FROM expedientes WHERE codigo=%s", (codigo,))
+        cur.execute("""SELECT e.codigo, e.proyecto, e.promotor, e.categoria, e.estado, e.acceso_publico,
+                              u.nombre AS consultor
+                       FROM expedientes e LEFT JOIN usuarios u ON u.id = e.usuario_id
+                       WHERE e.codigo=%s""", (codigo,))
         exp = cur.fetchone()
     if not exp:
         raise ApiError(404, "No encontrado")
+    if not exp["acceso_publico"]:
+        raise ApiError(403, "Este proyecto no está disponible para consulta pública.")
+    exp["acceso_publico"] = True
+    exp["estado_publico"] = ESTADO_PUBLICO.get(exp["estado"], exp["estado"])
     return jsonify({"expediente": exp}), 200
 
 

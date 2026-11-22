@@ -1,15 +1,43 @@
-"""HU-11: login, logout, sesion y registro."""
+"""HU-11: login, logout, sesion, registro y cambio de contrasena."""
+import threading
+import time
+from collections import deque
+
 import pymysql
 from flask import Blueprint, g, jsonify, request, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..bd import cursor
-from ..config import EMAIL_RE, ROLES_REGISTRO
+from ..config import EMAIL_RE, LOGIN_MAX_FALLOS, LOGIN_VENTANA_SEGUNDOS, ROLES_REGISTRO
+from ..errores import ApiError
 from ..reglas import problema_de_password
 from ..seguridad import requiere_login
 from ..utiles import texto
 
 bp = Blueprint("auth", __name__)
+
+# ---------- Limite de intentos fallidos (Sprint 9) ----------
+# En memoria: gunicorn corre un solo proceso con hilos. La clave es correo + IP,
+# asi un atacante no bloquea a otros usuarios y un correo no se prueba sin fin.
+# Solo cuentan los fallos; un login correcto limpia el contador.
+_fallos = {}
+_candado = threading.Lock()
+
+
+def _fallos_recientes(clave, ahora):
+    marcas = _fallos.get(clave)
+    if not marcas:
+        return 0
+    while marcas and ahora - marcas[0] > LOGIN_VENTANA_SEGUNDOS:
+        marcas.popleft()
+    if not marcas:
+        del _fallos[clave]
+        return 0
+    return len(marcas)
+
+
+def _anotar_fallo(clave, ahora):
+    _fallos.setdefault(clave, deque()).append(ahora)
 
 
 @bp.route("/login", methods=["POST"])
@@ -21,11 +49,19 @@ def login():
     if not email or not password:
         return jsonify({"acceso": False, "mensaje": "Debe ingresar correo y contrasena."}), 401
 
+    clave = (request.remote_addr, email)
+    with _candado:
+        if _fallos_recientes(clave, time.monotonic()) >= LOGIN_MAX_FALLOS:
+            return jsonify({"acceso": False, "mensaje":
+                            "Demasiados intentos fallidos. Espere un minuto e intente de nuevo."}), 429
+
     with cursor() as cur:
         cur.execute("SELECT id, email, password_hash, rol, nombre FROM usuarios WHERE email=%s", (email,))
         u = cur.fetchone()
 
     if u and check_password_hash(u["password_hash"], password):
+        with _candado:
+            _fallos.pop(clave, None)
         session.clear()
         session["uid"] = u["id"]
         return jsonify({
@@ -36,6 +72,8 @@ def login():
             "email": u["email"],
         }), 200
 
+    with _candado:
+        _anotar_fallo(clave, time.monotonic())
     return jsonify({"acceso": False, "mensaje": "Credenciales incorrectas."}), 401
 
 
@@ -66,8 +104,11 @@ def registro():
         return jsonify({"ok": False, "mensaje": "La contrasena debe ser texto."}), 400
     if not EMAIL_RE.match(email):
         return jsonify({"ok": False, "mensaje": "El correo no es valido."}), 400
+    if rol == "promotor":
+        return jsonify({"ok": False, "mensaje": "Rol no permitido: la cuenta del promotor la crea su "
+                                                "consultor desde el expediente."}), 400
     if rol not in ROLES_REGISTRO:
-        return jsonify({"ok": False, "mensaje": "Rol no permitido. Use consultor o promotor."}), 400
+        return jsonify({"ok": False, "mensaje": "Rol no permitido. Use consultor."}), 400
     problema = problema_de_password(password)
     if problema:
         return jsonify({"ok": False, "mensaje": problema}), 400
@@ -85,3 +126,27 @@ def registro():
         return jsonify({"ok": False, "mensaje": "Ese correo ya esta registrado."}), 409
 
     return jsonify({"ok": True, "mensaje": "Usuario registrado correctamente."}), 201
+
+
+@bp.route("/cuenta/contrasena", methods=["POST"])
+@requiere_login
+def cambiar_contrasena():
+    """Cualquier usuario cambia su propia contrasena (por ejemplo, la temporal
+    que recibe el promotor)."""
+    data = request.get_json(silent=True) or {}
+    actual = data.get("actual", "")
+    nueva = data.get("nueva", "")
+    if not isinstance(actual, str) or not actual:
+        raise ApiError(400, "Ingrese su contrasena actual.")
+    problema = problema_de_password(nueva)
+    if problema:
+        raise ApiError(400, problema)
+
+    with cursor() as cur:
+        cur.execute("SELECT password_hash FROM usuarios WHERE id=%s", (g.usuario["id"],))
+        fila = cur.fetchone()
+        if not fila or not check_password_hash(fila["password_hash"], actual):
+            raise ApiError(400, "La contrasena actual no es correcta.")
+        cur.execute("UPDATE usuarios SET password_hash=%s WHERE id=%s",
+                    (generate_password_hash(nueva), g.usuario["id"]))
+    return jsonify({"ok": True, "mensaje": "Contrasena actualizada."}), 200

@@ -53,8 +53,24 @@ CATEGORIAS_DOCS = {
 }
 PLAZOS_LEGALES = {"I": 20, "II": 40, "III": 80}
 ESTADOS_RESUELTOS = {"aprobado", "rechazado"}
-ROLES_REGISTRO = {"consultor", "promotor"}  # el jefe no se registra solo
+# Sprint 9: el promotor ya no se registra solo. Si pudiera, cualquiera que se
+# registrara primero con el correo de un promotor veria sus expedientes. Su
+# cuenta la crea el consultor (o el jefe) desde el expediente.
+ROLES_REGISTRO = {"consultor"}  # el jefe tampoco se registra solo
 ROLES_INTERNOS = {"consultor", "jefe"}
+
+# HU-07: los tres estados que ven el promotor y el publico.
+ESTADO_PUBLICO = {
+    "pendiente": "Pendiente de subsanación",
+    "aprobado_interno": "Pendiente de subsanación",
+    "evaluacion": "En evaluación",
+    "aprobado": "Aprobado",
+    "rechazado": "Rechazado",
+}
+
+# Limite de intentos fallidos de login por correo e IP (Sprint 9).
+LOGIN_MAX_FALLOS = int(os.environ.get("LOGIN_MAX_FALLOS", 5))
+LOGIN_VENTANA_SEGUNDOS = int(os.environ.get("LOGIN_VENTANA_SEGUNDOS", 60))
 
 # HU-13: usuario jefe de prueba. En Railway conviene definir JEFE_PASSWORD.
 JEFE_EMAIL = os.environ.get("JEFE_EMAIL", "jefe1@ejemplo.com").strip().lower()
@@ -65,6 +81,12 @@ JEFE_PASSWORD = os.environ.get("JEFE_PASSWORD", "Jefe2026*")
 ACCION_CREAR = "creó"
 ACCION_SUBIR = "subió documento"
 ACCION_APROBAR = "aprobó"
+# Sprint 9: el historial cubre todas las acciones que cambian el expediente.
+ACCION_ELIMINAR = "eliminó documento"
+ACCION_SOMETER = "sometió"
+ACCION_RESOLUCION = "registró aprobación de MiAmbiente"
+ACCION_ACCESO = "cambió acceso público"
+ACCION_CUENTA_PROMOTOR = "creó cuenta del promotor"
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 RUTAS_SIN_CABECERA = {"/login", "/registro"}

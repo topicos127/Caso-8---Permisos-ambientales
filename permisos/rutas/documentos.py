@@ -9,9 +9,9 @@ from flask import Blueprint, g, jsonify, request, send_file, send_from_directory
 from werkzeug.utils import secure_filename
 
 from ..bd import cargar_expediente, cursor, registrar_historial
-from ..config import ACCION_SUBIR, EXTENSIONES_PERMITIDAS, MAX_FILE_SIZE, UPLOADS_DIR, ZONA
+from ..config import ACCION_ELIMINAR, ACCION_SUBIR, EXTENSIONES_PERMITIDAS, MAX_FILE_SIZE, UPLOADS_DIR, ZONA
 from ..errores import ApiError
-from ..reglas import es_contenido_valido
+from ..reglas import es_contenido_valido, hoy
 from ..seguridad import exigir_gestion, exigir_lectura, requiere_login
 from ..utiles import borrar_archivo, ruta_segura
 
@@ -41,29 +41,41 @@ def validar_archivo():
 @bp.route("/expedientes/<codigo>/documentos/<carpeta>/subir", methods=["POST"])
 @requiere_login
 def subir_documento(codigo, carpeta):
-    with cursor() as cur:
-        exp = cargar_expediente(cur, codigo)
-        exigir_gestion(g.usuario, exp)
-        if exp["estado"] != "pendiente":
-            raise ApiError(403, "Expediente no editable.")
+    guardado = None  # archivo nuevo en disco, para borrarlo si la base falla
+    try:
+        with cursor() as cur:
+            exp = cargar_expediente(cur, codigo)
+            exigir_gestion(g.usuario, exp)
+            if exp["estado"] != "pendiente":
+                raise ApiError(403, "Expediente no editable.")
 
-        archivo, nombre_original, tamano = validar_archivo()
+            archivo, nombre_original, tamano = validar_archivo()
 
-        cur.execute("SELECT id, archivo_ruta FROM documentos WHERE expediente_id=%s AND carpeta=%s",
-                    (exp["id"], carpeta))
-        doc = cur.fetchone()
-        if not doc:
-            raise ApiError(404, "Documento no encontrado.")
+            cur.execute("SELECT id, archivo_ruta FROM documentos WHERE expediente_id=%s AND carpeta=%s",
+                        (exp["id"], carpeta))
+            doc = cur.fetchone()
+            if not doc:
+                raise ApiError(404, "Documento no encontrado.")
 
-        carpeta_path = os.path.join(UPLOADS_DIR, exp["codigo"])
-        os.makedirs(carpeta_path, exist_ok=True)
-        nombre_unico = f"{uuid.uuid4().hex[:8]}_{nombre_original}"
-        archivo.save(os.path.join(carpeta_path, nombre_unico))
+            carpeta_path = os.path.join(UPLOADS_DIR, exp["codigo"])
+            os.makedirs(carpeta_path, exist_ok=True)
+            nombre_unico = f"{uuid.uuid4().hex[:8]}_{nombre_original}"
+            guardado = os.path.join(carpeta_path, nombre_unico)
+            archivo.save(guardado)
 
-        cur.execute("""UPDATE documentos SET estado='recibido', archivo_nombre=%s, archivo_ruta=%s,
-                       archivo_tamano=%s, fecha_subida=NOW() WHERE id=%s""",
-                    (nombre_original, os.path.join(exp["codigo"], nombre_unico), tamano, doc["id"]))
-        registrar_historial(cur, exp["id"], g.usuario["id"], ACCION_SUBIR)
+            cur.execute("""UPDATE documentos SET estado='recibido', archivo_nombre=%s, archivo_ruta=%s,
+                           archivo_tamano=%s, fecha_subida=NOW() WHERE id=%s""",
+                        (nombre_original, os.path.join(exp["codigo"], nombre_unico), tamano, doc["id"]))
+            registrar_historial(cur, exp["id"], g.usuario["id"], ACCION_SUBIR)
+    except Exception:
+        # Sprint 9: si la transaccion no se confirma, el archivo nuevo no debe
+        # quedar huerfano en disco.
+        if guardado and os.path.exists(guardado):
+            try:
+                os.remove(guardado)
+            except OSError:
+                pass
+        raise
 
     # Al reemplazar, el archivo anterior ya no lo apunta nadie.
     borrar_archivo(doc["archivo_ruta"])
@@ -108,6 +120,7 @@ def eliminar_documento(codigo, carpeta):
             raise ApiError(400, "No tiene archivo.")
         cur.execute("""UPDATE documentos SET estado='pendiente', archivo_nombre=NULL, archivo_ruta=NULL,
                        archivo_tamano=NULL, fecha_subida=NULL WHERE id=%s""", (doc["id"],))
+        registrar_historial(cur, exp["id"], g.usuario["id"], ACCION_ELIMINAR)
 
     borrar_archivo(doc["archivo_ruta"])
     return jsonify({"ok": True, "mensaje": "Documento eliminado."}), 200
@@ -136,5 +149,6 @@ def descargar_zip_expediente(codigo):
         zf.writestr('Indice_Expediente.txt', indice_txt)
 
     memory_file.seek(0)
+    # HU-06: nombre estandarizado con el codigo y la fecha de Panama.
     return send_file(memory_file, mimetype='application/zip', as_attachment=True,
-                     download_name=f"{exp['codigo']}_completo.zip")
+                     download_name=f"{exp['codigo']}_{hoy().isoformat()}.zip")
