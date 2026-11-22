@@ -209,3 +209,32 @@ para no alterar las pruebas de Robot.
 | `GET /historial` y `GET /historial?codigo=X` | todo | solo los suyos | 403 | 401 |
 | `GET /expedientes/<codigo>/historial` | 200 | 200 si es suyo, si no 403 | 403 | 401 |
 | `POST /expedientes/<codigo>/aprobar` | 200 | 403 | 403 | 401 |
+
+## Equipo de consultores y uso en el celular (Sprint 9)
+
+- **Equipo de consultores.** El jefe gestiona su equipo en **Equipo** (menú lateral; solo lo
+  ve el jefe):
+  - **Alta:** nombre y correo. La app genera una contraseña temporal que se muestra una sola
+    vez, igual que la cuenta del promotor; si el jefe manda una propia, debe cumplir la
+    política del Sprint 6. En los dos casos el consultor la cambia en su primer ingreso.
+  - **Baja:** desactiva a un consultor. Ya no puede iniciar sesión (el login responde 403 y
+    su sesión abierta deja de valer), pero el usuario no se borra: sus expedientes y su
+    historial se conservan. Se puede reactivar.
+  - **Reasignar:** pasa los expedientes de un consultor desactivado a otro activo. Cada
+    expediente reasignado queda en el historial como `reasignó`, a nombre del jefe.
+  - La columna `usuarios.activo` la agrega la app al arrancar si no existe. Plan B:
+    `sql/sprint9_manual.sql`.
+- **Uso en el celular.** En pantallas de 820 px o menos, el menú lateral se abre y se cierra
+  con el botón **Menú** de la barra de arriba (antes quedaba apilado encima de cada
+  pantalla). En celular, Mis expedientes, Historial y Equipo se muestran como tarjetas, sin
+  desplazamiento horizontal.
+
+| Endpoint | Jefe | Consultor | Promotor | Sin sesión |
+|---|---|---|---|---|
+| `GET /consultores` | 200 | 403 | 403 | 401 |
+| `POST /consultores` (`nombre`, `email`, `password` opcional) | 201 (400 clave débil, 409 correo repetido) | 403 | 403 | 401 |
+| `POST /consultores/<id>/desactivar` | 200 (409 si ya lo está) | 403 | 403 | 401 |
+| `POST /consultores/<id>/activar` | 200 (409 si ya lo está) | 403 | 403 | 401 |
+| `POST /consultores/<id>/reasignar` (`destino_id`) | 200 (409 si el consultor sigue activo) | 403 | 403 | 401 |
+| `POST /login` de un consultor desactivado | — | 403 | — | — |
+
