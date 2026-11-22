@@ -56,6 +56,9 @@
 
     <div class="content">
       <div class="content-head"><h2>Mi cuenta</h2></div>
+      <div class="panel" id="aviso-obligatorio" style="display:none; max-width:520px; border-left:3px solid var(--status-warn);">
+        <p style="font-size:14px;"><b>Debe cambiar su contraseña temporal.</b> Por seguridad, no podrá usar el sistema hasta que cree una contraseña propia.</p>
+      </div>
       <p class="content-lede">Cambie su contraseña. Si recibió una contraseña temporal de su consultor, reemplácela aquí la primera vez que entre.</p>
 
       <div class="panel" style="max-width:520px;">
@@ -90,6 +93,13 @@ if (usuario) {
     document.querySelectorAll('a[href="expediente-nuevo.html"], #nav-historial').forEach(a => { a.style.display = 'none'; });
   }
 
+  const obligatorio = usuario.debe_cambiar_clave === true;
+  if (obligatorio) {
+    document.getElementById('aviso-obligatorio').style.display = 'block';
+    // Sin la contraseña nueva no hay nada más que hacer: se oculta el menú.
+    document.querySelectorAll('.rail nav a').forEach(a => { a.style.display = 'none'; });
+  }
+
   document.getElementById('formClave').addEventListener('submit', async (ev) => {
     ev.preventDefault();
     const m = document.getElementById('mensaje');
@@ -103,7 +113,15 @@ if (usuario) {
     const r = await apiFetch('/cuenta/contrasena', { method: 'POST', body: JSON.stringify({ actual, nueva }) });
     m.className = 'doc-msg show ' + (r.ok ? 'ok' : 'error');
     m.textContent = r.ok ? 'Contraseña actualizada.' : (r.mensaje || 'No se pudo cambiar la contraseña.');
-    if (r.ok) document.getElementById('formClave').reset();
+    if (r.ok) {
+      document.getElementById('formClave').reset();
+      if (obligatorio) {
+        usuario.debe_cambiar_clave = false;
+        sessionStorage.setItem('usuario', JSON.stringify(usuario));
+        m.textContent = 'Contraseña actualizada. Entrando al sistema...';
+        setTimeout(() => window.location.href = 'dashboard.html', 1200);
+      }
+    }
   });
 }
 </script>

@@ -66,6 +66,12 @@
         <div class="stat"><div class="num">—</div><div class="lbl">Aprobados por MiAmbiente</div></div>
       </div>
 
+      <div class="panel" id="panel-prioridades" style="display:none;">
+        <h3>Dónde poner al equipo hoy</h3>
+        <p class="panel-note">Los expedientes menos preparados, según el Índice de Preparación (IPE): 50% documentos, 30% plazo y 20% vigencia. Listo desde 80; en riesgo por debajo de 50.</p>
+        <ul class="reg-list" id="lista-prioridades"></ul>
+      </div>
+
       <div class="panel">
         <h3>Actividad reciente</h3>
         <p class="panel-note">Últimos movimientos sobre tus expedientes.</p>
@@ -94,6 +100,21 @@ if (usuario) {
       nums[1].textContent = d.metricas.pendientes;
       nums[2].textContent = d.metricas.alertas;
       nums[3].textContent = d.metricas.aprobados;
+    }
+
+    // HU-15: solo la consultora ve las prioridades (el promotor no recibe el dato).
+    if (Array.isArray(d.prioridades) && (esJefe() || esConsultor())) {
+      document.getElementById('panel-prioridades').style.display = 'block';
+      const ulP = document.getElementById('lista-prioridades');
+      ulP.innerHTML = d.prioridades.length ? '' : '<li style="color:var(--ink-faint);">No hay expedientes abiertos.</li>';
+      d.prioridades.forEach(p => {
+        ulP.innerHTML += `<li>
+          <span><span class="code">${esc(p.codigo)}</span>${esc(p.proyecto)}
+            <br><span style="font-size:13px; color:var(--ink-soft);">${esc(p.proxima_accion || 'Sin acciones pendientes')}</span></span>
+          <span style="text-align:right; white-space:nowrap;">${etiquetaIpe({ valor: p.ipe, banda: p.banda, banda_texto: p.banda_texto })}
+            <br><a href="expediente-detalle.html?codigo=${encodeURIComponent(p.codigo)}">Ver</a></span>
+        </li>`;
+      });
     }
 
     const ulR = document.getElementById('lista-recientes');

@@ -99,6 +99,19 @@
         </div>
       </div>
 
+      <div class="panel" id="panel-ipe" style="display:none;">
+        <h3>Índice de Preparación (IPE)</h3>
+        <p class="panel-note">50% documentos, 30% plazo legal y 20% vigencia. Listo desde 80; en riesgo por debajo de 50.</p>
+        <div class="fact-row" style="margin-top:12px;">
+          <div class="fact"><span class="k">IPE</span><span id="ipe-valor"></span></div>
+          <div class="fact"><span class="k">DOCUMENTOS</span><span class="v" id="ipe-documentos"></span></div>
+          <div class="fact"><span class="k">PLAZO</span><span class="v" id="ipe-plazo"></span></div>
+          <div class="fact"><span class="k">VIGENCIA</span><span class="v" id="ipe-vigencia"></span></div>
+        </div>
+        <h4 style="margin-top:18px; font-size:13px;">Próximas acciones</h4>
+        <ul class="reg-list" id="ipe-acciones" style="margin-top:8px;"></ul>
+      </div>
+
       <div class="panel" id="panel-docs">
         <h3>Documentos del expediente</h3>
         <p class="panel-note" id="panel-note-docs">
@@ -543,6 +556,21 @@ if (usuario) {
     };
   }
 
+  // HU-15: el IPE y sus proximas acciones; el servidor solo lo envia a la consultora.
+  function renderIpe(ipe) {
+    const panel = document.getElementById('panel-ipe');
+    if (!ipe) { panel.style.display = 'none'; return; }
+    panel.style.display = 'block';
+    document.getElementById('ipe-valor').innerHTML = etiquetaIpe({ valor: ipe.ipe, banda: ipe.banda, banda_texto: ipe.banda_texto });
+    document.getElementById('ipe-documentos').textContent = ipe.componentes.documentos + ' / 100';
+    document.getElementById('ipe-plazo').textContent = ipe.componentes.plazo + ' / 100';
+    document.getElementById('ipe-vigencia').textContent = ipe.componentes.vigencia + ' / 100';
+    const ul = document.getElementById('ipe-acciones');
+    ul.innerHTML = ipe.acciones.length
+      ? ipe.acciones.map((a, i) => `<li><span>${i + 1}. ${esc(a.texto)}</span></li>`).join('')
+      : '<li style="color:var(--ink-faint);">No hay acciones pendientes.</li>';
+  }
+
   async function cargarRegistroAprobaciones(infoDiv) {
     try {
       const ap = await apiFetch('/expedientes/' + codigo + '/aprobaciones');
@@ -629,6 +657,7 @@ if (usuario) {
       });
 
       renderDocumentos(d.documentos);
+      renderIpe(d.ipe);
 
       if (d.verificacion) {
         renderVerificacion(d.verificacion);
@@ -649,7 +678,7 @@ if (usuario) {
           'Consulta el estado de los documentos y descarga los que ya fueron subidos.';
       }
     } catch (e) {
-      const panels = ['panel-resumen', 'panel-docs', 'panel-aprobacion', 'panel-verificacion', 'panel-plazos', 'panel-timeline', 'panel-acceso'];
+      const panels = ['panel-resumen', 'panel-docs', 'panel-aprobacion', 'panel-verificacion', 'panel-plazos', 'panel-timeline', 'panel-acceso', 'panel-ipe'];
       panels.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';

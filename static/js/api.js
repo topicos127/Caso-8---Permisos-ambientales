@@ -28,6 +28,11 @@ function getUsuario() {
 function requireAuth() {
   const u = getUsuario();
   if (!u || !u.email) { window.location.href = 'login.html'; return null; }
+  // Sprint 9: con una contraseña temporal, solo "Mi cuenta" está disponible.
+  if (u.debe_cambiar_clave && !window.location.pathname.endsWith('cuenta.html')) {
+    window.location.href = 'cuenta.html?obligatorio=1';
+    return null;
+  }
   return u;
 }
 
@@ -65,6 +70,14 @@ function etiquetaPlazo(plazo) {
   return `<span class="${clase}">${texto}${dias}</span>`;
 }
 
+// HU-15: etiqueta del Indice de Preparacion (0 a 100) con su banda.
+const IPE_CLASE = { listo: 'status status-ok', en_preparacion: 'status status-warn', en_riesgo: 'status status-bad' };
+
+function etiquetaIpe(ipe) {
+  if (!ipe) return '—';
+  return `<span class="${IPE_CLASE[ipe.banda] || 'status status-info'}">${esc(ipe.valor)} · ${esc(ipe.banda_texto)}</span>`;
+}
+
 async function apiFetch(url, opciones = {}) {
   const esFormulario = opciones.body instanceof FormData;
   const headers = cabecerasApi(Object.assign(
@@ -77,7 +90,14 @@ async function apiFetch(url, opciones = {}) {
     window.location.href = 'login.html';
     throw new Error('No autenticado');
   }
-  return r.json();
+  const cuerpo = await r.json();
+  if (r.status === 403 && cuerpo.cambio_clave_obligatorio) {
+    const u = getUsuario();
+    if (u) { u.debe_cambiar_clave = true; sessionStorage.setItem('usuario', JSON.stringify(u)); }
+    window.location.href = 'cuenta.html?obligatorio=1';
+    throw new Error('Cambio de contraseña obligatorio');
+  }
+  return cuerpo;
 }
 
 async function cerrarSesion(ev) {

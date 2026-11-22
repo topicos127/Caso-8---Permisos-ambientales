@@ -74,6 +74,13 @@
           <label>Correo del promotor <span style="font-family:var(--sans); text-transform:none; color:var(--ink-faint); font-weight:400;">(opcional — para que el promotor vea el estado del trámite)</span></label>
           <input type="email" id="promotor_email" placeholder="promotor@empresa.com">
         </div>
+        <div class="doc-field" style="margin-top:16px;">
+          <label style="display:flex; align-items:flex-start; gap:10px; text-transform:none; letter-spacing:0; font-family:var(--sans); font-size:14px; font-weight:400; cursor:pointer;">
+            <input type="checkbox" id="acceso_publico" checked style="margin-top:3px;">
+            <span><b style="font-weight:600;">Permitir la consulta pública de este proyecto.</b>
+              El público verá solo el proyecto, el promotor, la categoría, el estado y el consultor responsable; nunca los documentos. El jefe de la consultora puede cambiarlo después.</span>
+          </label>
+        </div>
         <div class="doc-field" style="max-width:340px; margin-top:16px;">
           <label>Categoría de impacto ambiental</label>
           <select id="selectCategoria">
@@ -206,7 +213,8 @@ document.getElementById('btnGuardar').addEventListener('click', async () => {
         proyecto,
         promotor,
         promotor_email,
-        categoria: categoriaActual
+        categoria: categoriaActual,
+        acceso_publico: document.getElementById('acceso_publico').checked
       })
     });
 
