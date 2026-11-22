@@ -287,7 +287,7 @@ ${CLAVE_PROPIA}           Equipo2026x
     ${debil}=    Create Dictionary    nombre=Otro Robot    email=otro_${SUFIJO}@ejemplo.com    password=123
     POST On Session    jefe    /consultores    json=${debil}    expected_status=400
     ${r}=    GET On Session    jefe    /consultores    expected_status=200
-    ${fila}=    Evaluate    [c for c in $r.json()['consultores'] if c['email'] == $CONSULTOR_NUEVO][0]
+    ${fila}=    Evaluate    [c for c in $r.json()['consultores'] if c['email'] == '${CONSULTOR_NUEVO}'][0]
     Should Be True    ${fila['activo']}
     Should Be Equal As Integers    ${fila['expedientes']}    0
 
@@ -355,7 +355,7 @@ Id Del Consultor
     [Documentation]    Id de un consultor segun su correo (solo el jefe puede listarlos).
     [Arguments]    ${email}
     ${r}=    GET On Session    jefe    /consultores    expected_status=200
-    ${id}=    Evaluate    [c['id'] for c in $r.json()['consultores'] if c['email'] == $email][0]
+    ${id}=    Evaluate    [c['id'] for c in $r.json()['consultores'] if c['email'] == '${email}'][0]
     RETURN    ${id}
 
 Iniciar Sesion Como Jefe
