@@ -18,6 +18,22 @@ Flask + MySQL, con frontend en HTML y JS. Se corre localmente con Docker Compose
    `Set-ExecutionPolicy -Scope Process Bypass`
 4. Abrir `http://localhost:5000`.
 
+## Estructura del código (Sprint 9)
+
+`app.py` solo crea la app; la API vive en el paquete `permisos/`:
+
+| Archivo | Qué tiene |
+|---|---|
+| `permisos/config.py` | Variables de entorno y constantes (categorías, plazos, roles) |
+| `permisos/reglas.py` | Reglas puras: semáforo, verificación de documentos, política de contraseñas |
+| `permisos/bd.py` | Conexión a MySQL, consultas compartidas y preparación de la base al arrancar |
+| `permisos/seguridad.py` | Sesión, protección CSRF y permisos por rol |
+| `permisos/errores.py` | Forma única de los errores y cabeceras de seguridad |
+| `permisos/utiles.py` | Lectura de la petición, formato de salida y archivos subidos |
+| `permisos/rutas/` | Un blueprint por área: `auth`, `dashboard`, `expedientes`, `documentos`, `flujo`, `historial`, `publico` |
+
+El plan de los Sprints 9 y 10 está en [docs/PLAN_SPRINTS_9_10.md](docs/PLAN_SPRINTS_9_10.md).
+
 ## Variables del `.env`
 
 | Variable | Para qué |
@@ -26,11 +42,40 @@ Flask + MySQL, con frontend en HTML y JS. Se corre localmente con Docker Compose
 | `MYSQL_DATABASE` | Nombre de la base (`permisos_ambientales`) |
 | `SECRET_KEY` | Firma la cookie de sesión. Sin ella las sesiones se pierden al reiniciar |
 | `SESSION_COOKIE_SECURE` | `true` solo en el despliegue con HTTPS |
-| `JEFE_EMAIL` / `JEFE_PASSWORD` / `JEFE_NOMBRE` | Usuario jefe que se crea al arrancar si no existe (opcional; por defecto `jefe1@ejemplo.com` / `Jefe2026*`). En Render conviene poner una contraseña propia |
+| `JEFE_EMAIL` / `JEFE_PASSWORD` / `JEFE_NOMBRE` | Usuario jefe que se crea al arrancar si no existe (opcional; por defecto `jefe1@ejemplo.com` / `Jefe2026*`). En Railway conviene poner una contraseña propia |
+| `SEED_DEMO` | `true` solo para cargar los datos de prueba con `scripts/init_db.py` (una vez) |
 
 En el despliegue también se usan `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`,
 `DB_NAME` y, para Aiven, `DB_SSL_CA` (ruta al `ca.pem` que da Aiven, para verificar el
 certificado de la base).
+
+## Despliegue en Railway (Sprint 9; reemplaza a Render)
+
+La app corre en Railway (plan Hobby) con el `Dockerfile` del repositorio. La base sigue
+en Aiven, así que la migración solo mueve la aplicación. Railway ya no permite
+`railway.json` en servicios nuevos (se deja de leer el 01/12/2026), por eso todo se
+configura desde el panel del servicio:
+
+1. **New Project → Deploy from GitHub repo**, rama `main`. Railway detecta el `Dockerfile`.
+2. **Variables:** `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` (los de Aiven),
+   `SECRET_KEY` (texto largo y aleatorio), `SESSION_COOKIE_SECURE=true`, `JEFE_PASSWORD`
+   (propia) y `UPLOADS_DIR=/app/uploads`. Si se usa `DB_SSL_CA`, ver la nota de abajo.
+   Railway inyecta `PORT`; el `Dockerfile` lo usa solo.
+3. **Settings → Deploy → Pre-Deploy Command:** `python scripts/init_db.py` (aplica
+   `schema.sql`; es idempotente). La primera vez, agregar `SEED_DEMO=true` y quitarla
+   después del primer despliegue.
+4. **Settings → Deploy → Healthcheck Path:** `/health`.
+5. **Volume** montado en `/app/uploads`, para que los documentos subidos sobrevivan a cada
+   despliegue (en Render se perdían).
+6. **Settings → Networking → Generate Domain** para obtener la URL pública.
+
+Sobre `DB_SSL_CA`: sin esa variable, la conexión a Aiven va cifrada pero sin verificar
+el certificado (la app lo avisa en el log). Para verificarlo, el `ca.pem` de Aiven tiene
+que existir dentro del contenedor y `DB_SSL_CA` debe apuntar a su ruta.
+
+Costo: el plan Hobby cuesta $5 al mes e incluye $5 de consumo. Una sola instancia de
+gunicorn con la base fuera (Aiven) queda, en principio, dentro de ese consumo; conviene
+revisar **Usage** la primera semana.
 
 ## Cómo bajar los cambios más recientes
 
@@ -51,7 +96,7 @@ Con la app corriendo en `http://localhost:5000`:
 ```
 pip install -r requirements-test.txt
 python -m unittest tests/test_semaforo.py
-robot --outputdir resultados tests/sprint4 tests/sprint5 tests/sprint6 tests/sprint7
+robot --outputdir resultados tests/sprint4 tests/sprint5 tests/sprint6 tests/sprint7 tests/sprint8
 ```
 
 El pipeline de GitHub Actions corre lo mismo en cada push a `main`.
