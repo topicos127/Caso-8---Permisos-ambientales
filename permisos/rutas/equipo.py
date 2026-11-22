@@ -1,4 +1,4 @@
-"""Sprint 9: el jefe gestiona su equipo de consultores (alta, baja y reasignacion).
+"""HU-16 (Sprint 9): el jefe gestiona su equipo de consultores (alta, baja y reasignacion).
 
 - Alta: el jefe da nombre y correo. La app genera una contrasena temporal que
   se muestra una sola vez (igual que la cuenta del promotor); si el jefe manda

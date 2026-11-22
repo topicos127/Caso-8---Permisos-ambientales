@@ -210,7 +210,9 @@ para no alterar las pruebas de Robot.
 | `GET /expedientes/<codigo>/historial` | 200 | 200 si es suyo, si no 403 | 403 | 401 |
 | `POST /expedientes/<codigo>/aprobar` | 200 | 403 | 403 | 401 |
 
-## Equipo de consultores y uso en el celular (Sprint 9)
+## Equipo de consultores (HU-16) y uso en el celular (HU-12), Sprint 9
+
+> Numeración del Sprint 9: **HU-15** es el Índice de Preparación del Expediente (IPE), **HU-16** el equipo de consultores y **HU-12** el uso desde el celular.
 
 - **Equipo de consultores.** El jefe gestiona su equipo en **Equipo** (menú lateral; solo lo
   ve el jefe):

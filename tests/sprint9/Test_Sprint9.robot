@@ -12,7 +12,7 @@ Documentation     Suite de Pruebas Automatizadas - Sprint 9 (Permisos Ambientale
 ...               - HU-06: el ZIP lleva el codigo y la fecha.
 ...               - La contrasena temporal del promotor solo permite cambiarla.
 ...               - HU-15: Indice de Preparacion del Expediente (IPE).
-...               - Equipo de consultores: alta con clave temporal, baja logica y
+...               - HU-16: equipo de consultores: alta con clave temporal, baja logica y
 ...                 reasignacion de expedientes (solo el jefe).
 Library           RequestsLibrary
 Library           Collections
@@ -266,7 +266,7 @@ ${CLAVE_PROPIA}           Equipo2026x
     Should Be Equal    ${valores}    ${ordenados}
     Dictionary Should Contain Key    ${p[0]}    proxima_accion
 
-# ---------------- Equipo de consultores: alta, baja y reasignacion ----------------
+# ---------------- HU-16: equipo de consultores (alta, baja y reasignacion) ----------------
 
 20 - Equipo: Solo El Jefe Gestiona A Los Consultores
     Iniciar Sesion Como Consultor

@@ -1,4 +1,4 @@
-"""Equipo de consultores (Sprint 9): alta, baja logica y reasignacion, ejecutando
+"""Equipo de consultores (HU-16, Sprint 9): alta, baja logica y reasignacion, ejecutando
 el codigo real con una base simulada, sin MySQL. Complementa los casos de Robot,
 que si usan la base de verdad.
 
