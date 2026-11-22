@@ -99,7 +99,7 @@ Las pruebas unitarias no necesitan base de datos:
 
 ```
 pip install -r requirements-test.txt
-python -m unittest tests/test_semaforo.py tests/test_sprint9.py tests/test_ipe.py tests/test_ipe_api.py tests/test_documentos.py
+python -m unittest tests/test_semaforo.py tests/test_sprint9.py tests/test_ipe.py tests/test_ipe_api.py tests/test_documentos.py tests/test_equipo.py
 ```
 
 Las de Robot Framework necesitan la app corriendo en `http://localhost:5000` con la base

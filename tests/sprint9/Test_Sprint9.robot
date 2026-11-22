@@ -12,6 +12,8 @@ Documentation     Suite de Pruebas Automatizadas - Sprint 9 (Permisos Ambientale
 ...               - HU-06: el ZIP lleva el codigo y la fecha.
 ...               - La contrasena temporal del promotor solo permite cambiarla.
 ...               - HU-15: Indice de Preparacion del Expediente (IPE).
+...               - Equipo de consultores: alta con clave temporal, baja logica y
+...                 reasignacion de expedientes (solo el jefe).
 Library           RequestsLibrary
 Library           Collections
 Resource          ../recursos/sesion.resource
@@ -24,6 +26,7 @@ ${JEFE_PASSWORD}         Jefe2026*
 ${EXP_C1}                SP-A8-2026-001
 ${MOTIVO}                Revision interna Robot Sprint 9
 ${CLAVE_NUEVA}           Nueva2026x
+${CLAVE_PROPIA}           Equipo2026x
 
 *** Test Cases ***
 # ---------------- HU-09: consulta publica ----------------
@@ -263,11 +266,97 @@ ${CLAVE_NUEVA}           Nueva2026x
     Should Be Equal    ${valores}    ${ordenados}
     Dictionary Should Contain Key    ${p[0]}    proxima_accion
 
+# ---------------- Equipo de consultores: alta, baja y reasignacion ----------------
+
+20 - Equipo: Solo El Jefe Gestiona A Los Consultores
+    Iniciar Sesion Como Consultor
+    GET On Session    consultor    /consultores    expected_status=403
+    Iniciar Sesion Como Promotor
+    GET On Session    promotor    /consultores    expected_status=403
+    Create Session    anonimo    ${BASE_URL}
+    GET On Session    anonimo    /consultores    expected_status=401
+
+21 - Equipo: El Jefe Da De Alta Un Consultor Con Clave Temporal
+    Iniciar Sesion Como Jefe
+    ${datos}=    Create Dictionary    nombre=Consultor Robot S9    email=${CONSULTOR_NUEVO}
+    ${r}=    POST On Session    jefe    /consultores    json=${datos}    expected_status=201
+    Should Not Be Empty    ${r.json()['password_temporal']}
+    Set Suite Variable    ${TEMPORAL}    ${r.json()['password_temporal']}
+    Set Suite Variable    ${CONSULTOR_NUEVO_ID}    ${r.json()['id']}
+    POST On Session    jefe    /consultores    json=${datos}    expected_status=409
+    ${debil}=    Create Dictionary    nombre=Otro Robot    email=otro_${SUFIJO}@ejemplo.com    password=123
+    POST On Session    jefe    /consultores    json=${debil}    expected_status=400
+    ${r}=    GET On Session    jefe    /consultores    expected_status=200
+    ${fila}=    Evaluate    [c for c in $r.json()['consultores'] if c['email'] == $CONSULTOR_NUEVO][0]
+    Should Be True    ${fila['activo']}
+    Should Be Equal As Integers    ${fila['expedientes']}    0
+
+22 - Equipo: El Nuevo Consultor Debe Cambiar La Clave Antes De Trabajar
+    Iniciar Sesion    nuevo    ${CONSULTOR_NUEVO}    ${TEMPORAL}
+    ${r}=    GET On Session    nuevo    /sesion    expected_status=200
+    Should Be True    ${r.json()['debe_cambiar_clave']}
+    ${r}=    GET On Session    nuevo    /expedientes    expected_status=403
+    Should Be True    ${r.json()['cambio_clave_obligatorio']}
+    ${datos}=    Create Dictionary    actual=${TEMPORAL}    nueva=${CLAVE_PROPIA}
+    POST On Session    nuevo    /cuenta/contrasena    json=${datos}    expected_status=200
+    GET On Session    nuevo    /expedientes    expected_status=200
+
+23 - Equipo: Reasignar Exige Que El Consultor Este Desactivado
+    Iniciar Sesion    nuevo    ${CONSULTOR_NUEVO}    ${CLAVE_PROPIA}
+    ${codigo}=    Crear Expediente    nuevo    I
+    Set Suite Variable    ${COD_EQUIPO}    ${codigo}
+    Iniciar Sesion Como Jefe
+    ${destino}=    Id Del Consultor    ${CONSULTOR_EMAIL}
+    Set Suite Variable    ${DESTINO_ID}    ${destino}
+    ${datos}=    Create Dictionary    destino_id=${DESTINO_ID}
+    POST On Session    jefe    /consultores/${CONSULTOR_NUEVO_ID}/reasignar    json=${datos}    expected_status=409
+
+24 - Equipo: Desactivar Impide Entrar Y Cierra La Sesion Abierta
+    Iniciar Sesion Como Jefe
+    POST On Session    jefe    /consultores/${CONSULTOR_NUEVO_ID}/desactivar    expected_status=200
+    POST On Session    jefe    /consultores/${CONSULTOR_NUEVO_ID}/desactivar    expected_status=409
+    GET On Session    nuevo    /sesion    expected_status=401
+    Create Session    anonimo    ${BASE_URL}    headers=${CABECERA}
+    ${datos}=    Create Dictionary    email=${CONSULTOR_NUEVO}    password=${CLAVE_PROPIA}
+    ${r}=    POST On Session    anonimo    /login    json=${datos}    expected_status=403
+    Should Contain    ${r.json()['mensaje']}    desactivada
+    ${mala}=    Create Dictionary    email=${CONSULTOR_NUEVO}    password=Incorrecta2026x
+    POST On Session    anonimo    /login    json=${mala}    expected_status=401
+
+25 - Equipo: Reasignar Pasa Los Expedientes Y Queda En El Historial
+    Iniciar Sesion Como Jefe
+    ${mismo}=    Create Dictionary    destino_id=${CONSULTOR_NUEVO_ID}
+    POST On Session    jefe    /consultores/${CONSULTOR_NUEVO_ID}/reasignar    json=${mismo}    expected_status=400
+    ${datos}=    Create Dictionary    destino_id=${DESTINO_ID}
+    ${r}=    POST On Session    jefe    /consultores/${CONSULTOR_NUEVO_ID}/reasignar    json=${datos}    expected_status=200
+    Should Be Equal As Integers    ${r.json()['reasignados']}    1
+    ${entradas}=    Historial De    jefe    ${COD_EQUIPO}
+    Should Be Equal    ${entradas[0]['accion']}    reasignó
+    Should Be Equal    ${entradas[0]['usuario_email']}    ${JEFE_EMAIL}
+    Iniciar Sesion Como Consultor
+    GET On Session    consultor    /expedientes/${COD_EQUIPO}    expected_status=200
+
+26 - Equipo: Reactivar Devuelve El Acceso
+    Iniciar Sesion Como Jefe
+    POST On Session    jefe    /consultores/${CONSULTOR_NUEVO_ID}/activar    expected_status=200
+    POST On Session    jefe    /consultores/${CONSULTOR_NUEVO_ID}/activar    expected_status=409
+    Iniciar Sesion    nuevo    ${CONSULTOR_NUEVO}    ${CLAVE_PROPIA}
+
 *** Keywords ***
 Preparar Suite
     ${sufijo}=    Evaluate    int(time.time())    modules=time
     Set Suite Variable    ${SUFIJO}    ${sufijo}
     Set Suite Variable    ${PROMOTOR_NUEVO}    promotor_s9_${sufijo}@ejemplo.com
+    Set Suite Variable    ${CONSULTOR_NUEVO}    consultor_s9_${sufijo}@ejemplo.com
+    ${cabecera}=    Create Dictionary    X-Requested-With=fetch
+    Set Suite Variable    ${CABECERA}    ${cabecera}
+
+Id Del Consultor
+    [Documentation]    Id de un consultor segun su correo (solo el jefe puede listarlos).
+    [Arguments]    ${email}
+    ${r}=    GET On Session    jefe    /consultores    expected_status=200
+    ${id}=    Evaluate    [c['id'] for c in $r.json()['consultores'] if c['email'] == $email][0]
+    RETURN    ${id}
 
 Iniciar Sesion Como Jefe
     [Arguments]    ${alias}=jefe
