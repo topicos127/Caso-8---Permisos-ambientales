@@ -103,8 +103,14 @@ def inicializar_bd():
         raise ValueError(f"JEFE_PASSWORD no cumple la politica: {problema}")
     with cursor() as cur:
         cur.execute(DDL_HISTORIAL)
-    with cursor() as cur:
-        _asegurar_columna_cambio_clave(cur)
+    try:
+        with cursor() as cur:
+            _asegurar_columna_cambio_clave(cur)
+    except pymysql.MySQLError as e:
+        # Por ejemplo, un usuario de la base sin permiso ALTER. No debe impedir el
+        # resto del arranque: la regla de contrasena temporal queda inactiva.
+        print(f"AVISO: no se pudo agregar usuarios.debe_cambiar_clave ({e!r}); "
+              "la contrasena temporal no se exigira hasta que exista la columna.", flush=True)
     with cursor() as cur:
         cur.execute("SELECT id FROM usuarios WHERE email=%s", (JEFE_EMAIL,))
         if not cur.fetchone():
