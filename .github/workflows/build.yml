@@ -157,6 +157,10 @@ jobs:
 
   build:
     name: Build and Push Docker Image
+    # Solo al integrar en main. En un Pull Request la rama llega vacia y la
+    # etiqueta de la imagen queda invalida (":-<sha>"); ademas un PR no debe
+    # publicar imagenes.
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     needs: test
     permissions:
