@@ -17,8 +17,8 @@ ${PASSWORD_INCORRECTA}     claveIncorrecta
 
 *** Test Cases ***
 El Servicio Esta Activo
-    [Documentation]    Verifica que el endpoint raiz confirme que el servicio esta activo.
-    ${response}=    GET On Session    api    /
+    [Documentation]    Verifica que /api (la raiz ahora sirve la pagina de inicio) confirme que el servicio esta activo.
+    ${response}=    GET On Session    api    /api
     Should Be Equal As Strings    ${response.status_code}    200
     Should Be Equal    ${response.json()}[estado]    activo
 
