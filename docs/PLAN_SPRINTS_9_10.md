@@ -36,6 +36,7 @@ Preparación del Expediente (HU-15, innovación) y datos de demostración.
 | Migración a Railway (ítem 14) | Sprint 10 |
 | `k8s/` (ítem 13) | No se toca antes de la presentación |
 | Documentos del proyecto | Viven en la rama `context`, fuera de las ramas de desarrollo |
+| Numeración de historias nuevas | **HU-15** Índice de Preparación del Expediente (IPE, la innovación del PO), **HU-16** equipo de consultores (Ismael: alta, baja lógica y reasignación) y **HU-12** uso desde el celular (Ismael) |
 
 ---
 
