@@ -267,7 +267,8 @@ if (usuario) {
       header.style.display = 'flex';
       header.style.alignItems = 'center';
       header.style.justifyContent = 'space-between';
-      header.style.gap = '14px';
+      header.style.flexWrap = 'wrap';  // HU-12: en celular las acciones pasan a otra linea
+      header.style.gap = '10px 14px';
 
       const nombre = document.createElement('span');
       nombre.className = 'name';
@@ -276,6 +277,7 @@ if (usuario) {
       const acciones = document.createElement('div');
       acciones.style.display = 'flex';
       acciones.style.gap = '8px';
+      acciones.style.flexWrap = 'wrap';
       acciones.style.alignItems = 'center';
 
       if (recibido) {
