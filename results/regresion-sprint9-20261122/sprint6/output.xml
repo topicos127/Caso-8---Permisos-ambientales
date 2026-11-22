@@ -1,0 +1,621 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generator="Robot 7.0.1 (Python 3.11.18 on linux)" generated="2026-11-22T21:10:49.616924" rpa="false" schemaversion="5">
+<suite id="s1" name="Test Sprint6" source="/app/tests/sprint6/Test_Sprint6.robot">
+<test id="s1-t1" name="01 - Validar Registro De Nuevo Usuario Valido (POST /registro)" line="11">
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:49.742218" level="INFO">Creating Session using : alias=api, url=http://localhost:5000, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>api</arg>
+<arg>${BASE_URL}</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-11-22T21:10:49.742015" elapsed="0.000389"/>
+</kw>
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-11-22T21:10:49.742811" level="INFO">${data} = {'nombre': 'Usuario Robot', 'email': 'robot_test@ejemplo.com', 'password': 'Clave12345', 'rol': 'consultor'}</msg>
+<var>${data}</var>
+<arg>nombre=Usuario Robot</arg>
+<arg>email=robot_test@ejemplo.com</arg>
+<arg>password=Clave12345</arg>
+<arg>rol=consultor</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-11-22T21:10:49.742552" elapsed="0.000277"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:49.858240" level="INFO">POST Request : url=http://localhost:5000/registro 
+ path_url=/registro 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '108', 'Content-Type': 'application/json'} 
+ body=b'{"nombre": "Usuario Robot", "email": "robot_test@ejemplo.com", "password": "Clave12345", "rol": "consultor"}' 
+ </msg>
+<msg time="2026-11-22T21:10:49.858352" level="INFO">POST Response : url=http://localhost:5000/registro 
+ status=201, reason=CREATED 
+ headers={'Server': 'Werkzeug/3.0.4 Python/3.11.18', 'Date': 'Sun, 22 Nov 2026 21:10:49 GMT', 'Content-Type': 'application/json', 'Content-Length': '58', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'same-origin', 'Cache-Control': 'no-store', 'Connection': 'close'} 
+ body={"mensaje":"Usuario registrado correctamente.","ok":true}
+ 
+ </msg>
+<msg time="2026-11-22T21:10:49.858467" level="INFO">${response} = &lt;Response [201]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/registro</arg>
+<arg>json=${data}</arg>
+<arg>expected_status=any</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-11-22T21:10:49.742926" elapsed="0.115563"/>
+</kw>
+<kw name="Convert To Integer" owner="BuiltIn">
+<msg time="2026-11-22T21:10:49.859232" level="INFO">${status} = 201</msg>
+<var>${status}</var>
+<arg>${response.status_code}</arg>
+<doc>Converts the given item to an integer number.</doc>
+<status status="PASS" start="2026-11-22T21:10:49.858663" elapsed="0.000645"/>
+</kw>
+<kw name="Should Be True" owner="BuiltIn">
+<arg>${status} in [201, 409]</arg>
+<arg>El registro falló con un código inesperado: ${status}</arg>
+<doc>Fails if the given condition is not true.</doc>
+<status status="PASS" start="2026-11-22T21:10:49.859558" elapsed="0.000165"/>
+</kw>
+<doc>Verifica que se pueda registrar un usuario nuevo con clave segura (Mayuscula + Numero) o devuelva 409 si existe.</doc>
+<status status="PASS" start="2026-11-22T21:10:49.741254" elapsed="0.118546"/>
+</test>
+<test id="s1-t2" name="02 - Validar Login Con Usuario Registrado" line="24">
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:49.860237" level="INFO">Creating Session using : alias=api, url=http://localhost:5000, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>api</arg>
+<arg>${BASE_URL}</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-11-22T21:10:49.860152" elapsed="0.000202"/>
+</kw>
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-11-22T21:10:49.860551" level="INFO">${data} = {'email': 'robot_test@ejemplo.com', 'password': 'Clave12345'}</msg>
+<var>${data}</var>
+<arg>email=robot_test@ejemplo.com</arg>
+<arg>password=Clave12345</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-11-22T21:10:49.860431" elapsed="0.000134"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:49.984201" level="INFO">POST Request : url=http://localhost:5000/login 
+ path_url=/login 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '61', 'Content-Type': 'application/json'} 
+ body=b'{"email": "robot_test@ejemplo.com", "password": "Clave12345"}' 
+ </msg>
+<msg time="2026-11-22T21:10:49.984287" level="INFO">POST Response : url=http://localhost:5000/login 
+ status=200, reason=OK 
+ headers={'Server': 'Werkzeug/3.0.4 Python/3.11.18', 'Date': 'Sun, 22 Nov 2026 21:10:49 GMT', 'Content-Type': 'application/json', 'Content-Length': '194', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'same-origin', 'Cache-Control': 'no-store', 'Vary': 'Cookie', 'Set-Cookie': 'session=eyJ1aWQiOjV9.awNaWQ.anKLCKEVSqjmqQBP2wKiB88l6vg; HttpOnly; Path=/; SameSite=Lax', 'Connection': 'close'} 
+ body={"acceso":true,"debe_cambiar_clave":false,"email":"robot_test@ejemplo.com","mensaje":"Bienvenido, Usuario Robot. Acceso concedido a sus expedientes.","nombre":"Usuario Robot","rol":"consultor"}
+ 
+ </msg>
+<msg time="2026-11-22T21:10:49.984404" level="INFO">${response} = &lt;Response [200]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/login</arg>
+<arg>json=${data}</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-11-22T21:10:49.860636" elapsed="0.123789"/>
+</kw>
+<kw name="Status Should Be" owner="RequestsLibrary">
+<arg>200</arg>
+<arg>${response}</arg>
+<doc>Fails if response status code is different than the expected.</doc>
+<status status="PASS" start="2026-11-22T21:10:49.984577" elapsed="0.000238"/>
+</kw>
+<kw name="Dictionary Should Contain Key" owner="Collections">
+<arg>${response.json()}</arg>
+<arg>acceso</arg>
+<doc>Fails if ``key`` is not found from ``dictionary``.</doc>
+<status status="PASS" start="2026-11-22T21:10:49.984879" elapsed="0.000944"/>
+</kw>
+<kw name="Should Be True" owner="BuiltIn">
+<arg>${response.json()['acceso']}</arg>
+<doc>Fails if the given condition is not true.</doc>
+<status status="PASS" start="2026-11-22T21:10:49.985939" elapsed="0.000299"/>
+</kw>
+<doc>Verifica que el usuario creado en el paso anterior pueda iniciar sesión.</doc>
+<status status="PASS" start="2026-11-22T21:10:49.859923" elapsed="0.126415"/>
+</test>
+<test id="s1-t3" name="03 - Validar Rechazo De Registro Con Contrasena Debil (Seguridad Sprint 6)" line="36">
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:49.986808" level="INFO">Creating Session using : alias=api, url=http://localhost:5000, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>api</arg>
+<arg>${BASE_URL}</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-11-22T21:10:49.986712" elapsed="0.000212"/>
+</kw>
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-11-22T21:10:49.987153" level="INFO">${data} = {'nombre': 'Usuario Debil', 'email': 'debil_test@ejemplo.com', 'password': 'clave12345', 'rol': 'consultor'}</msg>
+<var>${data}</var>
+<arg>nombre=Usuario Debil</arg>
+<arg>email=debil_test@ejemplo.com</arg>
+<arg>password=clave12345</arg>
+<arg>rol=consultor</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-11-22T21:10:49.987007" elapsed="0.000158"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:49.991052" level="INFO">POST Request : url=http://localhost:5000/registro 
+ path_url=/registro 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '108', 'Content-Type': 'application/json'} 
+ body=b'{"nombre": "Usuario Debil", "email": "debil_test@ejemplo.com", "password": "clave12345", "rol": "consultor"}' 
+ </msg>
+<msg time="2026-11-22T21:10:49.991936" level="INFO">POST Response : url=http://localhost:5000/registro 
+ status=400, reason=BAD REQUEST 
+ headers={'Server': 'Werkzeug/3.0.4 Python/3.11.18', 'Date': 'Sun, 22 Nov 2026 21:10:49 GMT', 'Content-Type': 'application/json', 'Content-Length': '82', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'same-origin', 'Cache-Control': 'no-store', 'Connection': 'close'} 
+ body={"mensaje":"La contrasena debe incluir al menos una letra mayuscula.","ok":false}
+ 
+ </msg>
+<msg time="2026-11-22T21:10:49.992110" level="INFO">${response} = &lt;Response [400]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/registro</arg>
+<arg>json=${data}</arg>
+<arg>expected_status=400</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-11-22T21:10:49.987219" elapsed="0.004914"/>
+</kw>
+<kw name="Status Should Be" owner="RequestsLibrary">
+<arg>400</arg>
+<arg>${response}</arg>
+<doc>Fails if response status code is different than the expected.</doc>
+<status status="PASS" start="2026-11-22T21:10:49.992290" elapsed="0.000192"/>
+</kw>
+<doc>Verifica que un registro con clave sin mayuscula sea rechazado estrictamente con HTTP 400.</doc>
+<status status="PASS" start="2026-11-22T21:10:49.986478" elapsed="0.006078"/>
+</test>
+<test id="s1-t4" name="04 - Validar Que El Dashboard Devuelve Alertas (HU-05)" line="48">
+<kw name="Iniciar Sesion Como Consultor" owner="sesion">
+<kw name="Iniciar Sesion" owner="sesion">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-11-22T21:10:49.993881" level="INFO">${headers} = {'X-Requested-With': 'fetch'}</msg>
+<var>${headers}</var>
+<arg>X-Requested-With=fetch</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-11-22T21:10:49.993757" elapsed="0.000138"/>
+</kw>
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:49.994091" level="INFO">Creating Session using : alias=api, url=http://localhost:5000, headers={'X-Requested-With': 'fetch'},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>${alias}</arg>
+<arg>${BASE_URL}</arg>
+<arg>headers=${headers}</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-11-22T21:10:49.993959" elapsed="0.000234"/>
+</kw>
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-11-22T21:10:49.994388" level="INFO">${datos} = {'email': 'consultor1@ejemplo.com', 'password': 'Clave123'}</msg>
+<var>${datos}</var>
+<arg>email=${email}</arg>
+<arg>password=${password}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-11-22T21:10:49.994257" elapsed="0.000143"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:50.108008" level="INFO">POST Request : url=http://localhost:5000/login 
+ path_url=/login 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'X-Requested-With': 'fetch', 'Content-Length': '59', 'Content-Type': 'application/json'} 
+ body=b'{"email": "consultor1@ejemplo.com", "password": "Clave123"}' 
+ </msg>
+<msg time="2026-11-22T21:10:50.108102" level="INFO">POST Response : url=http://localhost:5000/login 
+ status=200, reason=OK 
+ headers={'Server': 'Werkzeug/3.0.4 Python/3.11.18', 'Date': 'Sun, 22 Nov 2026 21:10:50 GMT', 'Content-Type': 'application/json', 'Content-Length': '194', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'same-origin', 'Cache-Control': 'no-store', 'Vary': 'Cookie', 'Set-Cookie': 'session=eyJ1aWQiOjF9.awNaWg.-CIkAI_sBubMNNF_Ez0uL3N2Qe0; HttpOnly; Path=/; SameSite=Lax', 'Connection': 'close'} 
+ body={"acceso":true,"debe_cambiar_clave":false,"email":"consultor1@ejemplo.com","mensaje":"Bienvenido, Consultor Uno. Acceso concedido a sus expedientes.","nombre":"Consultor Uno","rol":"consultor"}
+ 
+ </msg>
+<msg time="2026-11-22T21:10:50.108249" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<var>${resp}</var>
+<arg>${alias}</arg>
+<arg>/login</arg>
+<arg>json=${datos}</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-11-22T21:10:49.994451" elapsed="0.113821"/>
+</kw>
+<kw name="Status Should Be" owner="RequestsLibrary">
+<arg>200</arg>
+<arg>${resp}</arg>
+<doc>Fails if response status code is different than the expected.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.108445" elapsed="0.000206"/>
+</kw>
+<kw name="Should Be True" owner="BuiltIn">
+<arg>${resp.json()['acceso']}</arg>
+<doc>Fails if the given condition is not true.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.108720" elapsed="0.000521"/>
+</kw>
+<arg>${alias}</arg>
+<arg>${CONSULTOR_EMAIL}</arg>
+<arg>${CONSULTOR_PASSWORD}</arg>
+<doc>Crea la sesion api e inicia sesion con ese usuario.
+La cabecera X-Requested-With la exige el servidor en los POST.</doc>
+<status status="PASS" start="2026-11-22T21:10:49.993505" elapsed="0.115807"/>
+</kw>
+<arg>api</arg>
+<status status="PASS" start="2026-11-22T21:10:49.993061" elapsed="0.116291"/>
+</kw>
+<kw name="GET On Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:50.125663" level="INFO">GET Request : url=http://localhost:5000/dashboard 
+ path_url=/dashboard 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'X-Requested-With': 'fetch', 'Cookie': 'session=eyJ1aWQiOjF9.awNaWg.-CIkAI_sBubMNNF_Ez0uL3N2Qe0'} 
+ body=None 
+ </msg>
+<msg time="2026-11-22T21:10:50.125786" level="INFO">GET Response : url=http://localhost:5000/dashboard 
+ status=200, reason=OK 
+ headers={'Server': 'Werkzeug/3.0.4 Python/3.11.18', 'Date': 'Sun, 22 Nov 2026 21:10:50 GMT', 'Content-Type': 'application/json', 'Content-Length': '724', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'same-origin', 'Cache-Control': 'no-store', 'Vary': 'Cookie', 'Connection': 'close'} 
+ body={"alertas":[],"metricas":{"activos":3,"alertas":0,"aprobados":1,"pendientes":2},"prioridades":[{"banda":"en_preparacion","banda_texto":"En preparaci\u00f3n","codigo":"SP-A8-2026-001","ipe":58,"proxima_accion":"Subir Cartograf\u00eda","proyecto":"Planta Solar Azuero"},{"banda":"en_preparacion","banda_texto":"En preparaci\u00f3n","codigo":"SP-A8-2026-002","ipe":75,"proxima_accion":"Subir Evidencia Foro P\u00fablico","proyecto":"Hotel Costero Bocas"}],"recientes":[{"codigo":"SP-A8-2026-001","estado":"pendiente","proyecto":"Planta Solar Azuero"},{"codigo":"SP-A8-2026-002","estado":"pendiente","proyecto":"Hotel Costero Bocas"},{"codigo":"SP-A8-2026-003","estado":"aprobado","proyecto":"Reforestaci\u00f3n Dari\u00e9n"}]}
+ 
+ </msg>
+<msg time="2026-11-22T21:10:50.125920" level="INFO">${response} = &lt;Response [200]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/dashboard</arg>
+<doc>Sends a GET request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.109530" elapsed="0.016410"/>
+</kw>
+<kw name="Status Should Be" owner="RequestsLibrary">
+<arg>200</arg>
+<arg>${response}</arg>
+<doc>Fails if response status code is different than the expected.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.126120" elapsed="0.000197"/>
+</kw>
+<kw name="Set Variable" owner="BuiltIn">
+<msg time="2026-11-22T21:10:50.127087" level="INFO">${json} = {'alertas': [], 'metricas': {'activos': 3, 'alertas': 0, 'aprobados': 1, 'pendientes': 2}, 'prioridades': [{'banda': 'en_preparacion', 'banda_texto': 'En preparación', 'codigo': 'SP-A8-2026-001', 'ipe...</msg>
+<var>${json}</var>
+<arg>${response.json()}</arg>
+<doc>Returns the given values which can then be assigned to a variables.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.126400" elapsed="0.000731"/>
+</kw>
+<kw name="Dictionary Should Contain Key" owner="Collections">
+<arg>${json}</arg>
+<arg>alertas</arg>
+<doc>Fails if ``key`` is not found from ``dictionary``.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.127603" elapsed="0.000279"/>
+</kw>
+<kw name="Dictionary Should Contain Key" owner="Collections">
+<arg>${json}</arg>
+<arg>metricas</arg>
+<doc>Fails if ``key`` is not found from ``dictionary``.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.129686" elapsed="0.000176"/>
+</kw>
+<kw name="Dictionary Should Contain Key" owner="Collections">
+<arg>${json['metricas']}</arg>
+<arg>alertas</arg>
+<doc>Fails if ``key`` is not found from ``dictionary``.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.129944" elapsed="0.000410"/>
+</kw>
+<doc>Verifica que el endpoint del dashboard devuelva la estructura de alertas reales.</doc>
+<status status="PASS" start="2026-11-22T21:10:49.992716" elapsed="0.137734"/>
+</test>
+<test id="s1-t5" name="05 - Validar Que El Dashboard Requiere Autenticacion" line="60">
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:50.130968" level="INFO">Creating Session using : alias=api, url=http://localhost:5000, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>api</arg>
+<arg>${BASE_URL}</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-11-22T21:10:50.130870" elapsed="0.000220"/>
+</kw>
+<kw name="GET On Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:50.136212" level="INFO">GET Request : url=http://localhost:5000/dashboard 
+ path_url=/dashboard 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive'} 
+ body=None 
+ </msg>
+<msg time="2026-11-22T21:10:50.136281" level="INFO">GET Response : url=http://localhost:5000/dashboard 
+ status=401, reason=UNAUTHORIZED 
+ headers={'Server': 'Werkzeug/3.0.4 Python/3.11.18', 'Date': 'Sun, 22 Nov 2026 21:10:50 GMT', 'Content-Type': 'application/json', 'Content-Length': '65', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'same-origin', 'Cache-Control': 'no-store', 'Vary': 'Cookie', 'Connection': 'close'} 
+ body={"error":"No autenticado","mensaje":"No autenticado","ok":false}
+ 
+ </msg>
+<msg time="2026-11-22T21:10:50.136396" level="INFO">${response} = &lt;Response [401]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/dashboard</arg>
+<arg>expected_status=401</arg>
+<doc>Sends a GET request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.131160" elapsed="0.005251"/>
+</kw>
+<kw name="Status Should Be" owner="RequestsLibrary">
+<arg>401</arg>
+<arg>${response}</arg>
+<doc>Fails if response status code is different than the expected.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.136538" elapsed="0.000149"/>
+</kw>
+<doc>Verifica que el endpoint del dashboard devuelva 401 si no hay credenciales.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.130598" elapsed="0.006298"/>
+</test>
+<test id="s1-t6" name="06 - Validar Paginacion Y Busqueda En Expedientes (Sprint 6)" line="66">
+<kw name="Iniciar Sesion Como Consultor" owner="sesion">
+<kw name="Iniciar Sesion" owner="sesion">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-11-22T21:10:50.138016" level="INFO">${headers} = {'X-Requested-With': 'fetch'}</msg>
+<var>${headers}</var>
+<arg>X-Requested-With=fetch</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.137904" elapsed="0.000126"/>
+</kw>
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:50.138216" level="INFO">Creating Session using : alias=api, url=http://localhost:5000, headers={'X-Requested-With': 'fetch'},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>${alias}</arg>
+<arg>${BASE_URL}</arg>
+<arg>headers=${headers}</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-11-22T21:10:50.138088" elapsed="0.000373"/>
+</kw>
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-11-22T21:10:50.138696" level="INFO">${datos} = {'email': 'consultor1@ejemplo.com', 'password': 'Clave123'}</msg>
+<var>${datos}</var>
+<arg>email=${email}</arg>
+<arg>password=${password}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.138538" elapsed="0.000171"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:50.250529" level="INFO">POST Request : url=http://localhost:5000/login 
+ path_url=/login 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'X-Requested-With': 'fetch', 'Content-Length': '59', 'Content-Type': 'application/json'} 
+ body=b'{"email": "consultor1@ejemplo.com", "password": "Clave123"}' 
+ </msg>
+<msg time="2026-11-22T21:10:50.250598" level="INFO">POST Response : url=http://localhost:5000/login 
+ status=200, reason=OK 
+ headers={'Server': 'Werkzeug/3.0.4 Python/3.11.18', 'Date': 'Sun, 22 Nov 2026 21:10:50 GMT', 'Content-Type': 'application/json', 'Content-Length': '194', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'same-origin', 'Cache-Control': 'no-store', 'Vary': 'Cookie', 'Set-Cookie': 'session=eyJ1aWQiOjF9.awNaWg.-CIkAI_sBubMNNF_Ez0uL3N2Qe0; HttpOnly; Path=/; SameSite=Lax', 'Connection': 'close'} 
+ body={"acceso":true,"debe_cambiar_clave":false,"email":"consultor1@ejemplo.com","mensaje":"Bienvenido, Consultor Uno. Acceso concedido a sus expedientes.","nombre":"Consultor Uno","rol":"consultor"}
+ 
+ </msg>
+<msg time="2026-11-22T21:10:50.250704" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<var>${resp}</var>
+<arg>${alias}</arg>
+<arg>/login</arg>
+<arg>json=${datos}</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.138769" elapsed="0.111951"/>
+</kw>
+<kw name="Status Should Be" owner="RequestsLibrary">
+<arg>200</arg>
+<arg>${resp}</arg>
+<doc>Fails if response status code is different than the expected.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.250844" elapsed="0.000149"/>
+</kw>
+<kw name="Should Be True" owner="BuiltIn">
+<arg>${resp.json()['acceso']}</arg>
+<doc>Fails if the given condition is not true.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.251057" elapsed="0.000400"/>
+</kw>
+<arg>${alias}</arg>
+<arg>${CONSULTOR_EMAIL}</arg>
+<arg>${CONSULTOR_PASSWORD}</arg>
+<doc>Crea la sesion api e inicia sesion con ese usuario.
+La cabecera X-Requested-With la exige el servidor en los POST.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.137711" elapsed="0.113803"/>
+</kw>
+<arg>api</arg>
+<status status="PASS" start="2026-11-22T21:10:50.137488" elapsed="0.114061"/>
+</kw>
+<kw name="GET On Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:50.264553" level="INFO">GET Request : url=http://localhost:5000/expedientes?q=SP&amp;page=1&amp;per_page=5 
+ path_url=/expedientes?q=SP&amp;page=1&amp;per_page=5 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'X-Requested-With': 'fetch', 'Cookie': 'session=eyJ1aWQiOjF9.awNaWg.-CIkAI_sBubMNNF_Ez0uL3N2Qe0'} 
+ body=None 
+ </msg>
+<msg time="2026-11-22T21:10:50.264622" level="INFO">GET Response : url=http://localhost:5000/expedientes?q=SP&amp;page=1&amp;per_page=5 
+ status=200, reason=OK 
+ headers={'Server': 'Werkzeug/3.0.4 Python/3.11.18', 'Date': 'Sun, 22 Nov 2026 21:10:50 GMT', 'Content-Type': 'application/json', 'Content-Length': '1126', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'same-origin', 'Cache-Control': 'no-store', 'Vary': 'Cookie', 'Connection': 'close'} 
+ body={"expedientes":[{"categoria":"II","codigo":"SP-A8-2026-001","consultor":"Consultor Uno","estado":"pendiente","fecha_ingreso":"2026-09-10","ipe":{"banda":"en_preparacion","banda_texto":"En preparaci\u00f3n","valor":58},"plazo":{"dias_restantes_legales":-33,"estado_semaforo":"vencido","limite_dias":40},"promotor":"Energ\u00eda Verde S.A.","proyecto":"Planta Solar Azuero"},{"categoria":"III","codigo":"SP-A8-2026-002","consultor":"Consultor Uno","estado":"pendiente","fecha_ingreso":"2026-09-05","ipe":{"banda":"en_preparacion","banda_texto":"En preparaci\u00f3n","valor":75},"plazo":{"dias_restantes_legales":2,"estado_semaforo":"por_vencer","limite_dias":80},"promotor":"Inversiones del Caribe","proyecto":"Hotel Costero Bocas"},{"categoria":"I","codigo":"SP-A8-2026-003","consultor":"Consultor Uno","estado":"aprobado","fecha_ingreso":"2026-08-28","ipe":{"banda":"listo","banda_texto":"Listo","valor":100},"plazo":{"dias_restantes_legales":null,"estado_semaforo":"resuelto","limite_dias":20},"promotor":"ONG Ambiental","proyecto":"Reforestaci\u00f3n Dari\u00e9n"}],"paginacion":{"page":1,"pages":1,"per_page":5,"total":3}}
+ 
+ </msg>
+<msg time="2026-11-22T21:10:50.265926" level="INFO">${response} = &lt;Response [200]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>url=/expedientes?q=SP&amp;page=1&amp;per_page=5</arg>
+<doc>Sends a GET request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.251766" elapsed="0.014201"/>
+</kw>
+<kw name="Status Should Be" owner="RequestsLibrary">
+<arg>200</arg>
+<arg>${response}</arg>
+<doc>Fails if response status code is different than the expected.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.266183" elapsed="0.000655"/>
+</kw>
+<kw name="Dictionary Should Contain Key" owner="Collections">
+<arg>${response.json()}</arg>
+<arg>paginacion</arg>
+<doc>Fails if ``key`` is not found from ``dictionary``.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.267014" elapsed="0.000472"/>
+</kw>
+<doc>Verifica que /expedientes soporte parametros q, page y per_page retornando el objeto paginacion.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.137124" elapsed="0.130454"/>
+</test>
+<test id="s1-t7" name="07 - Validar Generacion De PDF De Expediente (Sprint 6)" line="73">
+<kw name="Iniciar Sesion Como Consultor" owner="sesion">
+<kw name="Iniciar Sesion" owner="sesion">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-11-22T21:10:50.268998" level="INFO">${headers} = {'X-Requested-With': 'fetch'}</msg>
+<var>${headers}</var>
+<arg>X-Requested-With=fetch</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.268793" elapsed="0.000217"/>
+</kw>
+<kw name="Create Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:50.269217" level="INFO">Creating Session using : alias=api, url=http://localhost:5000, headers={'X-Requested-With': 'fetch'},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>${alias}</arg>
+<arg>${BASE_URL}</arg>
+<arg>headers=${headers}</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-11-22T21:10:50.269063" elapsed="0.000301"/>
+</kw>
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-11-22T21:10:50.269698" level="INFO">${datos} = {'email': 'consultor1@ejemplo.com', 'password': 'Clave123'}</msg>
+<var>${datos}</var>
+<arg>email=${email}</arg>
+<arg>password=${password}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.269513" elapsed="0.000200"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:50.390944" level="INFO">POST Request : url=http://localhost:5000/login 
+ path_url=/login 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'X-Requested-With': 'fetch', 'Content-Length': '59', 'Content-Type': 'application/json'} 
+ body=b'{"email": "consultor1@ejemplo.com", "password": "Clave123"}' 
+ </msg>
+<msg time="2026-11-22T21:10:50.391093" level="INFO">POST Response : url=http://localhost:5000/login 
+ status=200, reason=OK 
+ headers={'Server': 'Werkzeug/3.0.4 Python/3.11.18', 'Date': 'Sun, 22 Nov 2026 21:10:50 GMT', 'Content-Type': 'application/json', 'Content-Length': '194', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'same-origin', 'Cache-Control': 'no-store', 'Vary': 'Cookie', 'Set-Cookie': 'session=eyJ1aWQiOjF9.awNaWg.-CIkAI_sBubMNNF_Ez0uL3N2Qe0; HttpOnly; Path=/; SameSite=Lax', 'Connection': 'close'} 
+ body={"acceso":true,"debe_cambiar_clave":false,"email":"consultor1@ejemplo.com","mensaje":"Bienvenido, Consultor Uno. Acceso concedido a sus expedientes.","nombre":"Consultor Uno","rol":"consultor"}
+ 
+ </msg>
+<msg time="2026-11-22T21:10:50.391272" level="INFO">${resp} = &lt;Response [200]&gt;</msg>
+<var>${resp}</var>
+<arg>${alias}</arg>
+<arg>/login</arg>
+<arg>json=${datos}</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.269775" elapsed="0.121524"/>
+</kw>
+<kw name="Status Should Be" owner="RequestsLibrary">
+<arg>200</arg>
+<arg>${resp}</arg>
+<doc>Fails if response status code is different than the expected.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.391873" elapsed="0.000421"/>
+</kw>
+<kw name="Should Be True" owner="BuiltIn">
+<arg>${resp.json()['acceso']}</arg>
+<doc>Fails if the given condition is not true.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.392613" elapsed="0.000657"/>
+</kw>
+<arg>${alias}</arg>
+<arg>${CONSULTOR_EMAIL}</arg>
+<arg>${CONSULTOR_PASSWORD}</arg>
+<doc>Crea la sesion api e inicia sesion con ese usuario.
+La cabecera X-Requested-With la exige el servidor en los POST.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.268315" elapsed="0.125286"/>
+</kw>
+<arg>api</arg>
+<status status="PASS" start="2026-11-22T21:10:50.268080" elapsed="0.125592"/>
+</kw>
+<kw name="GET On Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:50.407920" level="INFO">GET Request : url=http://localhost:5000/expedientes/SP-A8-2026-001/pdf 
+ path_url=/expedientes/SP-A8-2026-001/pdf 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'X-Requested-With': 'fetch', 'Cookie': 'session=eyJ1aWQiOjF9.awNaWg.-CIkAI_sBubMNNF_Ez0uL3N2Qe0'} 
+ body=None 
+ </msg>
+<msg time="2026-11-22T21:10:50.425084" level="INFO">GET Response : url=http://localhost:5000/expedientes/SP-A8-2026-001/pdf 
+ status=200, reason=OK 
+ headers={'Server': 'Werkzeug/3.0.4 Python/3.11.18', 'Date': 'Sun, 22 Nov 2026 21:10:50 GMT, Sun, 22 Nov 2026 21:10:50 GMT', 'Content-Disposition': 'attachment; filename=SP-A8-2026-001-resumen.pdf', 'Content-Type': 'application/pdf', 'Content-Length': '1395', 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'same-origin', 'Vary': 'Cookie', 'Connection': 'close'} 
+ body=%PDF-1.3
+%���
+1 0 obj
+&lt;&lt;
+/Count 1
+/Kids [3 0 R]
+/MediaBox [0 0 595.28 841.89]
+/Type /Pages
+&gt;&gt;
+endobj
+2 0 obj
+&lt;&lt;
+/OpenAction [3 0 R /FitH null]
+/PageLayout /OneColumn
+/Pages 1 0 R
+/Type /Catalog
+&gt;&gt;
+endobj
+3 0 obj
+&lt;&lt;
+/Contents 4 0 R
+/Parent 1 0 R
+/Resources 7 0 R
+/Type /Page
+&gt;&gt;
+endobj
+4 0 obj
+&lt;&lt;
+/Filter /FlateDecode
+/Length 356
+&gt;&gt;
+stream
+x����n�0��&lt;��C�����$**!�zw�%9��}gޡI��4�u5�����%"���(���	��� ���a��kUYw��[T��1���MC�H;,*T�![����W~.#,���;��.�Rǰ�;I�p�}�R���L0J�#�F`nf���JX�4�|���臜���j�M�BS%&lt;�)�$!}Nx�z���R�J�0���\?�ime�ܵC���$Q@\щ'���&amp;;���`�`��#�ѫ��
+��d�������"�O����3r`vT(a$k�a�y�R�L��%�&amp;��7��µ�E�&amp;�˞D�9w���`}�����Kcui���t1����	�-
+endstream
+endobj
+5 0 obj
+&lt;&lt;
+/BaseFont /Helvetica-Bold
+/Encoding /WinAnsiEncoding
+/Subtype /Type1
+/Type /Font
+&gt;&gt;
+endobj
+6 0 obj
+&lt;&lt;
+/BaseFont /Helvetica
+/Encoding /WinAnsiEncoding
+/Subtype /Type1
+/Type /Font
+&gt;&gt;
+endobj
+7 0 obj
+&lt;&lt;
+/Font &lt;&lt;/F1 5 0 R
+/F2 6 0 R&gt;&gt;
+/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]
+&gt;&gt;
+endobj
+8 0 obj
+&lt;&lt;
+/CreationDate (D:20261122211050Z)
+&gt;&gt;
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000015 00000 n 
+0000000102 00000 n 
+0000000205 00000 n 
+0000000285 00000 n 
+0000000713 00000 n 
+0000000815 00000 n 
+0000000912 00000 n 
+0000001009 00000 n 
+trailer
+&lt;&lt;
+/Size 9
+/Root 2 0 R
+/Info 8 0 R
+/ID [&lt;603EB62BB20DC313A2E1A379C3896E97&gt;&lt;603EB62BB20DC313A2E1A379C3896E97&gt;]
+&gt;&gt;
+startxref
+1064
+%%EOF
+ 
+ </msg>
+<msg time="2026-11-22T21:10:50.425584" level="INFO">${response} = &lt;Response [200]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>url=/expedientes/SP-A8-2026-001/pdf</arg>
+<doc>Sends a GET request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.393792" elapsed="0.031912"/>
+</kw>
+<kw name="Status Should Be" owner="RequestsLibrary">
+<arg>200</arg>
+<arg>${response}</arg>
+<doc>Fails if response status code is different than the expected.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.426402" elapsed="0.001327"/>
+</kw>
+<kw name="Should Contain" owner="BuiltIn">
+<arg>${response.headers['Content-Type']}</arg>
+<arg>application/pdf</arg>
+<doc>Fails if ``container`` does not contain ``item`` one or more times.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.428061" elapsed="0.000375"/>
+</kw>
+<doc>Verifica que el endpoint /expedientes/&lt;codigo&gt;/pdf devuelva un documento application/pdf.</doc>
+<status status="PASS" start="2026-11-22T21:10:50.267739" elapsed="0.160789"/>
+</test>
+<doc>Suite de Pruebas Automatizadas - Sprint 6 (Permisos Ambientales)</doc>
+<status status="PASS" start="2026-11-22T21:10:49.619087" elapsed="0.809762"/>
+</suite>
+<statistics>
+<total>
+<stat pass="7" fail="0" skip="0">All Tests</stat>
+</total>
+<tag>
+</tag>
+<suite>
+<stat pass="7" fail="0" skip="0" id="s1" name="Test Sprint6">Test Sprint6</stat>
+</suite>
+</statistics>
+<errors>
+</errors>
+</robot>
