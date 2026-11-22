@@ -40,6 +40,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
         Historial
       </a>
+      <a href="equipo.html" id="nav-equipo" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9.5" r="2.4"/><path d="M15.8 14.2c2.3.2 4 1.8 4.6 4.8"/></svg>
+        Equipo
+      </a>
       <a href="consulta-publica.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M19.5 19.5 15 15"/></svg>
         Consulta pública
@@ -66,7 +70,7 @@
       <p class="content-lede" id="lede-historial">Quién hizo cada acción en tus expedientes y cuándo. El historial es de solo lectura y empieza en el Sprint 8.</p>
 
       <div class="panel" style="padding:0; overflow-x:auto;">
-        <table class="ledger" style="margin:0; width:100%; table-layout:auto;">
+        <table class="ledger tarjetas" style="margin:0; width:100%; table-layout:auto;">
           <thead>
             <tr>
               <th style="padding-left:24px; white-space:nowrap; width:170px;">Fecha y hora</th>
@@ -103,6 +107,7 @@ const ACCION_CLASE = {
   'registró aprobación de MiAmbiente': 'status status-ok',
   'cambió acceso público': 'status status-warn',
   'creó cuenta del promotor': 'status status-info',
+  'reasignó': 'status status-bad',
 };
 
 let pagina = 1;
@@ -112,16 +117,16 @@ function renderHistorial(d) {
   const tbody = document.getElementById('tabla-historial');
   const filas = d.historial || [];
   if (!filas.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="padding:24px; color:var(--ink-faint); text-align:center;">Todavía no hay acciones registradas.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="sin-etiqueta" data-label="" style="padding:24px; color:var(--ink-faint); text-align:center;">Todavía no hay acciones registradas.</td></tr>';
   } else {
     tbody.innerHTML = filas.map(h => `
       <tr>
-        <td style="padding-left:24px; white-space:nowrap; font-family:var(--mono); font-size:12.5px;">${esc(h.fecha)}</td>
-        <td style="white-space:nowrap;"><a href="expediente-detalle.html?codigo=${encodeURIComponent(h.codigo)}"><span class="case-tag">${esc(h.codigo)}</span></a></td>
-        <td>${esc(h.proyecto)}</td>
-        <td style="white-space:nowrap;"><span class="${ACCION_CLASE[h.accion] || 'status status-info'}">${esc(h.accion)}</span></td>
-        <td>${esc(h.usuario)}</td>
-        <td style="white-space:nowrap;">${esc(ROL_TEXTO[h.usuario_rol] || h.usuario_rol)}</td>
+        <td data-label="Fecha" style="padding-left:24px; white-space:nowrap; font-family:var(--mono); font-size:12.5px;">${esc(h.fecha)}</td>
+        <td data-label="Expediente" style="white-space:nowrap;"><a href="expediente-detalle.html?codigo=${encodeURIComponent(h.codigo)}"><span class="case-tag">${esc(h.codigo)}</span></a></td>
+        <td data-label="Proyecto">${esc(h.proyecto)}</td>
+        <td data-label="Acción" style="white-space:nowrap;"><span class="${ACCION_CLASE[h.accion] || 'status status-info'}">${esc(h.accion)}</span></td>
+        <td data-label="Usuario">${esc(h.usuario)}</td>
+        <td data-label="Rol" style="white-space:nowrap;">${esc(ROL_TEXTO[h.usuario_rol] || h.usuario_rol)}</td>
       </tr>`).join('');
   }
   const p = d.paginacion || { page: 1, pages: 0, total: 0 };
@@ -137,7 +142,7 @@ async function cargar() {
   if (codigoFiltro) params.set('codigo', codigoFiltro);
   const d = await apiFetch('/historial?' + params.toString());
   if (d.error) {
-    tbody.innerHTML = `<tr><td colspan="6" style="padding:24px; color:var(--status-bad); text-align:center;">${esc(d.error)}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="sin-etiqueta" data-label="" style="padding:24px; color:var(--status-bad); text-align:center;">${esc(d.error)}</td></tr>`;
     document.getElementById('info-pagina').textContent = '';
     return;
   }

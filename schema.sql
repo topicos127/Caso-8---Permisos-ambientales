@@ -11,7 +11,10 @@ CREATE TABLE IF NOT EXISTS usuarios (
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     -- Sprint 9: contrasena temporal del promotor; debe cambiarla al entrar.
     -- La app la agrega sola a las bases anteriores al arrancar.
-    debe_cambiar_clave BOOLEAN NOT NULL DEFAULT FALSE
+    debe_cambiar_clave BOOLEAN NOT NULL DEFAULT FALSE,
+    -- Sprint 9: baja logica de consultores (el jefe los desactiva, no se borran).
+    -- La app la agrega sola a las bases anteriores al arrancar.
+    activo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS expedientes (

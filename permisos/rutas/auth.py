@@ -7,7 +7,7 @@ import pymysql
 from flask import Blueprint, g, jsonify, request, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from ..bd import _esquema, col_cambio_clave, cursor
+from ..bd import _esquema, col_activo, col_cambio_clave, cursor
 from ..config import EMAIL_RE, LOGIN_MAX_FALLOS, LOGIN_VENTANA_SEGUNDOS, ROLES_REGISTRO
 from ..errores import ApiError
 from ..reglas import problema_de_password
@@ -56,13 +56,17 @@ def login():
                             "Demasiados intentos fallidos. Espere un minuto e intente de nuevo."}), 429
 
     with cursor() as cur:
-        cur.execute(f"SELECT id, email, password_hash, rol, nombre, {col_cambio_clave()} FROM usuarios "
-                    "WHERE email=%s", (email,))
+        cur.execute(f"SELECT id, email, password_hash, rol, nombre, {col_cambio_clave()}, {col_activo()} "
+                    "FROM usuarios WHERE email=%s", (email,))
         u = cur.fetchone()
 
     if u and check_password_hash(u["password_hash"], password):
         with _candado:
             _fallos.pop(clave, None)
+        if not u["activo"]:
+            # Sprint 9: la cuenta existe y la clave es correcta, pero el jefe la desactivo.
+            return jsonify({"acceso": False,
+                            "mensaje": "Tu cuenta está desactivada. Habla con el jefe de la consultora."}), 403
         session.clear()
         session["uid"] = u["id"]
         return jsonify({

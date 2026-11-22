@@ -3,7 +3,7 @@ from functools import wraps
 
 from flask import g, request, session
 
-from .bd import col_cambio_clave, cursor
+from .bd import col_activo, col_cambio_clave, cursor
 from .config import RUTAS_SIN_CABECERA
 from .errores import ApiError, respuesta_error
 
@@ -24,12 +24,15 @@ def usuario_sesion():
     if not uid:
         return None
     with cursor() as cur:
-        cur.execute(f"SELECT id, email, rol, nombre, {col_cambio_clave()} FROM usuarios WHERE id=%s", (uid,))
+        cur.execute(f"SELECT id, email, rol, nombre, {col_cambio_clave()}, {col_activo()} FROM usuarios "
+                    "WHERE id=%s", (uid,))
         u = cur.fetchone()
-    if not u:
+    # Sprint 9: si el jefe desactiva a un consultor, su sesion abierta deja de valer.
+    if not u or not u["activo"]:
         session.clear()
-    else:
-        u["debe_cambiar_clave"] = bool(u["debe_cambiar_clave"])
+        return None
+    u["debe_cambiar_clave"] = bool(u["debe_cambiar_clave"])
+    del u["activo"]
     return u
 
 

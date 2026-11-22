@@ -154,6 +154,10 @@ function pintarTopbar() {
       a.style.display = 'none';
     });
   }
+  // HU-15: solo el jefe gestiona el equipo de consultores.
+  if (esJefe()) {
+    document.querySelectorAll('#nav-equipo').forEach(a => { a.style.display = ''; });
+  }
 }
 
 // ============== NOTIFICACIONES TOAST ==============
@@ -181,3 +185,44 @@ function mostrarToast(mensaje, tipo = 'exito') {
     setTimeout(() => toast.remove(), 300);
   }, 3000);
 }
+
+// ============== HU-12: menu lateral en el celular ==============
+// En pantallas de 820 px o menos el menu se oculta y se abre con el boton
+// "Menu" de la barra de arriba. Se cierra con el fondo, con Escape o al
+// elegir una opcion.
+function iniciarMenuMovil() {
+  const rail = document.querySelector('.rail');
+  const topbar = document.querySelector('.topbar');
+  if (!rail || !topbar || document.querySelector('.btn-menu')) return;
+  rail.id = rail.id || 'menu-lateral';
+
+  const boton = document.createElement('button');
+  boton.type = 'button';
+  boton.className = 'btn-menu';
+  boton.setAttribute('aria-controls', rail.id);
+  boton.setAttribute('aria-expanded', 'false');
+  boton.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">'
+    + '<path d="M4 7h16M4 12h16M4 17h16"/></svg> Menú';
+  topbar.insertBefore(boton, topbar.firstChild);
+
+  const fondo = document.createElement('div');
+  fondo.className = 'menu-fondo';
+  document.body.appendChild(fondo);
+
+  const abrir = (si) => {
+    document.body.classList.toggle('menu-abierto', si);
+    boton.setAttribute('aria-expanded', si ? 'true' : 'false');
+  };
+  boton.addEventListener('click', () => abrir(!document.body.classList.contains('menu-abierto')));
+  fondo.addEventListener('click', () => abrir(false));
+  rail.querySelectorAll('a').forEach(a => a.addEventListener('click', () => abrir(false)));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') abrir(false); });
+  window.addEventListener('resize', () => { if (window.innerWidth > 820) abrir(false); });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', iniciarMenuMovil);
+} else {
+  iniciarMenuMovil();
+}
+

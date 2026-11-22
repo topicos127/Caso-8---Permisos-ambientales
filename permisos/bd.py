@@ -108,11 +108,26 @@ CREATE TABLE IF NOT EXISTS documento_versiones (
 # Sprint 9: el promotor recibe una contrasena temporal y debe cambiarla. La
 # columna se agrega al arrancar si la base es anterior; mientras no exista, las
 # consultas la reemplazan por un 0 constante y la regla simplemente no aplica.
-_esquema = {"cambio_clave": False}
+_esquema = {"cambio_clave": False, "activo": False}
 
 
 def col_cambio_clave():
     return "debe_cambiar_clave" if _esquema["cambio_clave"] else "0 AS debe_cambiar_clave"
+
+
+def col_activo():
+    """Sprint 9 (equipo de consultores): baja logica. Mientras la columna no
+    exista, todos los usuarios cuentan como activos."""
+    return "activo" if _esquema["activo"] else "1 AS activo"
+
+
+def _asegurar_columna_activo(cur):
+    cur.execute("SELECT COUNT(*) AS n FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() "
+                "AND TABLE_NAME = 'usuarios' AND COLUMN_NAME = 'activo'")
+    if cur.fetchone()["n"] == 0:
+        cur.execute("ALTER TABLE usuarios ADD COLUMN activo BOOLEAN NOT NULL DEFAULT TRUE")
+        print("Sprint 9: columna usuarios.activo agregada.", flush=True)
+    _esquema["activo"] = True
 
 
 def _asegurar_columna_cambio_clave(cur):
@@ -141,6 +156,14 @@ def inicializar_bd():
         # resto del arranque: la regla de contrasena temporal queda inactiva.
         print(f"AVISO: no se pudo agregar usuarios.debe_cambiar_clave ({e!r}); "
               "la contrasena temporal no se exigira hasta que exista la columna.", flush=True)
+    try:
+        with cursor() as cur:
+            _asegurar_columna_activo(cur)
+    except pymysql.MySQLError as e:
+        # Igual que la columna anterior: sin ella, nadie queda desactivado y
+        # desactivar responde 503 hasta que exista (plan B: sql/sprint9_manual.sql).
+        print(f"AVISO: no se pudo agregar usuarios.activo ({e!r}); "
+              "no se podra desactivar consultores hasta que exista la columna.", flush=True)
     with cursor() as cur:
         cur.execute("SELECT id FROM usuarios WHERE email=%s", (JEFE_EMAIL,))
         if not cur.fetchone():
@@ -164,6 +187,7 @@ def asegurar_bd():
     try:
         inicializar_bd()
         _estado_bd["lista"] = True
-        print("Sprints 8 y 9: historial, versiones de documentos, usuario jefe y columna de cambio de contrasena verificados.", flush=True)
+        print("Sprints 8 y 9: historial, versiones de documentos, usuario jefe y columnas de cambio de "
+              "contrasena y de usuario activo verificados.", flush=True)
     except Exception as e:  # noqa: BLE001 - la app sigue; se reintenta luego
         print(f"AVISO: no se pudo preparar la base para el Sprint 8: {e!r}", flush=True)
