@@ -89,6 +89,10 @@ jobs:
         run: |
           python -m unittest tests/test_semaforo.py tests/test_sprint9.py
 
+      - name: Run Robot Framework tests (Login HU-11)
+        run: |
+          robot --outputdir tests/login tests/login/test_login.robot
+
       - name: Run Robot Framework tests (Sprint 4)
         run: |
           robot --outputdir tests/sprint4 tests/sprint4/test_sprint4.robot
@@ -112,6 +116,13 @@ jobs:
       - name: Run Robot Framework tests (Sprint 9)
         run: |
           robot --outputdir tests/sprint9 tests/sprint9/Test_Sprint9.robot
+
+      - name: Upload Login test report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: robot-report-login
+          path: tests/login/
 
       - name: Upload Sprint 4 test report
         if: always()

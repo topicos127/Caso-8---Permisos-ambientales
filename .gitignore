@@ -27,3 +27,11 @@ uploads_data/
 uploads/
 
 .env
+# Reportes de Robot Framework (tambien el de login)
+tests/login/log.html
+tests/login/report.html
+tests/login/output.xml
+tests/sprint*/log.html
+tests/sprint*/report.html
+tests/sprint*/output.xml
+results/qa-*/
