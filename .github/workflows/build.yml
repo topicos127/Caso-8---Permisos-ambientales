@@ -117,6 +117,12 @@ jobs:
         run: |
           robot --outputdir tests/sprint9 tests/sprint9/Test_Sprint9.robot
 
+      - name: Run Robot Framework tests (Sprint 9 - HU-16 y HU-12, calidad y seguridad)
+        # Va en su propia carpeta para no pisar el reporte de Test_Sprint9.robot.
+        # El caso con la etiqueta "hallazgo" queda en SKIP mientras no se corrija.
+        run: |
+          robot --outputdir tests/sprint9/equipo tests/sprint9/Test_Sprint9_Equipo.robot
+
       - name: Upload Login test report
         if: always()
         uses: actions/upload-artifact@v5
@@ -165,6 +171,13 @@ jobs:
         with:
           name: robot-report-sprint9
           path: tests/sprint9/
+
+      - name: Upload Sprint 9 HU-16/HU-12 test report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: robot-report-sprint9-equipo
+          path: tests/sprint9/equipo/
 
   build:
     name: Build and Push Docker Image
