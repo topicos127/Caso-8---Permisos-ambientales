@@ -116,14 +116,14 @@ def exigir_gestion(u, exp):
         raise ApiError(403, "No autorizado.")
 
 
-def exigir_jefe(u, mensaje="Solo el jefe de la consultora puede aprobar internamente."):
+def exigir_jefe(u, mensaje="Solo el director de proyectos puede aprobar internamente."):
     """Solo comprueba el ROL. Para actuar sobre un expediente use exigir_jefe_de: un jefe
     de otra empresa tambien tiene el rol."""
     if u["rol"] != "jefe":
         raise ApiError(403, mensaje)
 
 
-def exigir_jefe_de(u, exp, mensaje="Solo el jefe de la consultora puede aprobar internamente."):
+def exigir_jefe_de(u, exp, mensaje="Solo el director de proyectos puede aprobar internamente."):
     """El jefe DE LA EMPRESA del expediente. De otra empresa responde 404, como si no existiera."""
     if u["rol"] != ROL_ADMIN and not misma_empresa(u, exp):
         raise ApiError(404, "Expediente no encontrado.")

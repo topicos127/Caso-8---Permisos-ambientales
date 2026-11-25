@@ -82,7 +82,7 @@ document.getElementById('btnGuardar').addEventListener('click', async () => {
   const promotor_email = (document.getElementById('promotor_email').value || '').trim();
 
   if (!proyecto || !promotor) {
-    mostrarToast('Completa el nombre del proyecto y el promotor.', 'error');
+    mostrarToast('Completa el nombre del proyecto y el cliente.', 'error');
     return;
   }
 

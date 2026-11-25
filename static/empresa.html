@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi consultora — Permisos Ambientales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilos.css">
+<script src="js/interaccion.js"></script>
+</head>
+<body>
+<div class="shell">
+  <aside class="rail">
+    <div class="rail-brand">
+      <div class="seal">
+        <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.1">
+          <circle cx="20" cy="20" r="17"/>
+          <path d="M6 24c4-4 8 4 12 0s8-6 12 0" opacity="0.6"/>
+          <path d="M7 16c4-3 8 3 12 0s8-5 12 0" opacity="0.45"/>
+          <circle cx="20" cy="20" r="2.2" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+      <div><b>Permisos Ambientales</b><span>Expedientes ambientales</span></div>
+    </div>
+    <nav></nav>
+    <div class="rail-foot">© 2026 Permisos Ambientales</div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="crumb">MI CONSULTORA</span>
+      <div class="who"></div>
+    </div>
+
+    <div class="content">
+      <div class="content-head"><h2>Mi consultora</h2></div>
+      <p class="content-lede">La marca de su empresa: el nombre, el color y el logo aparecen en el menú de todo su equipo, en el resumen PDF de cada expediente y en la consulta pública de sus proyectos.</p>
+
+      <div class="bento">
+        <div class="col-main">
+          <div class="panel">
+            <h3>Nombre y color</h3>
+            <form id="form-marca">
+              <div class="doc-field">
+                <label for="nombre-empresa">Nombre de la consultora</label>
+                <input type="text" id="nombre-empresa" maxlength="150" required>
+              </div>
+              <div class="doc-field">
+                <label id="etiqueta-color">Color de la marca</label>
+                <div class="colores" id="colores" role="radiogroup" aria-labelledby="etiqueta-color"></div>
+              </div>
+              <button type="submit" class="btn btn-brass">Guardar</button>
+            </form>
+          </div>
+
+          <div class="panel">
+            <h3>Logo</h3>
+            <p class="panel-note">Imagen PNG, JPG o WebP de hasta 1 MB. Se ve mejor con fondo transparente y formato cuadrado.</p>
+            <div class="logo-vista">
+              <div class="marco" id="logo-marco" aria-hidden="true">·</div>
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <label class="btn btn-brass" for="archivo-logo" style="cursor:pointer;">Subir logo</label>
+                <input type="file" id="archivo-logo" accept="image/png,image/jpeg,image/webp" hidden>
+                <button type="button" class="btn btn-ghost" id="btn-quitar-logo" style="border:1.5px solid var(--line);" hidden>Quitar logo</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-side">
+          <div class="panel">
+            <h3>Así se verá</h3>
+            <div class="rail" id="vista-previa" style="position:static; height:auto; width:auto; min-height:0; padding:18px; border-radius:16px; transform:none;">
+              <div class="rail-brand con-empresa" id="vista-marca"></div>
+            </div>
+            <p class="panel-note" style="margin-top:12px;">El color de cada rol (verde, azul, violeta) no cambia: así cada persona reconoce desde dónde trabaja.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/pag-empresa.js"></script>
+</body>
+</html>

@@ -154,7 +154,7 @@ def calcular_ipe(exp, documentos, dia=None):
                      else f"{carpeta} vence en {restan} días")
             acciones.append({"tipo": "vigencia", "texto": texto})
         if exp["estado"] == "pendiente" and verif["puede_someter"]:
-            acciones.append({"tipo": "flujo", "texto": "Pedir la aprobación interna al jefe"})
+            acciones.append({"tipo": "flujo", "texto": "Pedir la aprobación interna al director de proyectos"})
         elif exp["estado"] == "aprobado_interno":
             acciones.append({"tipo": "flujo", "texto": "Someter el expediente a MiAmbiente"})
         elif exp["estado"] == "evaluacion":

@@ -196,7 +196,7 @@ class PanelConPrioridades(unittest.TestCase):
         p = r.get_json()["prioridades"]
         self.assertEqual([x["codigo"] for x in p], ["A-2", "A-1"])
         self.assertEqual(p[0]["proxima_accion"], "Subir Línea Base")
-        self.assertEqual(p[1]["proxima_accion"], "Pedir la aprobación interna al jefe")
+        self.assertEqual(p[1]["proxima_accion"], "Pedir la aprobación interna al director de proyectos")
         self.assertEqual(r.get_json()["metricas"]["activos"], 3)
 
     def test_el_promotor_recibe_la_lista_vacia(self):

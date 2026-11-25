@@ -44,6 +44,10 @@ if (usuario) {
         sessionStorage.setItem('usuario', JSON.stringify(usuario));
         pintarTopbar();
       }
+      if (p.empresa) {
+        document.getElementById('perfil-empresa').textContent = p.empresa.nombre;
+        document.getElementById('perfil-empresa-caja').hidden = false;
+      }
       if (p.miembro_desde) {
         document.getElementById('perfil-desde').textContent = p.miembro_desde;
         document.getElementById('perfil-desde-caja').hidden = false;

@@ -461,6 +461,25 @@ ${CLAVE}          Clave12345
     ${r}=    GET On Session    admin    /plataforma/errores
     Dictionary Should Contain Key    ${r.json()}    errores
 
+31b - El resumen del administrador trae cifras agregadas y nunca contenido de expedientes
+    Iniciar Sesion Como Administrador    admin
+    ${r}=    GET On Session    admin    /plataforma/resumen
+    ${d}=    Set Variable    ${r.json()}
+    Should Be True    ${d['empresas']['total']} >= 2
+    Should Be True    ${d['empresas']['activas']} <= ${d['empresas']['total']}
+    Should Be True    ${d['expedientes']['total']} >= 1
+    Should Be True    ${d['usuarios']['por_rol']['jefe']['total']} >= 2
+    Length Should Be    ${d['actividad']}    14
+    ${nombres}=    Evaluate    [e['nombre'] for e in $d['ranking']]
+    Should Contain    ${nombres}    Consultora Demo
+    Should Contain    ${nombres}    Ambiental del Pacífico
+    # Solo agregados: ni el texto de un expediente ni de un comentario puede aparecer en la respuesta.
+    Should Not Contain    ${r.text}    SP-A8-2026
+    Should Not Contain    ${r.text}    paz y salvo
+    Iniciar Sesion Como Jefe    jefe
+    ${r}=    GET On Session    jefe    /plataforma/resumen    expected_status=any
+    Status Should Be    403    ${r}
+
 32 - Respaldo: se crea, se verifica y restaurarlo devuelve los datos de ese momento
     Iniciar Sesion Como Administrador    admin
     ${vacio}=    Create Dictionary

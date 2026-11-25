@@ -60,9 +60,9 @@ def crear():
         # El administrador invita al jefe de una empresa que ya existe.
         organizacion_id, rol = data.get("organizacion_id"), "jefe"
         if isinstance(organizacion_id, bool) or not isinstance(organizacion_id, int):
-            raise ApiError(400, "Indique la empresa a la que pertenecerá el jefe.")
+            raise ApiError(400, "Indique la empresa a la que pertenecerá el director de proyectos.")
     else:
-        raise ApiError(403, "Solo el jefe de la consultora puede invitar a su equipo.")
+        raise ApiError(403, "Solo el director de proyectos puede invitar a su equipo.")
 
     with cursor() as cur:
         cur.execute("SELECT activa FROM organizaciones WHERE id=%s", (organizacion_id,))
@@ -85,7 +85,7 @@ def crear():
 def listar():
     u = g.usuario
     if u["rol"] not in ("jefe", ROL_ADMIN):
-        raise ApiError(403, "Solo el jefe de la consultora puede ver las invitaciones.")
+        raise ApiError(403, "Solo el director de proyectos puede ver las invitaciones.")
     if u["rol"] == "jefe":
         donde, params = "i.organizacion_id=%s", [u["organizacion_id"]]
     else:

@@ -61,6 +61,11 @@
           <label for="password">Contraseña</label>
           <input type="password" id="password" placeholder="Su contraseña" required autocomplete="current-password">
         </div>
+        <div class="doc-field" id="campo-codigo" hidden>
+          <label for="codigo">Código de verificación</label>
+          <input type="text" id="codigo" inputmode="text" maxlength="14" placeholder="6 dígitos de su app, o un código de recuperación" autocomplete="one-time-code" spellcheck="false">
+          <small class="panel-note" style="margin-top:6px;">Abra su aplicación autenticadora. Si perdió el teléfono, use uno de sus códigos de recuperación.</small>
+        </div>
         <button type="submit" id="submitBtn" class="btn-stamp">Entrar</button>
       </form>
 
@@ -68,13 +73,14 @@
 
       <div class="doc-note">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/></svg>
-        <span>Tras 5 intentos fallidos en un minuto, el acceso se pausa. Si es promotor, su consultor crea su cuenta con una contraseña temporal que debe cambiar al entrar.</span>
+        <span>Tras 5 intentos fallidos en un minuto, el acceso se pausa. Si es cliente, su consultor crea su cuenta con una contraseña temporal que debe cambiar al entrar.</span>
       </div>
 
       <div class="doc-footnote">
         <span><a href="index.html">Volver al inicio</a></span>
-        <span>¿Consultor nuevo? <a href="registro.html">Crear cuenta</a></span>
+        <span><a href="recuperar.html">¿Olvidó su contraseña?</a></span>
       </div>
+      <p class="panel-note" style="margin-top:14px; text-align:center;">¿Su consultora le dio un enlace de invitación? Ábralo para crear su cuenta.</p>
     </div>
   </div>
 </div>

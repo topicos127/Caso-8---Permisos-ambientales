@@ -117,7 +117,7 @@ class ProximasAcciones(unittest.TestCase):
 
     def test_completo_pendiente_pide_la_aprobacion_del_jefe(self):
         r = calcular_ipe(expediente("I"), documentos("I", 3), HOY)
-        self.assertEqual([a["texto"] for a in r["acciones"]], ["Pedir la aprobación interna al jefe"])
+        self.assertEqual([a["texto"] for a in r["acciones"]], ["Pedir la aprobación interna al director de proyectos"])
 
     def test_el_flujo_siguiente_segun_el_estado(self):
         docs = documentos("I", 3)

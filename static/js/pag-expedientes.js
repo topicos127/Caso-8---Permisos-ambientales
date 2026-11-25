@@ -34,7 +34,7 @@ function aplicarFiltros() {
 
   const filtrados = todosLosExpedientes.filter(e => {
     const coincideTexto = e.codigo.toLowerCase().includes(texto) || e.proyecto.toLowerCase().includes(texto);
-    // HU-07: el promotor ve "aprobado_interno" como "Pendiente de subsanación".
+    // HU-07: el cliente ve "aprobado_interno" como "Pendiente de subsanación".
     const coincideEstado = estado === '' || e.estado === estado
       || (!interno && estado === 'pendiente' && e.estado === 'aprobado_interno');
     return coincideTexto && coincideEstado;
@@ -53,7 +53,7 @@ if (usuario) {
     document.getElementById('opt-aprobado-interno').remove();
   }
 
-  // HU-13: el jefe ve todos los expedientes de la consultora y de quién es cada uno.
+  // HU-13: el director de proyectos ve todos los expedientes de la consultora y de quién es cada uno.
   if (jefe) {
     document.getElementById('titulo-lista').textContent = 'Expedientes de la consultora';
     document.getElementById('lede-lista').textContent =
@@ -78,5 +78,96 @@ if (usuario) {
   document.getElementById('filtro-estado').addEventListener('change', aplicarFiltros);
   document.getElementById('orden').addEventListener('change', cargarLista);
 
+  // ---------- Vistas guardadas: filtros que se repiten, a un clic ----------
+  let vistas = [];
+  let vistaActiva = null;
+
+  function filtrosActuales() {
+    const f = {
+      q: document.getElementById('buscador').value.trim(),
+      estado: document.getElementById('filtro-estado').value,
+      orden: document.getElementById('orden').value,
+    };
+    Object.keys(f).forEach(k => { if (!f[k]) delete f[k]; });
+    return f;
+  }
+
+  function pintarVistas() {
+    const caja = document.getElementById('vistas');
+    caja.hidden = !vistas.length;
+    caja.innerHTML = vistas.map(v => `
+      <span class="chip-vista${v.id === vistaActiva ? ' activa' : ''}" data-vista="${v.id}" role="button" tabindex="0">
+        ${esc(v.nombre)}<button type="button" data-borrar-vista="${v.id}" aria-label="Eliminar la vista ${esc(v.nombre)}">×</button>
+      </span>`).join('');
+  }
+
+  async function cargarVistas() {
+    const d = await apiFetch('/vistas');
+    vistas = d.vistas || [];
+    pintarVistas();
+  }
+
+  async function aplicarVista(v) {
+    vistaActiva = v.id;
+    document.getElementById('buscador').value = v.filtros.q || '';
+    document.getElementById('filtro-estado').value = v.filtros.estado || '';
+    document.getElementById('orden').value = v.filtros.orden || '';
+    pintarVistas();
+    await cargarLista();
+  }
+
+  document.getElementById('vistas').addEventListener('click', async (e) => {
+    const borrar = e.target.closest('[data-borrar-vista]');
+    if (borrar) {
+      e.stopPropagation();
+      const r = await apiFetch(`/vistas/${borrar.dataset.borrarVista}`, { method: 'DELETE' });
+      mostrarToast(r.mensaje || 'Listo.', r.ok ? 'exito' : 'error');
+      if (vistaActiva === Number(borrar.dataset.borrarVista)) vistaActiva = null;
+      await cargarVistas();
+      return;
+    }
+    const chip = e.target.closest('[data-vista]');
+    if (chip) aplicarVista(vistas.find(v => v.id === Number(chip.dataset.vista)));
+  });
+  document.getElementById('vistas').addEventListener('keydown', (e) => {
+    const chip = e.target.closest('[data-vista]');
+    if (chip && (e.key === 'Enter' || e.key === ' ') && e.target === chip) { e.preventDefault(); chip.click(); }
+  });
+
+  document.getElementById('btn-guardar-vista').addEventListener('click', () => {
+    const filtros = filtrosActuales();
+    if (!Object.keys(filtros).length) { mostrarToast('Aplique algún filtro antes de guardar la vista.', 'error'); return; }
+    abrirModal({
+      titulo: 'Guardar vista',
+      html: '<div class="doc-field"><label for="m-nombre-vista">Nombre de la vista</label><input type="text" id="m-nombre-vista" maxlength="60" placeholder="Ej. Pendientes por vencer"></div><div class="doc-msg" id="m-error" role="alert"></div>',
+      acciones: [
+        { texto: 'Cancelar', clase: 'btn btn-ghost' },
+        {
+          texto: 'Guardar', clase: 'btn btn-brass',
+          alHacerClic: async ({ el }) => {
+            const nombre = el.querySelector('#m-nombre-vista').value.trim();
+            const m = el.querySelector('#m-error');
+            if (!nombre) { m.className = 'doc-msg show error'; m.textContent = 'Escriba un nombre.'; return false; }
+            const r = await apiFetch('/vistas', { method: 'POST', body: JSON.stringify({ nombre, filtros }) });
+            if (!r.ok) { m.className = 'doc-msg show error'; m.textContent = r.mensaje || 'No se pudo guardar.'; return false; }
+            mostrarToast('Vista guardada.', 'exito');
+            vistaActiva = r.id;
+            await cargarVistas();
+          },
+        },
+      ],
+    });
+  });
+
+  // Si el usuario cambia un filtro a mano, ya no está en una vista guardada.
+  ['buscador', 'filtro-estado', 'orden'].forEach(id => document.getElementById(id).addEventListener('input', () => {
+    if (vistaActiva !== null) { vistaActiva = null; pintarVistas(); }
+  }));
+
+  // Con un código en la URL (?q=) la lista llega ya filtrada (por ejemplo, desde el panel).
+  const q0 = new URLSearchParams(window.location.search).get('q');
+  if (q0) document.getElementById('buscador').value = q0;
+
+  cargarVistas().catch(console.error);
   cargarLista();
 }

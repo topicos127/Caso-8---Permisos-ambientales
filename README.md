@@ -30,7 +30,12 @@ Flask + MySQL, con frontend en HTML y JS. Se corre localmente con Docker Compose
 | `permisos/seguridad.py` | Sesión, protección CSRF y permisos por rol |
 | `permisos/errores.py` | Forma única de los errores y cabeceras de seguridad |
 | `permisos/utiles.py` | Lectura de la petición, formato de salida y archivos subidos |
-| `permisos/rutas/` | Un blueprint por área: `auth`, `dashboard`, `expedientes`, `documentos`, `flujo`, `historial`, `publico` |
+| `permisos/rutas/` | Un blueprint por área: `auth`, `cuenta`, `invitaciones`, `organizaciones`, `plataforma`, `colaboracion`, `dashboard`, `expedientes`, `documentos`, `flujo`, `historial`, `equipo`, `publico` |
+| `permisos/totp.py` | Verificación en dos pasos (TOTP, RFC 6238) y códigos de recuperación |
+| `permisos/almacenamiento.py` | Archivos en disco local o en un servicio compatible con S3 (firma SigV4 propia) |
+| `permisos/respaldos.py` | Respaldos (base + archivos) con verificación, retención y restauración |
+| `permisos/limitador.py` | Límite de intentos fallidos (login, recuperación, invitaciones) |
+| `permisos/registro_errores.py` | Registro propio de errores con identificador de petición |
 
 Los documentos del proyecto (plan de los Sprints 9 y 10, guía del PO) están en la rama
 [`context`](../../tree/context/docs), separados del código.
@@ -45,6 +50,14 @@ Los documentos del proyecto (plan de los Sprints 9 y 10, guía del PO) están en
 | `SESSION_COOKIE_SECURE` | `true` solo en el despliegue con HTTPS |
 | `JEFE_EMAIL` / `JEFE_PASSWORD` / `JEFE_NOMBRE` | Usuario jefe que se crea al arrancar si no existe (opcional; por defecto `jefe1@ejemplo.com` / `Jefe2026*`). En Railway conviene poner una contraseña propia |
 | `SEED_DEMO` | `true` solo para cargar los datos de prueba con `scripts/init_db.py` (una vez) |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_NOMBRE` | Administrador de la plataforma, que se crea al arrancar si no existe (por defecto `admin@ejemplo.com` / `Admin2026*`). **En el despliegue, definir una contraseña propia** |
+| `ORG_POR_DEFECTO` | Nombre de la empresa que recibe los datos anteriores a la separación por empresa (por defecto `Consultora Demo`) |
+| `SESION_MINUTOS` | Minutos de inactividad antes de cerrar la sesión (120) |
+| `INVITACION_HORAS` | Vigencia de un enlace de invitación (72) |
+| `ALMACENAMIENTO` | `local` (volumen de Docker, por defecto) o `s3` |
+| `S3_ENDPOINT` / `S3_BUCKET` / `S3_REGION` / `S3_ACCESS_KEY` / `S3_SECRET_KEY` | Servicio compatible con S3 (Cloudflare R2, Backblaze B2, MinIO, AWS) cuando `ALMACENAMIENTO=s3` |
+| `BACKUP_DIR` | Carpeta de los respaldos (`/app/respaldos`, un volumen aparte) |
+| `RESPALDO_AUTOMATICO` / `RESPALDO_HORA` / `RESPALDOS_CONSERVAR` | Respaldo diario (hora de Panamá, 2 a. m. por defecto) y cuántos se conservan (14) |
 
 En el despliegue también se usan `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`,
 `DB_NAME` y, para Aiven, `DB_SSL_CA` (ruta al `ca.pem` que da Aiven, para verificar el
@@ -89,6 +102,8 @@ revisar **Usage** la primera semana.
 - **Consultor:** `consultor1@ejemplo.com` / `Clave123`
 - **Consultor 2:** `consultor2@ejemplo.com` / `Clave2026`
 - **Promotor:** `promotor1@ejemplo.com` / `Clave456`
+- **Administrador de la plataforma:** `admin@ejemplo.com` / `Admin2026*` (lo crea la app al arrancar; no ve expedientes)
+- **Segunda empresa («Ambiental del Pacífico»):** jefe `jefe2@ejemplo.com` / `Jefe2026*` y consultor `consultor3@ejemplo.com` / `Clave2026`. Sirve para comprobar que una consultora no ve lo de otra.
 
 Desde el Sprint 9 todas cumplen la política de contraseñas. Si tu base local se creó
 antes, vuelve a correr el seed (`.\start.ps1` lo hace) para actualizarlas.
@@ -99,18 +114,64 @@ Las pruebas unitarias no necesitan base de datos:
 
 ```
 pip install -r requirements-test.txt
-python -m unittest tests/test_semaforo.py tests/test_sprint9.py tests/test_ipe.py tests/test_ipe_api.py tests/test_documentos.py tests/test_equipo.py
+python -m unittest tests/test_semaforo.py tests/test_sprint9.py tests/test_ipe.py tests/test_ipe_api.py tests/test_documentos.py tests/test_equipo.py tests/test_sprint10.py tests/test_plataforma.py tests/test_sigv4_botocore.py
 ```
 
 Las de Robot Framework necesitan la app corriendo en `http://localhost:5000` con la base
 recién sembrada (registran usuarios y crean expedientes; nunca correrlas contra Railway):
 
 ```
-robot --outputdir resultados tests/login tests/sprint4 tests/sprint5 tests/sprint6 tests/sprint7 tests/sprint8 tests/sprint9
+robot --outputdir resultados tests/login tests/sprint4 tests/sprint5 tests/sprint6 tests/sprint7 tests/sprint8 tests/sprint9 tests/sprint10 tests/plataforma
 ```
 
 El pipeline de GitHub Actions corre todo en cada push a `main` y en cada Pull Request
 hacia `main`.
+
+## Plataforma multiempresa
+
+La plataforma ya no es de una sola consultora: cada **empresa** tiene sus usuarios y sus
+expedientes, y ninguna ve lo de otra.
+
+**Aislamiento.** La regla vive en un solo lugar, `permisos/seguridad.py` (`puede_ver`,
+`exigir_gestion`, `exigir_jefe_de`, `filtro_de`, `condicion_empresa`); las rutas no comparan
+empresas por su cuenta. Un expediente de otra empresa responde 404, como si no existiera. El
+**administrador de la plataforma** (rol `admin`) crea las empresas, ve el estado del servicio y
+administra los respaldos; no tiene acceso a ninguna pantalla de expedientes. Las bases anteriores
+se migran solas al arrancar: sus usuarios y expedientes pasan a la empresa por defecto.
+
+**Cuentas.** No hay registro abierto. El administrador crea una empresa y recibe un enlace de
+invitación (de un solo uso, vence en 72 h, solo se guarda su SHA-256) para el jefe; el jefe invita
+a su equipo igual desde «Equipo». Sin servicio de correo, la recuperación funciona así: cada
+persona puede guardar **códigos de recuperación** (se muestran una sola vez) para fijar una
+contraseña nueva en `recuperar.html`; si no los tiene, su jefe le genera una contraseña temporal
+(al jefe, el administrador). Las contraseñas temporales y los códigos cierran las sesiones abiertas.
+
+**Seguridad de la cuenta.** Verificación en dos pasos opcional (TOTP compatible con Google/Microsoft
+Authenticator, Authy y 1Password; el secreto se guarda cifrado y cada código sirve una vez),
+«cerrar sesión en los demás dispositivos», sesión que vence por inactividad (`SESION_MINUTOS`),
+límite de intentos, aceptación de términos y privacidad, y cabeceras de seguridad con una política
+de contenido sin scripts en línea. `Strict-Transport-Security` y la cookie `Secure` se activan con
+`SESSION_COOKIE_SECURE=true` (solo con HTTPS).
+
+**Archivos y respaldos.** Con `ALMACENAMIENTO=s3` los documentos van a un bucket (los mismos nombres
+de siempre; para pasar los que ya hay en disco: `python scripts/migrar_archivos.py --simular` y luego
+sin `--simular`). Los respaldos (`/plataforma` → «Respaldos») traen la base completa y los documentos en
+un ZIP con su huella; se pueden verificar, descargar y restaurar (antes de restaurar se guarda uno del
+estado actual). Con `RESPALDO_AUTOMATICO=true` se hace uno cada día. `/estado` (público) y
+`estado.html` muestran si la base y los archivos responden; `/plataforma/errores` guarda los últimos
+errores con un código que la persona afectada puede citar.
+
+**Trabajo en equipo y reportes.** Responsable de cada expediente (lo cambia el jefe y queda en el
+historial), comentarios internos (el promotor no los ve), vistas guardadas de filtros, búsqueda global
+con `Ctrl+K`, exportación de la cartera a Excel y del historial a CSV (sin inyección de fórmulas), marca
+propia por empresa (nombre, color y logo, que también salen en el PDF y en la consulta pública), guía
+de primeros pasos en el panel y página de ayuda.
+
+**Qué no cubre (a propósito).** No hay dominio propio ni avisos por correo. Los textos de términos y
+privacidad son una base de trabajo y **deben revisarse con asesoría legal** antes de su uso comercial.
+La firma S3 se verificó contra botocore (la implementación de referencia de AWS) y contra un servicio S3
+emulado, no contra un proveedor real: pruebe con su bucket antes de depender de él. No se corrió un
+escaneo de vulnerabilidades (OpenVAS) sobre esta versión.
 
 ## Correcciones del Sprint 9
 

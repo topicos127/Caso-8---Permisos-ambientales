@@ -33,9 +33,9 @@
       </a>
 
       <div style="display:flex; flex-direction:column;">
-        <span class="auth-chip">Cuenta de consultor ambiental</span>
-        <h2>Organice sus expedientes desde el primer día.</h2>
-        <p>Los promotores no se registran aquí: su consultor les crea el acceso desde el expediente, con una contraseña temporal.</p>
+        <span class="auth-chip">Invitación a la plataforma</span>
+        <h2 id="aside-titulo">Organice sus expedientes desde el primer día.</h2>
+        <p>Cada cuenta nace de una invitación de su consultora. Los clientes no se registran aquí: su consultor les crea el acceso desde el expediente.</p>
       </div>
 
       <ol class="auth-steps" aria-label="Cómo avanza un trámite">
@@ -49,10 +49,14 @@
       <div class="doc-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="8" r="4"/><path d="M3 21c1.3-4 4-6 7-6 1.6 0 3 .5 4.2 1.4M18 15v6M15 18h6"/></svg>
       </div>
-      <h1>Crear cuenta</h1>
-      <p class="doc-lede">Perfil de consultor ambiental para gestionar expedientes.</p>
+      <h1 id="titulo">Crear cuenta</h1>
+      <p class="doc-lede" id="lede">Verificando su invitación…</p>
 
-      <form id="formRegistro">
+      <div id="sin-invitacion" class="panel" hidden style="border-left:3px solid var(--status-warn);">
+        <p style="margin:0; font-size:14.5px;"><b>El registro es solo por invitación.</b> Pida a su consultora el enlace de invitación (el director de proyectos lo genera en «Equipo») y ábralo en este navegador.</p>
+      </div>
+
+      <form id="formRegistro" hidden>
         <input type="hidden" id="tipo" value="consultor">
         <div class="doc-field">
           <label for="nombre">Nombre completo</label>
@@ -65,13 +69,17 @@
         <div class="doc-field-row">
           <div class="doc-field">
             <label for="password">Contraseña</label>
-            <input type="password" id="password" placeholder="Mínimo 8 caracteres" required autocomplete="new-password">
+            <input type="password" id="password" placeholder="Mínimo 8 caracteres, un número y una mayúscula" required autocomplete="new-password">
           </div>
           <div class="doc-field">
             <label for="password2">Repetir contraseña</label>
             <input type="password" id="password2" placeholder="Repita la contraseña" required autocomplete="new-password">
           </div>
         </div>
+        <label class="casilla-terminos" for="terminos">
+          <input type="checkbox" id="terminos" required>
+          <span>Leí y acepto los <a href="terminos.html" target="_blank" rel="noopener">términos de uso</a> y la <a href="privacidad.html" target="_blank" rel="noopener">política de privacidad</a>.</span>
+        </label>
 
         <button type="submit" class="btn-stamp">Crear cuenta</button>
       </form>

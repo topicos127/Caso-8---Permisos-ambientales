@@ -93,7 +93,7 @@ def siguiente_codigo(cur, prefijo):
 def crear_expediente():
     u = g.usuario
     if u["rol"] not in ROLES_INTERNOS:
-        raise ApiError(403, "Solo un consultor o el jefe pueden crear expedientes.")
+        raise ApiError(403, "Solo un consultor o el director de proyectos pueden crear expedientes.")
 
     data = request.get_json(silent=True) or {}
     proyecto = texto(data, "proyecto", 150, obligatorio=False)
@@ -224,7 +224,7 @@ def cambiar_acceso_publico(codigo):
         raise ApiError(400, "acceso_publico debe ser true o false.")
     with cursor() as cur:
         exp = cargar_expediente(cur, codigo)
-        exigir_jefe_de(g.usuario, exp, "Solo el jefe de la consultora cambia el acceso público.")
+        exigir_jefe_de(g.usuario, exp, "Solo el director de proyectos cambia el acceso público.")
         cur.execute("UPDATE expedientes SET acceso_publico=%s WHERE id=%s", (valor, exp["id"]))
         if bool(exp["acceso_publico"]) != valor:
             registrar_historial(cur, exp["id"], g.usuario["id"], ACCION_ACCESO)

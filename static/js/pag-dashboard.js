@@ -14,7 +14,47 @@ if (usuario) {
 
   const vacio = (texto) => `<li style="color:var(--ink-faint);">${texto}</li>`;
 
+  // ---------- Primeros pasos (jefe y consultor) ----------
+  async function pintarPrimerosPasos(metricas) {
+    if (!(esJefe() || esConsultor())) return;
+    try { if (localStorage.getItem('pasos_ocultos_' + usuario.email) === '1') return; } catch (e) { /* sin almacenamiento */ }
+    let seguridad = null;
+    let equipo = null;
+    try { seguridad = await apiFetch('/cuenta/seguridad'); } catch (e) { /* se omite el paso */ }
+    if (esJefe()) { try { equipo = await apiFetch('/consultores'); } catch (e) { /* se omite el paso */ } }
+
+    const tieneExpediente = !!(metricas && metricas.activos > 0);
+    const pasos = [];
+    if (esJefe()) {
+      pasos.push({ hecho: !!(usuario.empresa && usuario.empresa.logo), titulo: 'Ponga el logo de su consultora',
+        texto: 'Su equipo lo verá en el menú y en los resúmenes en PDF.', href: 'empresa.html', boton: 'Mi consultora' });
+      if (equipo) pasos.push({ hecho: (equipo.consultores || []).length > 0, titulo: 'Invite a su equipo',
+        texto: 'Genere un enlace de invitación para cada consultor.', href: 'equipo.html', boton: 'Equipo' });
+    }
+    pasos.push({ hecho: tieneExpediente, titulo: 'Registre su primer expediente',
+      texto: 'Elija la categoría y el sistema arma la lista de documentos.', href: 'expediente-nuevo.html', boton: 'Nuevo expediente' });
+    if (seguridad && seguridad.disponible) pasos.push({ hecho: seguridad.dos_pasos, titulo: 'Active la verificación en dos pasos',
+      texto: 'Protege su cuenta aunque alguien conozca la contraseña.', href: 'cuenta.html', boton: 'Mi perfil' });
+    pasos.push({ hecho: false, titulo: 'Conozca los atajos y la guía',
+      texto: 'Con Ctrl+K busca cualquier expediente en un segundo.', href: 'ayuda.html', boton: 'Ver la ayuda', opcional: true });
+
+    const obligatorios = pasos.filter(p => !p.opcional);
+    if (obligatorios.every(p => p.hecho)) return;   // todo listo: la guía ya no hace falta
+    document.getElementById('panel-primeros-pasos').hidden = false;
+    document.getElementById('pasos-resumen').textContent =
+      `${obligatorios.filter(p => p.hecho).length} de ${obligatorios.length} pasos completados.`;
+    document.getElementById('lista-pasos').innerHTML = pasos.map((p, i) => `
+      <li class="${p.hecho ? 'hecho' : ''}"><span class="n">${p.hecho ? '✓' : i + 1}</span>
+        <div><b>${esc(p.titulo)}</b><span>${esc(p.texto)}</span></div>
+        ${p.hecho ? '' : `<a class="btn btn-ghost" style="border:1.5px solid var(--line);" href="${esc(p.href)}">${esc(p.boton)}</a>`}</li>`).join('');
+    document.getElementById('btn-ocultar-pasos').onclick = () => {
+      try { localStorage.setItem('pasos_ocultos_' + usuario.email, '1'); } catch (e) { /* sin almacenamiento */ }
+      document.getElementById('panel-primeros-pasos').hidden = true;
+    };
+  }
+
   apiFetch('/dashboard').then(d => {
+    pintarPrimerosPasos(d.metricas);
     const nums = document.querySelectorAll('.stat .num');
     if (d.metricas && nums.length >= 4) {
       nums[0].textContent = d.metricas.activos;
@@ -24,7 +64,7 @@ if (usuario) {
       if (d.metricas.alertas > 0) document.getElementById('stat-alertas').classList.add('alerta');
     }
 
-    // HU-15: solo la consultora ve las prioridades (el promotor no recibe el dato).
+    // HU-15: solo la consultora ve las prioridades (el cliente no recibe el dato).
     if (Array.isArray(d.prioridades) && (esJefe() || esConsultor())) {
       document.getElementById('panel-prioridades').style.display = 'block';
       const tb = document.getElementById('lista-prioridades');
@@ -60,7 +100,7 @@ if (usuario) {
       ulR.innerHTML = vacio('Sin expedientes registrados.');
     }
 
-    // HU-08: avisos de plazo para todos los roles (el promotor incluido).
+    // HU-08: avisos de plazo para todos los roles (el cliente incluido).
     const avisos = d.avisos_plazo || [];
     if (avisos.length) {
       document.getElementById('panel-avisos-plazo').style.display = 'block';

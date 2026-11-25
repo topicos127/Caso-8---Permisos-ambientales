@@ -56,7 +56,7 @@ def login():
             # La cuenta existe y la clave es correcta, pero el jefe la desactivo.
             limitador.limpiar(clave)
             return jsonify({"acceso": False,
-                            "mensaje": "Tu cuenta está desactivada. Habla con el jefe de la consultora."}), 403
+                            "mensaje": "Tu cuenta está desactivada. Habla con el director de proyectos."}), 403
         if empresa is not None and not empresa["activa"]:
             return jsonify({"acceso": False, "mensaje": "La cuenta de su empresa está desactivada. "
                                                        "Comuníquese con el administrador de la plataforma."}), 403
@@ -154,8 +154,8 @@ def registro():
     if problema:
         return jsonify({"ok": False, "mensaje": problema}), 400
     if not token:
-        return jsonify({"ok": False, "mensaje": "El registro es solo por invitación. Pida una a su jefe de "
-                                                "consultora."}), 403
+        return jsonify({"ok": False, "mensaje": "El registro es solo por invitación. Pida una a su director "
+                                                "de proyectos."}), 403
     if data.get("acepto_terminos") is not True:
         return jsonify({"ok": False, "mensaje": "Debe aceptar los términos y la política de privacidad."}), 400
 

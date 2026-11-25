@@ -11,7 +11,7 @@ function aviso(texto, ok, extra) {
 }
 
 function datosDeAcceso(email, temporal) {
-  // Igual que la cuenta del promotor: la contraseña temporal se muestra una sola vez.
+  // Igual que la cuenta del cliente: la contraseña temporal se muestra una sola vez.
   const caja = document.createElement('div');
   caja.style.marginTop = '8px';
   const titulo = document.createElement('div');
@@ -34,7 +34,7 @@ function problemaDePassword(p) {
 
 function accionesDe(c) {
   if (c.activo) {
-    return `<button type="button" class="btn btn-ghost" style="border:1.5px solid var(--line);"
+    return `${botonRestablecer(c)}<button type="button" class="btn btn-ghost" style="border:1.5px solid var(--line);"
               data-desactivar="${c.id}">Desactivar</button>`;
   }
   const destinos = consultores.filter(d => d.activo && d.id !== c.id);
@@ -51,6 +51,12 @@ function accionesDe(c) {
   return `${reasignar}
     <button type="button" class="btn btn-ghost" style="border:1.5px solid var(--line);"
             data-activar="${c.id}">Reactivar</button>`;
+}
+
+// Botón común a los consultores activos: genera una contraseña temporal (sin correo).
+function botonRestablecer(c) {
+  return `<button type="button" class="btn btn-ghost" style="border:1.5px solid var(--line);"
+            data-restablecer="${c.id}" title="Genera una contraseña temporal y cierra sus sesiones">Restablecer contraseña</button>`;
 }
 
 function render() {
@@ -119,9 +125,14 @@ if (usuario) {
     document.getElementById('tabla-equipo').addEventListener('click', async (e) => {
       const b = e.target.closest('button');
       if (!b) return;
-      const c = consultores.find(x => String(x.id) === (b.dataset.desactivar || b.dataset.activar || b.dataset.reasignar));
+      const c = consultores.find(x => String(x.id) === (b.dataset.desactivar || b.dataset.activar || b.dataset.reasignar || b.dataset.restablecer));
       if (!c) return;
-      if (b.dataset.desactivar) {
+      if (b.dataset.restablecer) {
+        if (!(await confirmar('Restablecer contraseña',
+          `Se genera una contraseña temporal para ${c.nombre}, se cierran sus sesiones y se desactivan sus dos pasos. La verá una sola vez.`,
+          'Restablecer'))) return;
+        await enviar(`/consultores/${c.id}/restablecer-clave`);
+      } else if (b.dataset.desactivar) {
         if (!confirm(`¿Desactivar a ${c.nombre}? Ya no podrá iniciar sesión. Sus expedientes y su historial se conservan.`)) return;
         await enviar(`/consultores/${c.id}/desactivar`);
       } else if (b.dataset.activar) {
@@ -135,5 +146,56 @@ if (usuario) {
     });
 
     cargar().catch(console.error);
+
+    // ---------- Invitaciones por enlace ----------
+    const resultado = document.getElementById('inv-resultado');
+    const lista = document.getElementById('lista-invitaciones');
+    const ESTADO_INV = { pendiente: ['status status-warn', 'Pendiente'], usada: ['status status-ok', 'Usada'],
+                         vencida: ['status status-neutral', 'Vencida'], revocada: ['status status-bad', 'Revocada'] };
+
+    async function cargarInvitaciones() {
+      const d = await apiFetch('/invitaciones');
+      const filas = (d.invitaciones || []).slice(0, 8);
+      lista.innerHTML = filas.length ? filas.map(i => {
+        const [clase, texto] = ESTADO_INV[i.estado] || ['status', i.estado];
+        const detalle = i.estado === 'usada' ? `Usada por ${esc(i.usada_por || '—')} el ${esc(i.usada_en)}`
+          : `Creada el ${esc(i.fecha_creacion)} · vence el ${esc(i.expira)}`;
+        return `<li><span><b>${esc(i.email || 'Cualquier correo')}</b><small>${detalle}</small></span>
+          <span style="display:flex; gap:8px; align-items:center;"><span class="${clase}">${texto}</span>
+          ${i.estado === 'pendiente' ? `<button type="button" class="btn btn-ghost" style="border:1.5px solid var(--line); padding:4px 10px; font-size:13px;" data-revocar="${i.id}">Revocar</button>` : ''}</span></li>`;
+      }).join('') : '<li><span class="panel-note" style="margin:0;">Todavía no ha generado invitaciones.</span></li>';
+    }
+
+    document.getElementById('form-invitar').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('inv-email').value.trim();
+      const btn = document.getElementById('btn-invitar');
+      btn.disabled = true;
+      try {
+        const d = await apiFetch('/invitaciones', { method: 'POST', body: JSON.stringify(email ? { email } : {}) });
+        if (!d.ok) { aviso(d.mensaje || d.error || 'No se pudo generar la invitación.', false); return; }
+        resultado.innerHTML = `<div class="aviso-unico" style="margin-top:14px;">Copie el enlace ahora: no se vuelve a mostrar. Vence el ${esc(d.expira)}.</div>
+          <div class="enlace-unico"><input type="text" readonly id="inv-enlace" value="${esc(d.enlace)}" aria-label="Enlace de invitación">
+          <button type="button" class="btn btn-brass" id="btn-copiar-enlace">Copiar enlace</button></div>`;
+        const campo = document.getElementById('inv-enlace');
+        campo.select();
+        document.getElementById('btn-copiar-enlace').addEventListener('click', () => copiarTexto(d.enlace, 'Enlace copiado.'));
+        document.getElementById('form-invitar').reset();
+        await cargarInvitaciones();
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    lista.addEventListener('click', async (e) => {
+      const b = e.target.closest('button[data-revocar]');
+      if (!b) return;
+      if (!(await confirmar('Revocar invitación', 'El enlace dejará de funcionar.', 'Revocar', true))) return;
+      const d = await apiFetch(`/invitaciones/${b.dataset.revocar}`, { method: 'DELETE' });
+      mostrarToast(d.mensaje || 'Listo.', d.ok ? 'exito' : 'error');
+      await cargarInvitaciones();
+    });
+
+    cargarInvitaciones().catch(console.error);
   }
 }

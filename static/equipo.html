@@ -99,6 +99,22 @@
         </form>
       </div>
 
+      <div class="panel" style="margin-bottom:22px;">
+        <h3>Invitar por enlace</h3>
+        <p class="panel-note">Genere un enlace de un solo uso para que la persona cree su propia cuenta y elija su contraseña. Vence en 72 horas y se muestra una sola vez: compártalo por el canal que prefiera.</p>
+        <form id="form-invitar" class="form-alta" novalidate>
+          <div class="campo">
+            <label for="inv-email">Correo (opcional)</label>
+            <input type="email" id="inv-email" maxlength="255" autocomplete="off" placeholder="Si lo escribe, el enlace solo sirve para ese correo">
+          </div>
+          <div style="align-self:end;">
+            <button type="submit" class="btn btn-brass" id="btn-invitar">Generar enlace</button>
+          </div>
+        </form>
+        <div id="inv-resultado" aria-live="polite"></div>
+        <ul class="lista-simple" id="lista-invitaciones" style="margin-top:14px;"></ul>
+      </div>
+
       <div class="panel" style="padding:0; overflow-x:auto;">
         <table class="ledger tarjetas" style="margin:0; width:100%; table-layout:auto;">
           <thead>

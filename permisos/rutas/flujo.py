@@ -128,7 +128,7 @@ def devolver_con_observaciones(codigo):
     observaciones = texto(data, "observaciones", 2000)
     with cursor() as cur:
         exp = cargar_expediente(cur, codigo)
-        exigir_jefe_de(g.usuario, exp, "Solo el jefe de la consultora devuelve expedientes.")
+        exigir_jefe_de(g.usuario, exp, "Solo el director de proyectos devuelve expedientes.")
         if exp["estado"] not in ("pendiente", "aprobado_interno"):
             raise ApiError(400, "Solo se devuelve un expediente que aún no se ha sometido.")
         cambiadas = cur.execute("UPDATE expedientes SET estado='pendiente' WHERE id=%s AND estado=%s",

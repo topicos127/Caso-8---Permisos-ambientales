@@ -4,6 +4,7 @@
 para el administrador de la plataforma.
 """
 import os
+from datetime import datetime, timedelta
 
 from flask import Blueprint, jsonify, request, send_file
 
@@ -11,6 +12,7 @@ from .. import config, registro_errores, respaldos
 from ..almacenamiento import AlmacenamientoError, almacen
 from ..bd import _esquema, cursor
 from ..errores import ApiError
+from ..reglas import ahora
 from ..seguridad import requiere_admin
 
 bp = Blueprint("plataforma", __name__)
@@ -63,6 +65,134 @@ def estado_detalle():
         "respaldo_hora": config.RESPALDO_HORA, "respaldos_conservar": config.RESPALDOS_CONSERVAR,
         "ultimo_respaldo": ficha, "totales": totales, "funciones": dict(_esquema),
         **registro_errores.resumen(),
+    }), 200
+
+
+# ---------- Resumen para el administrador ----------
+
+DIAS_SERIE = 14
+DIAS_INACTIVA = 30
+
+
+def _una(cur, sql, params=()):
+    cur.execute(sql, params)
+    return cur.fetchone()
+
+
+@bp.route("/plataforma/resumen", methods=["GET"])
+@requiere_admin
+def resumen():
+    """Cifras de toda la plataforma para el tablero del administrador. Solo agregados: nunca el
+    contenido de un expediente, un documento o un comentario."""
+    ahora_ = ahora()
+    hace30 = ahora_ - timedelta(days=30)
+    desde_serie = (ahora_ - timedelta(days=DIAS_SERIE - 1)).replace(hour=0, minute=0, second=0)
+    con_activo = "COALESCE(SUM(activo=1), 0)" if _esquema["activo"] else "COUNT(*)"
+    con_2fa = "COALESCE(SUM(totp_activo=1), 0)" if _esquema["totp"] else "0"
+    con_terminos = "COALESCE(SUM(terminos_aceptados_en IS NULL), 0)" if _esquema["terminos"] else "0"
+
+    with cursor() as cur:
+        e = _una(cur, "SELECT COUNT(*) AS total, COALESCE(SUM(activa), 0) AS activas, "
+                      "COALESCE(SUM(fecha_creacion >= %s), 0) AS nuevas FROM organizaciones", (hace30,))
+        empresas = {"total": int(e["total"]), "activas": int(e["activas"]), "nuevas_30d": int(e["nuevas"])}
+        empresas["desactivadas"] = empresas["total"] - empresas["activas"]
+
+        cur.execute(f"SELECT rol, COUNT(*) AS n, {con_activo} AS activos, {con_2fa} AS con_2fa FROM usuarios GROUP BY rol")
+        por_rol = {r["rol"]: {"total": int(r["n"]), "activos": int(r["activos"]), "con_2fa": int(r["con_2fa"])}
+                   for r in cur.fetchall()}
+        u = _una(cur, f"SELECT COUNT(*) AS total, COALESCE(SUM(fecha_creacion >= %s), 0) AS nuevos, "
+                      f"{con_terminos} AS sin_terminos FROM usuarios", (hace30,))
+        usuarios = {"total": int(u["total"]), "nuevos_30d": int(u["nuevos"]), "sin_terminos": int(u["sin_terminos"]),
+                    "por_rol": por_rol}
+
+        cur.execute("SELECT estado, COUNT(*) AS n FROM expedientes GROUP BY estado")
+        por_estado = {r["estado"]: int(r["n"]) for r in cur.fetchall()}
+        cur.execute("SELECT categoria, COUNT(*) AS n FROM expedientes GROUP BY categoria")
+        por_categoria = {r["categoria"]: int(r["n"]) for r in cur.fetchall()}
+        x = _una(cur, "SELECT COUNT(*) AS total, COALESCE(SUM(fecha_ingreso >= %s), 0) AS nuevos FROM expedientes",
+                 (hace30.date(),))
+        expedientes = {"total": int(x["total"]), "nuevos_30d": int(x["nuevos"]), "por_estado": por_estado,
+                       "por_categoria": por_categoria,
+                       "en_tramite": sum(n for est, n in por_estado.items() if est not in ("aprobado", "rechazado"))}
+
+        d = _una(cur, "SELECT COUNT(*) AS total, COALESCE(SUM(estado='recibido'), 0) AS recibidos FROM documentos")
+        v = _una(cur, "SELECT COUNT(*) AS n FROM documento_versiones")
+        documentos = {"total": int(d["total"]), "recibidos": int(d["recibidos"]), "versiones": int(v["n"])}
+
+        i = _una(cur, "SELECT COALESCE(SUM(usada_en IS NULL AND revocada=0 AND expira >= %s), 0) AS pendientes, "
+                      "COALESCE(SUM(usada_en IS NULL AND revocada=0 AND expira < %s), 0) AS vencidas, "
+                      "COALESCE(SUM(usada_en >= %s), 0) AS usadas_30d FROM invitaciones", (ahora_, ahora_, hace30))
+        invitaciones = {k: int(i[k]) for k in ("pendientes", "vencidas", "usadas_30d")}
+
+        cur.execute("SELECT DATE(fecha) AS dia, COUNT(*) AS n FROM historial_expediente WHERE fecha >= %s GROUP BY DATE(fecha)",
+                    (desde_serie,))
+        por_dia = {str(r["dia"]): int(r["n"]) for r in cur.fetchall()}
+        actividad = []
+        for k in range(DIAS_SERIE):
+            dia = (desde_serie + timedelta(days=k)).date()
+            actividad.append({"dia": dia.strftime("%d/%m"), "n": por_dia.get(str(dia), 0)})
+
+        cur.execute("""SELECT o.id, o.nombre, o.color, o.activa,
+                (SELECT COUNT(*) FROM usuarios u WHERE u.organizacion_id = o.id AND u.rol <> 'promotor') AS equipo,
+                (SELECT COUNT(*) FROM usuarios u WHERE u.organizacion_id = o.id AND u.rol = 'promotor') AS clientes,
+                (SELECT COUNT(*) FROM usuarios u WHERE u.organizacion_id = o.id AND u.rol = 'jefe') AS jefes,
+                (SELECT COUNT(*) FROM expedientes ex WHERE ex.organizacion_id = o.id) AS expedientes,
+                (SELECT COUNT(*) FROM expedientes ex WHERE ex.organizacion_id = o.id
+                    AND ex.estado NOT IN ('aprobado', 'rechazado')) AS en_tramite,
+                (SELECT MAX(h.fecha) FROM historial_expediente h JOIN expedientes ex ON ex.id = h.expediente_id
+                    WHERE ex.organizacion_id = o.id) AS ultima_actividad
+                FROM organizaciones o ORDER BY expedientes DESC, o.nombre""")
+        filas = cur.fetchall()
+
+    ranking = []
+    for f_ in filas:
+        ult = f_["ultima_actividad"]
+        ranking.append({
+            "id": f_["id"], "nombre": f_["nombre"], "color": f_["color"], "activa": bool(f_["activa"]),
+            "equipo": int(f_["equipo"]), "clientes": int(f_["clientes"]), "jefes": int(f_["jefes"]),
+            "expedientes": int(f_["expedientes"]), "en_tramite": int(f_["en_tramite"]),
+            "ultima_actividad": ult.strftime("%d/%m/%Y") if ult else None,
+            "inactiva": bool(f_["activa"]) and (ult is None or ult < ahora_ - timedelta(days=DIAS_INACTIVA)),
+        })
+
+    # Avisos para actuar: lo que el administrador deberia mirar hoy.
+    base, archivos = _estado_base()
+    ficha = respaldos.ultimo()
+    avisos = []
+    if not base:
+        avisos.append({"nivel": "alta", "texto": "La base de datos no responde.", "pestana": "servicio"})
+    if not archivos:
+        avisos.append({"nivel": "alta", "texto": "El almacenamiento de archivos no responde.", "pestana": "servicio"})
+    horas = None
+    if ficha:
+        horas = int((ahora_ - datetime.strptime(ficha["nombre"][9:24], "%Y%m%d-%H%M%S")).total_seconds() // 3600)
+    if ficha is None:
+        avisos.append({"nivel": "alta", "texto": "Todavía no hay ningún respaldo.", "pestana": "respaldos"})
+    elif horas > 36:
+        avisos.append({"nivel": "media", "texto": f"El último respaldo tiene {horas // 24} días.", "pestana": "respaldos"})
+    if registro_errores.resumen()["errores"]:
+        avisos.append({"nivel": "media", "texto": f"Hubo {registro_errores.resumen()['errores']} error(es) desde el último arranque.",
+                       "pestana": "servicio"})
+    sin_jefe = [r["nombre"] for r in ranking if r["activa"] and r["jefes"] == 0]
+    if sin_jefe:
+        avisos.append({"nivel": "media", "texto": "Sin director de proyectos todavía: " + ", ".join(sin_jefe[:3])
+                       + ("…" if len(sin_jefe) > 3 else "") + ".", "pestana": "empresas"})
+    if invitaciones["vencidas"]:
+        avisos.append({"nivel": "info", "texto": f"{invitaciones['vencidas']} invitación(es) vencida(s) sin usar.", "pestana": "empresas"})
+    inactivas = [r["nombre"] for r in ranking if r["inactiva"] and r["jefes"] > 0]
+    if inactivas:
+        avisos.append({"nivel": "info", "texto": f"Sin actividad en {DIAS_INACTIVA} días: " + ", ".join(inactivas[:3])
+                       + ("…" if len(inactivas) > 3 else "") + ".", "pestana": "empresas"})
+    jefes = por_rol.get("jefe", {"total": 0, "con_2fa": 0})
+    if _esquema["totp"] and jefes["total"] > jefes["con_2fa"]:
+        avisos.append({"nivel": "info", "texto": f"{jefes['total'] - jefes['con_2fa']} director(es) de proyectos sin verificación en dos pasos.",
+                       "pestana": "empresas"})
+
+    return jsonify({
+        "empresas": empresas, "usuarios": usuarios, "expedientes": expedientes, "documentos": documentos,
+        "invitaciones": invitaciones, "actividad": actividad, "ranking": ranking, "avisos": avisos,
+        "servicio": {"base_de_datos": base, "archivos": archivos, "version": VERSION,
+                     "almacenamiento": config.ALMACENAMIENTO, "horas_desde_respaldo": horas},
     }), 200
 
 

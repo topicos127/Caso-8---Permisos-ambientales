@@ -44,7 +44,7 @@ def _seguro(valor):
 @bp.route("/expedientes/<codigo>/responsable", methods=["POST"])
 @requiere_login
 def cambiar_responsable(codigo):
-    exigir_jefe(g.usuario, "Solo el jefe de la consultora puede cambiar el responsable.")
+    exigir_jefe(g.usuario, "Solo el director de proyectos puede cambiar el responsable.")
     data = request.get_json(silent=True) or {}
     nuevo = data.get("usuario_id")
     if isinstance(nuevo, bool) or not isinstance(nuevo, int):
@@ -270,7 +270,7 @@ def exportar_historial():
     """Historial de acciones en CSV (para auditoria). Misma regla que /historial: jefe todo, consultor lo suyo."""
     u = g.usuario
     if u["rol"] not in ROLES_INTERNOS:
-        raise ApiError(403, "El historial solo lo ven el jefe y los consultores.")
+        raise ApiError(403, "El historial solo lo ven el director de proyectos y los consultores.")
     empresa, params = condicion_empresa(u)
     condiciones, params = [empresa], list(params)
     if u["rol"] == "consultor":

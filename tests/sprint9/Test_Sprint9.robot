@@ -225,7 +225,7 @@ ${CLAVE_PROPIA}           Equipo2026x
     Should Be Equal As Integers    ${ipe['ipe']}    100
     Should Be Equal    ${ipe['banda']}    listo
     ${textos}=    Evaluate    [a['texto'] for a in $ipe['acciones']]
-    Should Be Equal    ${textos[0]}    Pedir la aprobación interna al jefe
+    Should Be Equal    ${textos[0]}    Pedir la aprobación interna al director de proyectos
     Length Should Be    ${textos}    1
 
 17 - HU-15 El Listado Trae El IPE Y Se Ordena De Menor A Mayor

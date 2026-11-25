@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recuperar contraseña — Permisos Ambientales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilos.css">
+<script src="js/interaccion.js"></script>
+</head>
+<body>
+
+<div class="doc-screen">
+  <div class="doc-sheet split">
+
+    <section class="auth-aside" aria-label="Presentación">
+      <svg class="contour" viewBox="0 0 620 620" fill="none" aria-hidden="true">
+        <ellipse cx="310" cy="310" rx="300" ry="250" stroke="#fff" stroke-opacity="0.07" transform="rotate(-18 310 310)"/>
+        <ellipse cx="318" cy="300" rx="250" ry="205" stroke="#fff" stroke-opacity="0.08" transform="rotate(-14 310 310)"/>
+        <ellipse cx="326" cy="292" rx="200" ry="162" stroke="#fff" stroke-opacity="0.09" transform="rotate(-10 310 310)"/>
+        <ellipse cx="334" cy="286" rx="152" ry="120" stroke="#fff" stroke-opacity="0.11" transform="rotate(-6 310 310)"/>
+        <ellipse cx="340" cy="282" rx="104" ry="80" stroke="#fff" stroke-opacity="0.13" transform="rotate(-2 310 310)"/>
+        <ellipse cx="344" cy="280" rx="58" ry="42" stroke="#fff" stroke-opacity="0.16"/>
+      </svg>
+
+      <a class="auth-brand" href="index.html" style="color:inherit; text-decoration:none;">
+        <span class="seal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19c9 0 14-6 14-14-8 0-14 5-14 14z"/><path d="M5 19l7-7"/></svg>
+        </span>
+        <span><b>Permisos Ambientales</b><span>Expediente digital para consultoras</span></span>
+      </a>
+
+      <div style="display:flex; flex-direction:column;">
+        <span class="auth-chip">Seguridad de la cuenta</span>
+        <h2>Recupere el acceso a su cuenta.</h2>
+        <p>Con uno de los códigos de recuperación que guardó puede fijar una contraseña nueva, sin necesidad de correo.</p>
+      </div>
+
+      <ol class="auth-steps" aria-label="Cómo avanza un trámite">
+        <li class="on"><span class="n">1</span>Registrar el expediente y su categoría</li>
+        <li><span class="n">2</span>Completar los documentos obligatorios</li>
+        <li><span class="n">3</span>Aprobar internamente y someter</li>
+      </ol>
+    </section>
+
+    <div class="doc-body">
+      <div class="doc-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      </div>
+      <h1>Recuperar contraseña</h1>
+      <p class="doc-lede">Escriba su correo, uno de sus códigos de recuperación y la contraseña nueva.</p>
+
+      <form id="formRecuperar">
+        <div class="doc-field">
+          <label for="email">Correo electrónico</label>
+          <input type="email" id="email" required autocomplete="email">
+        </div>
+        <div class="doc-field">
+          <label for="codigo">Código de recuperación</label>
+          <input type="text" id="codigo" maxlength="14" placeholder="Ej. AB2CD-3EFGH" required autocomplete="off" spellcheck="false">
+        </div>
+        <div class="doc-field-row">
+          <div class="doc-field">
+            <label for="password">Contraseña nueva</label>
+            <input type="password" id="password" placeholder="Mínimo 8 caracteres, un número y una mayúscula" required autocomplete="new-password">
+          </div>
+          <div class="doc-field">
+            <label for="password2">Repetir contraseña</label>
+            <input type="password" id="password2" required autocomplete="new-password">
+          </div>
+        </div>
+        <button type="submit" id="submitBtn" class="btn-stamp">Cambiar contraseña</button>
+      </form>
+
+      <div id="message" class="doc-msg" role="status"></div>
+
+      <div class="doc-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/></svg>
+        <span><b>¿No tiene códigos?</b> Pídale a su director de proyectos que le genere una contraseña temporal desde «Equipo». Si es el director de proyectos, escriba al administrador de la plataforma. Cada código sirve una sola vez.</span>
+      </div>
+
+      <div class="doc-footnote">
+        <span><a href="login.html">Volver a entrar</a></span>
+        <span><a href="index.html">Inicio</a></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/pag-recuperar.js"></script>
+</body>
+</html>

@@ -23,6 +23,17 @@ if (usuario) {
         return;
       }
       expActual = d.expediente;
+      expActual.empresa = d.empresa ? d.empresa.nombre : null;
+      const celdaEmpresa = document.getElementById('rEmpresa');
+      celdaEmpresa.replaceChildren();
+      if (d.empresa && d.empresa.logo) {
+        const img = document.createElement('img');
+        img.src = d.empresa.logo;
+        img.alt = '';
+        img.style.cssText = 'height:28px; max-width:56px; object-fit:contain; border-radius:6px;';
+        celdaEmpresa.append(img);
+      }
+      celdaEmpresa.append(document.createTextNode(d.empresa ? d.empresa.nombre : '—'));
       document.getElementById('rCodigo').textContent = expActual.codigo;
       document.getElementById('rProyecto').textContent = expActual.proyecto;
       document.getElementById('rPromotor').textContent = expActual.promotor;
@@ -51,6 +62,7 @@ if (usuario) {
       "Código: " + expActual.codigo,
       "Proyecto: " + expActual.proyecto,
       "Promotor: " + expActual.promotor,
+      "Consultora: " + (expActual.empresa || "—"),
       "Consultor responsable: " + (expActual.consultor || "—"),
       "Categoría: " + expActual.categoria,
       "Estado: " + expActual.estado_publico,

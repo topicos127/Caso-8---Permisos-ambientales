@@ -71,7 +71,7 @@ def editar_empresa():
     u = g.usuario
     _exigir_empresa_propia(u)
     if u["rol"] != "jefe":
-        raise ApiError(403, "Solo el jefe de la consultora puede cambiar la marca de la empresa.")
+        raise ApiError(403, "Solo el director de proyectos puede cambiar la marca de la empresa.")
     data = request.get_json(silent=True) or {}
     sets, params = [], []
     if "nombre" in data:
@@ -100,7 +100,7 @@ def subir_logo():
     u = g.usuario
     _exigir_empresa_propia(u)
     if u["rol"] != "jefe":
-        raise ApiError(403, "Solo el jefe de la consultora puede cambiar el logo.")
+        raise ApiError(403, "Solo el director de proyectos puede cambiar el logo.")
     archivo = request.files.get("logo")
     if not archivo or not archivo.filename:
         raise ApiError(400, "Seleccione una imagen.")
@@ -131,7 +131,7 @@ def quitar_logo():
     u = g.usuario
     _exigir_empresa_propia(u)
     if u["rol"] != "jefe":
-        raise ApiError(403, "Solo el jefe de la consultora puede cambiar el logo.")
+        raise ApiError(403, "Solo el director de proyectos puede cambiar el logo.")
     with cursor() as cur:
         cur.execute("SELECT logo_ruta FROM organizaciones WHERE id=%s", (u["organizacion_id"],))
         anterior = cur.fetchone()["logo_ruta"]
@@ -190,7 +190,7 @@ def crear_empresa():
     color = _validar_color(data.get("color", COLORES_EMPRESA[0]))
     email = texto(data, "email_jefe", 255, obligatorio=False).lower()
     if email and not EMAIL_RE.match(email):
-        raise ApiError(400, "El correo del jefe no es válido.")
+        raise ApiError(400, "El correo del director de proyectos no es válido.")
     try:
         with cursor() as cur:
             if email:
@@ -203,7 +203,7 @@ def crear_empresa():
     except pymysql.err.IntegrityError:
         raise ApiError(409, "Ya existe una empresa con ese nombre.")
     return jsonify({"ok": True, "id": org_id, "enlace": _enlace(token), "expira": expira.strftime("%d/%m/%Y %H:%M"),
-                    "mensaje": "Empresa creada. Entregue el enlace de invitación a su jefe: es de un solo uso "
+                    "mensaje": "Empresa creada. Entregue el enlace de invitación a su director de proyectos: es de un solo uso "
                                "y no se vuelve a mostrar."}), 201
 
 
@@ -234,7 +234,7 @@ def restablecer_jefe(usuario_id):
         cur.execute("SELECT id, nombre, email, rol FROM usuarios WHERE id=%s", (usuario_id,))
         j = cur.fetchone()
         if not j or j["rol"] != "jefe":
-            raise ApiError(404, "Jefe no encontrado.")
+            raise ApiError(404, "Director de proyectos no encontrado.")
         sets = "password_hash=%s" + (", debe_cambiar_clave=TRUE" if _esquema["cambio_clave"] else "") \
             + (", sesion_version = sesion_version + 1" if _esquema["sesion"] else "") \
             + (", totp_activo=FALSE, totp_secreto=NULL, totp_ultimo_paso=0" if _esquema["totp"] else "")

@@ -72,6 +72,18 @@
         </a>
       </div>
 
+      <!-- Guia de primeros pasos: se oculta sola cuando todo esta hecho. -->
+      <div class="panel primeros-pasos" id="panel-primeros-pasos" hidden>
+        <div class="panel-head">
+          <div>
+            <h3>Primeros pasos</h3>
+            <p class="panel-note" style="margin:0;" id="pasos-resumen"></p>
+          </div>
+          <button type="button" class="btn btn-ghost" id="btn-ocultar-pasos" style="border:1.5px solid var(--line);">Ocultar guía</button>
+        </div>
+        <ol id="lista-pasos"></ol>
+      </div>
+
       <div class="stat-row">
         <div class="stat"><div class="top"><span class="lbl">Expedientes</span><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span></div><div class="num">—</div></div>
         <div class="stat aviso"><div class="top"><span class="lbl">Pendientes de subsanación</span><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 7v5h5"/></svg></span></div><div class="num">—</div></div>

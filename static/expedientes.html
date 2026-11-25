@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="css/estilos.css">
 <script src="js/interaccion.js"></script>
 <style>
-  /* Sprint 8: la vista del jefe tiene 9 columnas; menos relleno para que quepan. */
+  /* Sprint 8: la vista del director de proyectos tiene 9 columnas; menos relleno para que quepan. */
   .ledger.compacta th, .ledger.compacta td { padding-right: 10px; }
   .ledger.compacta .status { font-size: 12px; padding: 3px 8px 3px 6px; }
 </style>
@@ -67,7 +67,10 @@
     <div class="content">
       <div class="content-head">
         <h2 id="titulo-lista">Mis expedientes</h2>
-        <a href="expediente-nuevo.html" class="btn btn-brass" id="btnNuevo">+ Nuevo expediente</a>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <a href="/exportar/cartera.xlsx" class="btn btn-ghost" id="btnExportar" style="border:1.5px solid var(--line);" download>Exportar Excel</a>
+          <a href="expediente-nuevo.html" class="btn btn-brass" id="btnNuevo">+ Nuevo expediente</a>
+        </div>
       </div>
       <div class="panel" style="padding: 15px; margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
         <input type="text" id="buscador" placeholder="Buscar por código o proyecto..." style="flex: 1; padding: 10px; border: 1px solid var(--line); border-radius: 4px; font-family: inherit;">
@@ -85,7 +88,9 @@
           <option value="">Más recientes primero</option>
           <option value="ipe">IPE: los menos preparados primero</option>
         </select>
+        <button type="button" class="btn btn-ghost" id="btn-guardar-vista" style="border:1.5px solid var(--line);" title="Guarda los filtros actuales para usarlos con un clic">Guardar vista</button>
       </div>
+      <div class="vistas" id="vistas" aria-label="Vistas guardadas" hidden></div>
       <p class="content-lede" id="lede-lista">Expedientes que gestionas actualmente, con su categoría de impacto y estado de trámite.</p>
 
       <div class="panel" style="padding:0; overflow-x:auto;">

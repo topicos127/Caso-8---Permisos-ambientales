@@ -33,6 +33,10 @@ function requireAuth() {
     window.location.href = 'cuenta.html?obligatorio=1';
     return null;
   }
+  if (u.rol === 'admin' && !PAGINAS_DEL_ADMIN.some(p => window.location.pathname.endsWith(p))) {
+    window.location.href = 'plataforma.html';
+    return null;
+  }
   return u;
 }
 
@@ -46,13 +50,22 @@ function esConsultor() {
   return u && u.rol === 'consultor';
 }
 
-// HU-13: el jefe de la consultora ve todo y es quien aprueba internamente.
+// HU-13: el director de proyectos ve todo y es quien aprueba internamente.
 function esJefe() {
   const u = getUsuario();
   return u && u.rol === 'jefe';
 }
 
-const ROL_TEXTO = { promotor: 'Promotor', consultor: 'Consultor', jefe: 'Jefe' };
+const ROL_TEXTO = { promotor: 'Cliente', consultor: 'Consultor ambiental', jefe: 'Director de proyectos', admin: 'Administración de la plataforma' };
+
+// Administrador de la plataforma: crea empresas, ve el estado y los respaldos. No ve expedientes.
+function esAdmin() {
+  const u = getUsuario();
+  return u && u.rol === 'admin';
+}
+
+// Paginas que el administrador puede abrir; cualquier otra lo lleva a la plataforma.
+const PAGINAS_DEL_ADMIN = ['plataforma.html', 'cuenta.html', 'ayuda.html'];
 
 // HU-07/HU-13: etiqueta corta del plazo para las listas.
 const PLAZO_ETIQUETA = {
@@ -161,7 +174,7 @@ function claseEstado(estado) {
   return 'status status-info';
 }
 
-// HU-07: el promotor y el publico ven solo tres estados (Aprobado, En
+// HU-07: el cliente y el publico ven solo tres estados (Aprobado, En
 // evaluacion, Pendiente de subsanacion). La consultora ve ademas el paso
 // interno "Aprobado internamente".
 const ESTADO_PUBLICO = {
@@ -228,15 +241,12 @@ function pintarTopbar() {
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !lista.hidden) { abrir(false); boton.focus(); } });
     who.querySelector('#link-salir').addEventListener('click', cerrarSesion);
   }
-  if (esPromotor()) {
-    document.querySelectorAll('a[href="expediente-nuevo.html"], #nav-historial').forEach(a => {
-      a.style.display = 'none';
-    });
+  pintarRail();
+  if (u && u.rol !== 'admin') {
+    agregarBotonBuscar();
+    iniciarPaleta();
   }
-  // HU-15: solo el jefe gestiona el equipo de consultores.
-  if (esJefe()) {
-    document.querySelectorAll('#nav-equipo').forEach(a => { a.style.display = ''; });
-  }
+  revisarTerminos();
 }
 
 // ============== NOTIFICACIONES TOAST ==============
@@ -309,3 +319,286 @@ if (document.readyState === 'loading') {
   iniciarMenuMovil();
 }
 
+// ============== MENU LATERAL, MARCA DE LA EMPRESA ==============
+// El menu se arma segun el rol (asi todas las pantallas comparten el mismo y no se
+// desfasan) y muestra el nombre y el logo de la consultora a la que pertenece el usuario.
+const ICONOS = {
+  panel: '<rect x="3.5" y="3.5" width="7" height="7"/><rect x="13.5" y="3.5" width="7" height="7"/><rect x="3.5" y="13.5" width="7" height="7"/><rect x="13.5" y="13.5" width="7" height="7"/>',
+  carpeta: '<path d="M4 6.5a1.5 1.5 0 0 1 1.5-1.5H10l2 2.5h6.5A1.5 1.5 0 0 1 20 9v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18z"/>',
+  nuevo: '<path d="M6 3.5h9l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z"/><path d="M12 11v6M9 14h6"/>',
+  historial: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  equipo: '<circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9.5" r="2.4"/><path d="M15.8 14.2c2.3.2 4 1.8 4.6 4.8"/>',
+  empresa: '<path d="M4 20V6.5L12 3l8 3.5V20"/><path d="M9 20v-5h6v5M8 9.5h.01M12 9.5h.01M16 9.5h.01"/>',
+  buscar: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M19.5 19.5 15 15"/>',
+  ayuda: '<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.6 2.2c-.8.5-1.2 1-1.2 1.9M12 16.8h.01"/>',
+  plataforma: '<rect x="3.5" y="4" width="17" height="6" rx="1.5"/><rect x="3.5" y="14" width="17" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/>',
+  estado: '<path d="M3 12h4l2.5-6 4 12 2.5-6H21"/>',
+  persona: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',
+};
+
+function itemsDeMenu(rol) {
+  const panel = { href: 'dashboard.html', icono: 'panel', texto: 'Panel' };
+  const ayuda = { href: 'ayuda.html', icono: 'ayuda', texto: 'Ayuda' };
+  if (rol === 'admin') {
+    return [{ href: 'plataforma.html', icono: 'plataforma', texto: 'Plataforma' },
+            { href: 'estado.html', icono: 'estado', texto: 'Estado del servicio' }, ayuda];
+  }
+  if (rol === 'promotor') {
+    return [panel, { href: 'expedientes.html', icono: 'carpeta', texto: 'Mis expedientes' },
+            { href: 'consulta-publica.html', icono: 'buscar', texto: 'Consulta pública' }, ayuda];
+  }
+  const items = [panel,
+    { href: 'expedientes.html', icono: 'carpeta', texto: rol === 'jefe' ? 'Expedientes' : 'Mis expedientes' },
+    { href: 'expediente-nuevo.html', icono: 'nuevo', texto: 'Nuevo expediente' },
+    { href: 'historial.html', icono: 'historial', texto: 'Historial' }];
+  if (rol === 'jefe') {
+    items.push({ href: 'equipo.html', icono: 'equipo', texto: 'Equipo' },
+               { href: 'empresa.html', icono: 'empresa', texto: 'Mi consultora' });
+  }
+  items.push({ href: 'consulta-publica.html', icono: 'buscar', texto: 'Consulta pública' }, ayuda);
+  return items;
+}
+
+// Las pantallas de detalle pertenecen a "Expedientes".
+const PAGINA_PADRE = { 'expediente-detalle.html': 'expedientes.html' };
+
+function pintarRail() {
+  const rail = document.querySelector('.rail');
+  const u = getUsuario();
+  if (!rail || !u) return;
+  const nav = rail.querySelector('nav');
+  const pagina = window.location.pathname.split('/').pop() || 'index.html';
+  const activa = PAGINA_PADRE[pagina] || pagina;
+  if (nav) {
+    nav.innerHTML = itemsDeMenu(u.rol).map(i =>
+      `<a href="${i.href}"${i.href === activa ? ' class="active" aria-current="page"' : ''}>`
+      + `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">${ICONOS[i.icono]}</svg>${esc(i.texto)}</a>`).join('');
+  }
+  const e = u.empresa;
+  const marca = rail.querySelector('.rail-brand');
+  if (e && marca) {
+    document.documentElement.style.setProperty('--empresa', e.color || '#17805a');
+    const sello = e.logo
+      ? `<div class="seal seal-logo"><img src="${esc(e.logo)}" alt=""></div>`
+      : `<div class="seal seal-iniciales" aria-hidden="true">${esc(iniciales(e.nombre))}</div>`;
+    marca.innerHTML = `${sello}<div><b>${esc(e.nombre)}</b><span>Permisos Ambientales</span></div>`;
+    marca.classList.add('con-empresa');
+  } else if (u.rol === 'admin' && marca) {
+    marca.innerHTML = marca.innerHTML.replace('Expedientes ambientales', 'Administración');
+  }
+}
+
+// ============== VENTANAS (confirmaciones, avisos que se muestran una vez) ==============
+// abrirModal({ titulo, html, acciones: [{ texto, clase, alHacerClic }], cerrable })
+// Devuelve { cerrar, el }. Escape cierra si es cerrable; el foco queda dentro mientras esta abierta.
+// Si alHacerClic devuelve false, la ventana no se cierra.
+function abrirModal({ titulo, html, acciones = [], cerrable = true }) {
+  const previo = document.activeElement;
+  const fondo = document.createElement('div');
+  fondo.className = 'modal-fondo';
+  fondo.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+      <h3 id="modal-titulo">${esc(titulo)}</h3><div class="modal-cuerpo">${html || ''}</div>
+      <div class="modal-acciones"></div></div>`;
+  const caja = fondo.querySelector('.modal');
+  const barra = fondo.querySelector('.modal-acciones');
+  const cerrar = () => {
+    document.removeEventListener('keydown', teclas, true);
+    fondo.remove();
+    if (previo && previo.focus) previo.focus();
+  };
+  acciones.forEach(a => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = a.clase || 'btn btn-ghost';
+    b.textContent = a.texto;
+    b.addEventListener('click', async () => {
+      if (a.alHacerClic) {
+        const resultado = await a.alHacerClic({ cerrar, el: caja });
+        if (resultado === false) return;
+      }
+      cerrar();
+    });
+    barra.appendChild(b);
+  });
+  function teclas(ev) {
+    if (ev.key === 'Escape' && cerrable) { ev.stopPropagation(); cerrar(); return; }
+    if (ev.key !== 'Tab') return;
+    const foco = caja.querySelectorAll('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if (!foco.length) return;
+    const primero = foco[0], ultimo = foco[foco.length - 1];
+    if (ev.shiftKey && document.activeElement === primero) { ev.preventDefault(); ultimo.focus(); }
+    else if (!ev.shiftKey && document.activeElement === ultimo) { ev.preventDefault(); primero.focus(); }
+  }
+  document.addEventListener('keydown', teclas, true);
+  if (cerrable) fondo.addEventListener('mousedown', (ev) => { if (ev.target === fondo) cerrar(); });
+  document.body.appendChild(fondo);
+  (caja.querySelector('input, select, textarea') || barra.querySelector('button') || caja).focus();
+  return { cerrar, el: caja };
+}
+
+// Confirmacion propia (en lugar de confirm()): devuelve una promesa con true o false.
+function confirmar(titulo, mensaje, textoBoton = 'Confirmar', peligro = false) {
+  return new Promise(resolver => {
+    abrirModal({
+      titulo, html: `<p>${esc(mensaje)}</p>`,
+      acciones: [
+        { texto: 'Cancelar', clase: 'btn btn-ghost', alHacerClic: () => resolver(false) },
+        { texto: textoBoton, clase: peligro ? 'btn btn-peligro' : 'btn btn-brass', alHacerClic: () => resolver(true) },
+      ],
+    });
+  });
+}
+
+// Copia texto al portapapeles y lo avisa.
+async function copiarTexto(texto, aviso = 'Copiado.') {
+  try { await navigator.clipboard.writeText(texto); mostrarToast(aviso, 'exito'); }
+  catch (e) { mostrarToast('No se pudo copiar; selecciónelo y copie a mano.', 'error'); }
+}
+
+// ============== TERMINOS Y POLITICA DE PRIVACIDAD ==============
+// Quien aun no los acepto (cuentas anteriores) los ve una vez al entrar.
+async function revisarTerminos() {
+  const u = getUsuario();
+  if (!u || u.debe_cambiar_clave || sessionStorage.getItem('terminos_ok') === '1') return;
+  try {
+    const s = await apiFetch('/sesion');
+    if (!s.terminos_pendientes) { sessionStorage.setItem('terminos_ok', '1'); return; }
+    abrirModal({
+      titulo: 'Términos y privacidad',
+      html: '<p>Para seguir usando la plataforma, confirme que leyó y acepta los '
+        + '<a href="terminos.html" target="_blank" rel="noopener">términos de uso</a> y la '
+        + '<a href="privacidad.html" target="_blank" rel="noopener">política de privacidad</a>.</p>',
+      cerrable: false,
+      acciones: [{
+        texto: 'Acepto', clase: 'btn btn-brass',
+        alHacerClic: async () => {
+          const r = await apiFetch('/cuenta/terminos', { method: 'POST', body: '{}' });
+          if (!r.ok) { mostrarToast(r.mensaje || 'No se pudo registrar.', 'error'); return false; }
+          sessionStorage.setItem('terminos_ok', '1');
+        },
+      }],
+    });
+  } catch (e) { /* sin red: se vuelve a intentar en la proxima pantalla */ }
+}
+
+// ============== BUSQUEDA GLOBAL (Ctrl+K) ==============
+function agregarBotonBuscar() {
+  const topbar = document.querySelector('.topbar');
+  if (!topbar || topbar.querySelector('.btn-buscar')) return;
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'btn-buscar';
+  b.setAttribute('aria-label', 'Buscar en la plataforma (Control K)');
+  b.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">'
+    + `${ICONOS.buscar}</svg><span>Buscar</span><kbd>Ctrl K</kbd>`;
+  b.addEventListener('click', abrirPaleta);
+  const who = topbar.querySelector('.who');
+  topbar.insertBefore(b, who || null);
+}
+
+let paletaIniciada = false;
+function iniciarPaleta() {
+  if (paletaIniciada) return;
+  paletaIniciada = true;
+  document.addEventListener('keydown', (ev) => {
+    const escribiendo = /^(INPUT|TEXTAREA|SELECT)$/.test((ev.target.tagName || '')) || ev.target.isContentEditable;
+    if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'k') { ev.preventDefault(); abrirPaleta(); }
+    else if (ev.key === '/' && !escribiendo && !document.querySelector('.paleta-fondo')) { ev.preventDefault(); abrirPaleta(); }
+  });
+}
+
+function abrirPaleta() {
+  if (document.querySelector('.paleta-fondo')) return;
+  const u = getUsuario();
+  if (!u) return;
+  const previo = document.activeElement;
+  const paginas = itemsDeMenu(u.rol).map(i => ({ grupo: 'Ir a', texto: i.texto, href: i.href, icono: i.icono }));
+  const acciones = [];
+  if (u.rol !== 'promotor') {
+    acciones.push({ grupo: 'Acciones', texto: 'Crear un expediente', href: 'expediente-nuevo.html', icono: 'nuevo' });
+  }
+  acciones.push({ grupo: 'Acciones', texto: 'Descargar la cartera en Excel', href: '/exportar/cartera.xlsx', icono: 'carpeta' });
+  acciones.push({ grupo: 'Acciones', texto: 'Mi perfil y seguridad', href: 'cuenta.html', icono: 'persona' });
+  const comandos = [...acciones, ...paginas];
+
+  const fondo = document.createElement('div');
+  fondo.className = 'paleta-fondo';
+  fondo.innerHTML = `<div class="paleta" role="dialog" aria-modal="true" aria-label="Buscar en la plataforma">
+      <div class="paleta-campo">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">${ICONOS.buscar}</svg>
+        <input type="text" id="paleta-q" role="combobox" aria-expanded="true" aria-controls="paleta-lista" aria-autocomplete="list"
+               placeholder="Código, proyecto, cliente o una acción…" autocomplete="off" maxlength="80">
+        <kbd>Esc</kbd>
+      </div>
+      <ul id="paleta-lista" role="listbox"></ul>
+      <div class="paleta-pie"><span><kbd>↑</kbd><kbd>↓</kbd> moverse</span><span><kbd>Enter</kbd> abrir</span></div>
+    </div>`;
+  document.body.appendChild(fondo);
+  const campo = fondo.querySelector('#paleta-q');
+  const lista = fondo.querySelector('#paleta-lista');
+  let filas = [];
+  let sel = 0;
+  let temporizador = null;
+  let consulta = 0;
+
+  const cerrar = () => { document.removeEventListener('keydown', teclas, true); fondo.remove(); if (previo && previo.focus) previo.focus(); };
+  const ir = (f) => { if (!f) return; cerrar(); window.location.href = f.href; };
+
+  function pintar() {
+    let grupo = '';
+    lista.innerHTML = filas.length ? filas.map((f, i) => {
+      const cab = f.grupo !== grupo ? `<li class="paleta-grupo" role="presentation">${esc(f.grupo)}</li>` : '';
+      grupo = f.grupo;
+      return `${cab}<li role="option" id="paleta-op-${i}" data-i="${i}" aria-selected="${i === sel}" class="${i === sel ? 'sel' : ''}">`
+        + `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">${ICONOS[f.icono] || ICONOS.carpeta}</svg>`
+        + `<span class="paleta-texto"><b>${esc(f.texto)}</b>${f.detalle ? `<small>${esc(f.detalle)}</small>` : ''}</span></li>`;
+    }).join('') : '<li class="paleta-vacio" role="presentation">Sin resultados.</li>';
+    campo.setAttribute('aria-activedescendant', filas.length ? `paleta-op-${sel}` : '');
+    const activo = lista.querySelector('li.sel');
+    if (activo) activo.scrollIntoView({ block: 'nearest' });
+  }
+
+  function filtrarComandos(q) {
+    const n = q.toLowerCase();
+    return comandos.filter(c => !n || c.texto.toLowerCase().includes(n));
+  }
+
+  async function buscar() {
+    const q = campo.value.trim();
+    const mio = ++consulta;
+    let encontrados = [];
+    if (q.length >= 2) {
+      try {
+        const d = await apiFetch('/buscar?q=' + encodeURIComponent(q));
+        if (mio !== consulta) return;  // llego una busqueda mas nueva
+        encontrados = (d.expedientes || []).map(e => ({
+          grupo: 'Expedientes', texto: `${e.codigo} · ${e.proyecto}`, detalle: `${e.promotor} — ${e.estado}`,
+          href: 'expediente-detalle.html?codigo=' + encodeURIComponent(e.codigo), icono: 'carpeta' }));
+        encontrados.push(...(d.personas || []).map(p => ({
+          grupo: 'Equipo', texto: p.nombre, detalle: p.email, href: 'equipo.html', icono: 'equipo' })));
+      } catch (e) { /* sin red: quedan los comandos */ }
+    }
+    filas = [...encontrados, ...filtrarComandos(q)];
+    sel = 0;
+    pintar();
+  }
+
+  function teclas(ev) {
+    if (ev.key === 'Escape') { ev.stopPropagation(); cerrar(); }
+    else if (ev.key === 'ArrowDown') { ev.preventDefault(); sel = Math.min(filas.length - 1, sel + 1); pintar(); }
+    else if (ev.key === 'ArrowUp') { ev.preventDefault(); sel = Math.max(0, sel - 1); pintar(); }
+    else if (ev.key === 'Enter') { ev.preventDefault(); ir(filas[sel]); }
+    else if (ev.key === 'Tab') { ev.preventDefault(); }
+  }
+  document.addEventListener('keydown', teclas, true);
+  fondo.addEventListener('mousedown', (ev) => { if (ev.target === fondo) cerrar(); });
+  lista.addEventListener('click', (ev) => { const li = ev.target.closest('li[data-i]'); if (li) ir(filas[Number(li.dataset.i)]); });
+  lista.addEventListener('mousemove', (ev) => {
+    const li = ev.target.closest('li[data-i]');
+    if (li && Number(li.dataset.i) !== sel) { sel = Number(li.dataset.i); pintar(); }
+  });
+  campo.addEventListener('input', () => { clearTimeout(temporizador); temporizador = setTimeout(buscar, 180); });
+  filas = comandos;
+  pintar();
+  campo.focus();
+}

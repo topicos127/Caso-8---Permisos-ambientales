@@ -17,7 +17,7 @@ def ver_historial(codigo=None):
     """Jefe: todo. Consultor: solo sus expedientes. Promotor: 403."""
     u = g.usuario
     if u["rol"] not in ROLES_INTERNOS:
-        raise ApiError(403, "El historial solo lo ven el jefe y los consultores.")
+        raise ApiError(403, "El historial solo lo ven el director de proyectos y los consultores.")
 
     codigo = codigo or request.args.get("codigo", "").strip() or None
     page = entero("page", 1, 1, 100000)

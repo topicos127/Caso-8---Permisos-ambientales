@@ -56,7 +56,7 @@ const usuario = requireAuth();
 if (usuario) {
   pintarTopbar();
   if (esPromotor()) {
-    // El promotor no ve el historial (el servidor también responde 403).
+    // El cliente no ve el historial (el servidor también responde 403).
     window.location.href = 'expedientes.html';
   }
   if (esJefe()) {

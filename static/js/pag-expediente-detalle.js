@@ -6,7 +6,7 @@ if (usuario) {
   const codigo = params.get('codigo') || 'SP-A8-2026-001';
   const esPromotorUsuario = esPromotor();
 
-  // HU-14: el jefe y los consultores ven el historial; el promotor no.
+  // HU-14: el director de proyectos y los consultores ven el historial; el cliente no.
   if (!esPromotorUsuario) {
     const linkHistorial = document.getElementById('link-historial');
     linkHistorial.href = 'historial.html?codigo=' + encodeURIComponent(codigo);
@@ -302,9 +302,9 @@ if (usuario) {
   function pintarObservaciones() {
     const cont = document.getElementById('observaciones-lista');
     if (!observacionesActuales.length) { cont.innerHTML = ''; return; }
-    cont.innerHTML = '<h4 style="margin-bottom:8px;">Observaciones del jefe</h4>' + observacionesActuales.map(o =>
+    cont.innerHTML = '<h4 style="margin-bottom:8px;">Observaciones del director</h4>' + observacionesActuales.map(o =>
       `<div style="margin-top:8px; padding:12px 14px; background:var(--status-warn-bg); border-radius:12px;">
-        <div style="font-size:12px; color:var(--status-warn); font-weight:600;">${esc(o.fecha)} · ${esc(o.autor || 'Jefe')}</div>
+        <div style="font-size:12px; color:var(--status-warn); font-weight:600;">${esc(o.fecha)} · ${esc(o.autor || 'Director')}</div>
         <div style="margin-top:4px; font-size:14px;">${esc(o.texto)}</div>
       </div>`).join('');
   }
@@ -332,7 +332,7 @@ if (usuario) {
       document.getElementById('resolucion-aprobado').textContent = textoResolucion(resolucionActual);
       document.getElementById('resolucion-rechazado').textContent = textoResolucion(resolucionActual);
     }
-    // Sprint 10: el jefe puede devolver lo que aún no se ha sometido.
+    // Sprint 10: el director de proyectos puede devolver lo que aún no se ha sometido.
     if (!esPromotorUsuario && esJefe() && (estado === 'pendiente' || estado === 'aprobado_interno')) {
       devolverDiv.style.display = 'block';
     }
@@ -367,8 +367,8 @@ if (usuario) {
         note.textContent = 'Todos los documentos están completos. Puedes aprobar internamente el expediente.';
         formDiv.style.display = 'block';
       } else if (verif && verif.puede_someter) {
-        // HU-13: la aprobación interna es solo del jefe de la consultora.
-        note.textContent = 'Todos los documentos están completos. Falta la aprobación interna del jefe de la consultora.';
+        // HU-13: la aprobación interna es solo del director de proyectos.
+        note.textContent = 'Todos los documentos están completos. Falta la aprobación interna del director de proyectos.';
       } else {
         note.textContent = 'Aprueba internamente el expediente antes de someterlo a MiAmbiente.';
         avisoFaltantes.style.display = 'block';
@@ -394,9 +394,9 @@ if (usuario) {
     }
   }
 
-  // Sprint 9 (HU-09 y opción a del registro): el jefe publica o retira el
-  // proyecto de la consulta pública; el consultor o el jefe crean la cuenta
-  // del promotor con una contraseña temporal que se muestra una sola vez.
+  // Sprint 9 (HU-09 y opción a del registro): el director de proyectos publica o retira el
+  // proyecto de la consulta pública; el consultor o el director de proyectos crean la cuenta
+  // del cliente con una contraseña temporal que se muestra una sola vez.
   function renderAcceso(e) {
     if (esPromotorUsuario) return;
     document.getElementById('panel-acceso').style.display = 'block';
@@ -425,11 +425,29 @@ if (usuario) {
     const nota = document.getElementById('promotor-nota');
     const btnCuenta = document.getElementById('btnCuentaPromotor');
     if (!e.promotor_email) {
-      nota.textContent = 'El expediente no tiene correo de promotor, así que no se le puede dar acceso.';
+      nota.textContent = 'El expediente no tiene correo de cliente, así que no se le puede dar acceso.';
       return;
     }
-    nota.textContent = `El promotor entra con ${e.promotor_email}. Su cuenta no se crea por registro público: la crea su consultor desde aquí.`;
+    nota.textContent = `El cliente entra con ${e.promotor_email}. Su cuenta no se crea por registro público: la crea su consultor desde aquí.`;
     btnCuenta.style.display = 'inline-block';
+    const btnReset = document.getElementById('btnResetPromotor');
+    btnReset.style.display = 'inline-block';
+    btnReset.onclick = async () => {
+      if (!(await confirmar('Restablecer contraseña',
+        `Se genera una contraseña temporal nueva para ${e.promotor_email} y se cierran sus sesiones. La verá una sola vez.`, 'Restablecer'))) return;
+      const r = await apiFetch(`/expedientes/${codigo}/promotor/clave`, { method: 'POST', body: '{}' });
+      if (!r.ok) { mostrarToast(r.mensaje || 'No se pudo restablecer.', 'error'); return; }
+      abrirModal({
+        titulo: 'Contraseña temporal',
+        html: `<p class="aviso-unico">Entréguela al cliente por un canal seguro. No se vuelve a mostrar.</p>
+          <p style="margin-top:12px;">${esc(r.email)}</p><code class="clave-manual">${esc(r.password_temporal)}</code>`,
+        cerrable: false,
+        acciones: [
+          { texto: 'Copiar', clase: 'btn btn-ghost', alHacerClic: () => { copiarTexto(r.password_temporal, 'Contraseña copiada.'); return false; } },
+          { texto: 'Listo', clase: 'btn btn-brass' },
+        ],
+      });
+    };
     btnCuenta.onclick = async () => {
       if (!confirm(`¿Crear el acceso de ${e.promotor_email}? Verás una contraseña temporal una sola vez.`)) return;
       const r = await apiFetch(`/expedientes/${codigo}/promotor/cuenta`, { method: 'POST', body: '{}' });
@@ -438,13 +456,13 @@ if (usuario) {
       if (r.ok) {
         salida.className = 'doc-msg show ok';
         const titulo = document.createElement('div');
-        titulo.textContent = 'Acceso creado. Entregue estos datos al promotor por un canal seguro; se muestran una sola vez:';
+        titulo.textContent = 'Acceso creado. Entregue estos datos al cliente por un canal seguro; se muestran una sola vez:';
         const datos = document.createElement('div');
         datos.style.cssText = 'margin-top:8px; font-family:var(--mono);';
         datos.textContent = `${r.email} · ${r.password_temporal}`;
         const aviso = document.createElement('div');
         aviso.style.marginTop = '8px';
-        aviso.textContent = 'El promotor debe cambiarla en «Mi cuenta» al entrar.';
+        aviso.textContent = 'El cliente debe cambiarla en «Mi cuenta» al entrar.';
         salida.append(titulo, datos, aviso);
         btnCuenta.style.display = 'none';
       } else {
@@ -453,6 +471,53 @@ if (usuario) {
       }
     };
   }
+
+  // Responsable del expediente: lo ve la consultora; solo el director de proyectos lo cambia.
+  async function renderResponsable(resp) {
+    if (esPromotorUsuario || !resp) return;
+    document.getElementById('fact-responsable-caja').style.display = '';
+    const cont = document.getElementById('fact-responsable');
+    cont.textContent = resp.nombre;
+    if (!esJefe()) return;
+    try {
+      const d = await apiFetch('/consultores');
+      const activos = (d.consultores || []).filter(c => c.activo);
+      if (!activos.length) return;
+      cont.innerHTML = `<span id="resp-nombre"></span>
+        <select id="select-responsable" aria-label="Nuevo responsable">${activos.map(c =>
+          `<option value="${esc(c.id)}"${c.id === resp.id ? ' selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select>
+        <button type="button" class="btn btn-ghost" id="btn-responsable" style="border:1.5px solid var(--line); padding:4px 12px;">Cambiar</button>`;
+      cont.querySelector('#resp-nombre').textContent = activos.some(c => c.id === resp.id) ? '' : resp.nombre;
+      cont.querySelector('#btn-responsable').onclick = async () => {
+        const nuevo = Number(cont.querySelector('#select-responsable').value);
+        if (nuevo === resp.id) { mostrarToast('Ya es la persona responsable.', 'error'); return; }
+        const r = await apiFetch(`/expedientes/${codigo}/responsable`, { method: 'POST', body: JSON.stringify({ usuario_id: nuevo }) });
+        mostrarToast(r.mensaje || (r.ok ? 'Responsable actualizado.' : 'No se pudo cambiar.'), r.ok ? 'exito' : 'error');
+        if (r.ok) setTimeout(() => location.reload(), 900);
+      };
+    } catch (err) { console.error(err); }
+  }
+
+  // Comentarios internos del equipo.
+  async function cargarComentarios() {
+    if (esPromotorUsuario) return;
+    document.getElementById('panel-comentarios').style.display = 'block';
+    const d = await apiFetch(`/expedientes/${codigo}/comentarios`);
+    const lista = document.getElementById('lista-comentarios');
+    lista.innerHTML = (d.comentarios || []).length
+      ? d.comentarios.map(c => `<div class="comentario"><div class="cab"><b>${esc(c.autor)}</b><span>${esc(ROL_TEXTO[c.autor_rol] || c.autor_rol)} · ${esc(c.fecha)}</span></div><p>${esc(c.texto)}</p></div>`).join('')
+      : '<p class="panel-note" style="margin:0;">Todavía no hay comentarios.</p>';
+  }
+
+  document.getElementById('form-comentario').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const campo = document.getElementById('texto-comentario');
+    const texto = campo.value.trim();
+    if (!texto) { mostrarToast('Escriba el comentario.', 'error'); return; }
+    const r = await apiFetch(`/expedientes/${codigo}/comentarios`, { method: 'POST', body: JSON.stringify({ texto }) });
+    if (r.ok) { campo.value = ''; mostrarToast('Comentario publicado.', 'exito'); await cargarComentarios(); }
+    else mostrarToast(r.mensaje || 'No se pudo publicar.', 'error');
+  });
 
   // HU-15: el IPE y sus proximas acciones; el servidor solo lo envia a la consultora.
   function renderIpe(ipe) {
@@ -557,6 +622,8 @@ if (usuario) {
       document.getElementById('fact-categoria').innerHTML = fichaTier(e.categoria);
       document.getElementById('fact-promotor').textContent = e.promotor;
       document.getElementById('fact-fecha').textContent = e.fecha_ingreso;
+      renderResponsable(d.responsable);
+      cargarComentarios();
 
       // Pintar la Línea de Tiempo (Timeline)
       const pasos = {
@@ -617,7 +684,7 @@ if (usuario) {
           'Consulta el estado de los documentos y descarga los que ya fueron subidos.';
       }
     } catch (e) {
-      const panels = ['panel-resumen', 'panel-docs', 'panel-aprobacion', 'panel-verificacion', 'panel-plazos', 'panel-timeline', 'panel-acceso', 'panel-ipe'];
+      const panels = ['panel-resumen', 'panel-docs', 'panel-aprobacion', 'panel-verificacion', 'panel-plazos', 'panel-timeline', 'panel-acceso', 'panel-ipe', 'panel-comentarios'];
       panels.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
@@ -801,7 +868,7 @@ if (usuario) {
     });
   }
 
-  // Sprint 10: el jefe devuelve el expediente al consultor con observaciones.
+  // Sprint 10: el director de proyectos devuelve el expediente al consultor con observaciones.
   const btnDevolver = document.getElementById('btnDevolver');
   if (btnDevolver) {
     btnDevolver.addEventListener('click', async () => {

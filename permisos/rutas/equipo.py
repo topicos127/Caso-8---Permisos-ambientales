@@ -35,7 +35,7 @@ def requiere_jefe(f):
     @wraps(f)
     def envoltura(*args, **kwargs):
         if g.usuario["rol"] != "jefe":
-            raise ApiError(403, "Solo el jefe de la consultora gestiona a los consultores.")
+            raise ApiError(403, "Solo el director de proyectos gestiona a los consultores.")
         return f(*args, **kwargs)
     return envoltura
 
