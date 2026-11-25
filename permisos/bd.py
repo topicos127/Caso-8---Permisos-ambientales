@@ -31,8 +31,13 @@ COLUMNAS_EXPEDIENTE = ("id, codigo, proyecto, promotor, promotor_email, categori
                        "fecha_ingreso, usuario_id, acceso_publico")
 
 
+def columnas_expediente():
+    """Sprint 10 (HU-08): con la fecha de sometimiento si la columna existe."""
+    return f"{COLUMNAS_EXPEDIENTE}, {col_sometimiento('')}"
+
+
 def cargar_expediente(cur, codigo):
-    cur.execute(f"SELECT {COLUMNAS_EXPEDIENTE} FROM expedientes WHERE codigo=%s", (codigo,))
+    cur.execute(f"SELECT {columnas_expediente()} FROM expedientes WHERE codigo=%s", (codigo,))
     exp = cur.fetchone()
     if not exp:
         raise ApiError(404, "Expediente no encontrado.")
@@ -51,7 +56,7 @@ def documentos_de(cur, expediente_ids):
     if not expediente_ids:
         return por_expediente
     marcas = ", ".join(["%s"] * len(expediente_ids))
-    cur.execute(f"SELECT expediente_id, carpeta, estado, fecha_subida FROM documentos "
+    cur.execute(f"SELECT expediente_id, carpeta, estado, fecha_subida, {col_vencimiento('')} FROM documentos "
                 f"WHERE expediente_id IN ({marcas})", list(expediente_ids))
     for d in cur.fetchall():
         por_expediente[d["expediente_id"]].append(d)
@@ -105,10 +110,76 @@ CREATE TABLE IF NOT EXISTS documento_versiones (
 """
 
 
+# Sprint 10: resolucion de MiAmbiente (aprobado o rechazado, con numero y fecha)
+# y observaciones con las que el jefe devuelve un expediente al consultor.
+DDL_RESOLUCIONES = """
+CREATE TABLE IF NOT EXISTS resoluciones (
+    id INT NOT NULL AUTO_INCREMENT,
+    expediente_id INT NOT NULL,
+    resultado ENUM('aprobado','rechazado') NOT NULL,
+    numero VARCHAR(60) NOT NULL,
+    fecha_resolucion DATE NOT NULL,
+    registrado_por INT NOT NULL,
+    fecha_registro DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY (expediente_id) REFERENCES expedientes (id),
+    FOREIGN KEY (registrado_por) REFERENCES usuarios (id)
+)
+"""
+
+DDL_OBSERVACIONES = """
+CREATE TABLE IF NOT EXISTS observaciones (
+    id INT NOT NULL AUTO_INCREMENT,
+    expediente_id INT NOT NULL,
+    texto TEXT NOT NULL,
+    autor_id INT NOT NULL,
+    fecha DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY (expediente_id) REFERENCES expedientes (id),
+    FOREIGN KEY (autor_id) REFERENCES usuarios (id)
+)
+"""
+
+
 # Sprint 9: el promotor recibe una contrasena temporal y debe cambiarla. La
 # columna se agrega al arrancar si la base es anterior; mientras no exista, las
 # consultas la reemplazan por un 0 constante y la regla simplemente no aplica.
-_esquema = {"cambio_clave": False, "activo": False}
+# Sprint 10: lo mismo con la fecha de sometimiento (HU-08), la fecha de
+# vencimiento de cada documento y el aviso que elige cada usuario (HU-05).
+_esquema = {"cambio_clave": False, "activo": False, "sometimiento": False, "vencimiento": False,
+            "aviso": False}
+
+# (tabla, columna, definicion, clave en _esquema)
+COLUMNAS_SPRINT10 = (
+    ("expedientes", "fecha_sometimiento", "DATE NULL", "sometimiento"),
+    ("documentos", "fecha_vencimiento", "DATE NULL", "vencimiento"),
+    ("usuarios", "aviso_vencimiento_dias", "INT NOT NULL DEFAULT 30", "aviso"),
+)
+
+
+def _pref(alias):
+    return f"{alias}." if alias else ""
+
+
+def col_sometimiento(alias="e"):
+    return f"{_pref(alias)}fecha_sometimiento" if _esquema["sometimiento"] else "NULL AS fecha_sometimiento"
+
+
+def col_vencimiento(alias="d"):
+    return f"{_pref(alias)}fecha_vencimiento" if _esquema["vencimiento"] else "NULL AS fecha_vencimiento"
+
+
+def col_aviso(alias=""):
+    return f"{_pref(alias)}aviso_vencimiento_dias" if _esquema["aviso"] else "30 AS aviso_vencimiento_dias"
+
+
+def _asegurar_columna(cur, tabla, columna, definicion, clave):
+    cur.execute("SELECT COUNT(*) AS n FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() "
+                "AND TABLE_NAME = %s AND COLUMN_NAME = %s", (tabla, columna))
+    if cur.fetchone()["n"] == 0:
+        cur.execute(f"ALTER TABLE {tabla} ADD COLUMN {columna} {definicion}")
+        print(f"Sprint 10: columna {tabla}.{columna} agregada.", flush=True)
+    _esquema[clave] = True
 
 
 def col_cambio_clave():
@@ -148,6 +219,17 @@ def inicializar_bd():
     with cursor() as cur:
         cur.execute(DDL_HISTORIAL)
         cur.execute(DDL_VERSIONES)
+        cur.execute(DDL_RESOLUCIONES)
+        cur.execute(DDL_OBSERVACIONES)
+    for tabla, columna, definicion, clave in COLUMNAS_SPRINT10:
+        try:
+            with cursor() as cur:
+                _asegurar_columna(cur, tabla, columna, definicion, clave)
+        except pymysql.MySQLError as e:
+            # Sin la columna la app sigue con la regla anterior (plan B:
+            # sql/sprint10_manual.sql).
+            print(f"AVISO: no se pudo agregar {tabla}.{columna} ({e!r}); se usa la regla del Sprint 9 "
+                  "hasta que exista.", flush=True)
     try:
         with cursor() as cur:
             _asegurar_columna_cambio_clave(cur)
@@ -187,7 +269,7 @@ def asegurar_bd():
     try:
         inicializar_bd()
         _estado_bd["lista"] = True
-        print("Sprints 8 y 9: historial, versiones de documentos, usuario jefe y columnas de cambio de "
-              "contrasena y de usuario activo verificados.", flush=True)
+        print("Sprints 8 a 10: historial, versiones, resoluciones, observaciones, usuario jefe y columnas "
+              "nuevas verificados.", flush=True)
     except Exception as e:  # noqa: BLE001 - la app sigue; se reintenta luego
         print(f"AVISO: no se pudo preparar la base para el Sprint 8: {e!r}", flush=True)

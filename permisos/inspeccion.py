@@ -117,6 +117,29 @@ def problema_zip(datos):
     return None
 
 
+def problema_cartografia(ext, datos):
+    """HU-01 (Sprint 10): la carpeta Cartografia recibe un ZIP con el shapefile
+    completo: al menos un .shp con su .shx y su .dbf del mismo nombre."""
+    if ext != ".zip":
+        return "La cartografía va en un ZIP con el shapefile (.shp, .shx y .dbf)."
+    try:
+        with zipfile.ZipFile(io.BytesIO(datos)) as zf:
+            nombres = [e.filename.replace("\\", "/") for e in zf.infolist() if not e.is_dir()]
+    except zipfile.BadZipFile:
+        return "El ZIP está dañado."
+    por_base = {}
+    for n in nombres:
+        base, ext_n = os.path.splitext(n)
+        por_base.setdefault(base.lower(), set()).add(ext_n.lower())
+    if any({".shp", ".shx", ".dbf"} <= exts for exts in por_base.values()):
+        return None
+    presentes = set().union(*por_base.values()) if por_base else set()
+    faltan = [e for e in (".shp", ".shx", ".dbf") if e not in presentes]
+    if faltan:
+        return f"El ZIP de cartografía no trae el shapefile completo: falta {', '.join(faltan)}."
+    return "El ZIP de cartografía debe traer .shp, .shx y .dbf con el mismo nombre."
+
+
 def problema_archivo(ext, datos):
     """La extension debe coincidir con el contenido y el contenido ser seguro."""
     if ext == ".pdf":

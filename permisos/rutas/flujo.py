@@ -1,14 +1,16 @@
-"""Flujo del expediente: aprobacion interna (HU-10), sometimiento y
-aprobacion de MiAmbiente (simulada); PDF de resumen."""
+"""Flujo del expediente: aprobacion interna (HU-10), sometimiento (HU-08),
+resolucion de MiAmbiente y devolucion con observaciones (Sprint 10); PDF de
+resumen."""
 import io
+from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request, send_file
 from fpdf import FPDF
 
-from ..bd import cargar_expediente, cursor, registrar_historial
-from ..config import ACCION_APROBAR, ACCION_RESOLUCION, ACCION_SOMETER
+from ..bd import _esquema, cargar_expediente, cursor, registrar_historial
+from ..config import ACCION_APROBAR, ACCION_DEVOLVER, ACCION_RECHAZO, ACCION_RESOLUCION, ACCION_SOMETER
 from ..errores import ApiError
-from ..reglas import calcular_verificacion
+from ..reglas import ahora, calcular_verificacion, como_fecha, hoy
 from ..seguridad import exigir_gestion, exigir_jefe, exigir_lectura, requiere_login
 from ..utiles import texto
 
@@ -43,14 +45,14 @@ def aprobar_expediente(codigo):
     return jsonify({"ok": True, "mensaje": "Aprobado internamente."}), 200
 
 
-def cambiar_estado(codigo, desde, hacia, mensaje_error, accion):
+def cambiar_estado(codigo, desde, hacia, mensaje_error, accion, extra_sql="", extra_params=()):
     with cursor() as cur:
         exp = cargar_expediente(cur, codigo)
         exigir_gestion(g.usuario, exp)
         if exp["estado"] != desde:
             raise ApiError(400, mensaje_error)
-        cambiadas = cur.execute("UPDATE expedientes SET estado=%s WHERE id=%s AND estado=%s",
-                                (hacia, exp["id"], desde))
+        cambiadas = cur.execute(f"UPDATE expedientes SET estado=%s{extra_sql} WHERE id=%s AND estado=%s",
+                                (hacia, *extra_params, exp["id"], desde))
         if cambiadas != 1:
             raise ApiError(400, mensaje_error)
         registrar_historial(cur, exp["id"], g.usuario["id"], accion)  # Sprint 9
@@ -59,16 +61,84 @@ def cambiar_estado(codigo, desde, hacia, mensaje_error, accion):
 @bp.route("/expedientes/<codigo>/someter", methods=["POST"])
 @requiere_login
 def someter_expediente(codigo):
+    # HU-08 (Sprint 10): desde hoy corre el plazo de MiAmbiente, en dias habiles.
+    extra = (", fecha_sometimiento=%s", (hoy().isoformat(),)) if _esquema["sometimiento"] else ("", ())
     cambiar_estado(codigo, "aprobado_interno", "evaluacion", "Debe aprobarse internamente primero.",
-                   ACCION_SOMETER)
-    return jsonify({"ok": True, "mensaje": "Sometido a MiAmbiente."}), 200
+                   ACCION_SOMETER, *extra)
+    return jsonify({"ok": True, "mensaje": "Sometido a MiAmbiente.",
+                    "fecha_sometimiento": hoy().isoformat()}), 200
 
 
 @bp.route("/expedientes/<codigo>/aprobar-miambiente", methods=["POST"])
 @requiere_login
 def aprobar_miambiente(codigo):
+    """Atajo del Sprint 9 (aprobacion sin numero ni fecha). Se conserva para las
+    suites anteriores; la pantalla usa /resolucion."""
     cambiar_estado(codigo, "evaluacion", "aprobado", "Debe estar en evaluacion.", ACCION_RESOLUCION)
     return jsonify({"ok": True, "mensaje": "Aprobado por MiAmbiente."}), 200
+
+
+@bp.route("/expedientes/<codigo>/resolucion", methods=["POST"])
+@requiere_login
+def registrar_resolucion(codigo):
+    """Sprint 10: la consultora registra la resolucion que emitio MiAmbiente:
+    aprobado o rechazado, con su numero y su fecha."""
+    data = request.get_json(silent=True) or {}
+    resultado = data.get("resultado")
+    if resultado not in ("aprobado", "rechazado"):
+        raise ApiError(400, "El resultado debe ser aprobado o rechazado.")
+    numero = texto(data, "numero", 60)
+    valor_fecha = texto(data, "fecha", 10)
+    try:
+        fecha = datetime.strptime(valor_fecha, "%Y-%m-%d").date()
+    except ValueError:
+        raise ApiError(400, "La fecha debe tener el formato AAAA-MM-DD.")
+    if fecha > hoy():
+        raise ApiError(400, "La fecha de la resolución no puede ser futura.")
+
+    with cursor() as cur:
+        exp = cargar_expediente(cur, codigo)
+        exigir_gestion(g.usuario, exp)
+        if exp["estado"] != "evaluacion":
+            raise ApiError(400, "Solo se registra la resolución de un expediente en evaluación.")
+        sometido = como_fecha(exp.get("fecha_sometimiento"))
+        if sometido and fecha < sometido:
+            raise ApiError(400, "La resolución no puede ser anterior al sometimiento.")
+        cambiadas = cur.execute("UPDATE expedientes SET estado=%s WHERE id=%s AND estado='evaluacion'",
+                                (resultado, exp["id"]))
+        if cambiadas != 1:
+            raise ApiError(400, "Solo se registra la resolución de un expediente en evaluación.")
+        cur.execute("INSERT INTO resoluciones (expediente_id, resultado, numero, fecha_resolucion, "
+                    "registrado_por, fecha_registro) VALUES (%s, %s, %s, %s, %s, %s)",
+                    (exp["id"], resultado, numero, fecha.isoformat(), g.usuario["id"], ahora()))
+        registrar_historial(cur, exp["id"], g.usuario["id"],
+                            ACCION_RESOLUCION if resultado == "aprobado" else ACCION_RECHAZO)
+    texto_resultado = "Aprobado" if resultado == "aprobado" else "Rechazado"
+    return jsonify({"ok": True, "estado": resultado,
+                    "mensaje": f"Resolución {numero} registrada: {texto_resultado}."}), 200
+
+
+@bp.route("/expedientes/<codigo>/devolver", methods=["POST"])
+@requiere_login
+def devolver_con_observaciones(codigo):
+    """Sprint 10: el jefe devuelve el expediente al consultor con lo que debe
+    corregir. Si ya estaba aprobado internamente, vuelve a pendiente."""
+    data = request.get_json(silent=True) or {}
+    observaciones = texto(data, "observaciones", 2000)
+    with cursor() as cur:
+        exp = cargar_expediente(cur, codigo)
+        exigir_jefe(g.usuario, "Solo el jefe de la consultora devuelve expedientes.")
+        if exp["estado"] not in ("pendiente", "aprobado_interno"):
+            raise ApiError(400, "Solo se devuelve un expediente que aún no se ha sometido.")
+        cambiadas = cur.execute("UPDATE expedientes SET estado='pendiente' WHERE id=%s AND estado=%s",
+                                (exp["id"], exp["estado"]))
+        if cambiadas != 1:
+            raise ApiError(400, "El expediente cambió de estado. Recargue e intente de nuevo.")
+        cur.execute("INSERT INTO observaciones (expediente_id, texto, autor_id, fecha) VALUES (%s, %s, %s, %s)",
+                    (exp["id"], observaciones, g.usuario["id"], ahora()))
+        registrar_historial(cur, exp["id"], g.usuario["id"], ACCION_DEVOLVER)
+    return jsonify({"ok": True, "estado": "pendiente",
+                    "mensaje": "Expediente devuelto al consultor con observaciones."}), 200
 
 
 # ---------- PDF ----------

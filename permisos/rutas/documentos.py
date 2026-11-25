@@ -15,17 +15,33 @@ from datetime import datetime
 from flask import Blueprint, g, jsonify, request, send_file, send_from_directory
 from werkzeug.utils import secure_filename
 
-from ..bd import SQL_ULTIMA_VERSION, cargar_expediente, cursor, registrar_historial
-from ..config import ACCION_SUBIR, ACCION_VERSION, EXTENSIONES_PERMITIDAS, MAX_FILE_SIZE, UPLOADS_DIR, ZONA
+from ..bd import SQL_ULTIMA_VERSION, _esquema, cargar_expediente, cursor, registrar_historial
+from ..config import (ACCION_SUBIR, ACCION_VERSION, CARPETA_CARTOGRAFIA, EXTENSIONES_PERMITIDAS, MAX_FILE_SIZE,
+                      UPLOADS_DIR, ZONA)
 from ..errores import ApiError
-from ..inspeccion import problema_archivo
+from ..inspeccion import problema_archivo, problema_cartografia
 from ..reglas import ahora, hoy
 from ..seguridad import exigir_gestion, exigir_lectura, requiere_login
 from ..utiles import formatear_fechas, ruta_segura
 
 bp = Blueprint("documentos", __name__)
 
-def validar_archivo():
+def fecha_vencimiento_enviada():
+    """HU-05 (Sprint 10): fecha de vencimiento opcional del documento (campo del
+    formulario fecha_vencimiento, AAAA-MM-DD). Debe ser posterior a hoy."""
+    valor = (request.form.get("fecha_vencimiento") or "").strip()
+    if not valor:
+        return None
+    try:
+        fecha = datetime.strptime(valor, "%Y-%m-%d").date()
+    except ValueError:
+        raise ApiError(400, "La fecha de vencimiento debe tener el formato AAAA-MM-DD.")
+    if fecha <= hoy():
+        raise ApiError(400, "La fecha de vencimiento debe ser posterior a hoy: el documento ya estaría vencido.")
+    return fecha
+
+
+def validar_archivo(carpeta=None):
     """Devuelve (nombre_seguro, contenido) o lanza ApiError 400."""
     if "archivo" not in request.files:
         raise ApiError(400, "No se recibio archivo.")
@@ -38,6 +54,8 @@ def validar_archivo():
     if len(contenido) > MAX_FILE_SIZE:
         raise ApiError(400, "Max 20 MB.")
     problema = problema_archivo(ext, contenido)  # HU-01: revision de seguridad
+    if not problema and carpeta == CARPETA_CARTOGRAFIA:
+        problema = problema_cartografia(ext, contenido)  # HU-01 (Sprint 10): shapefile completo
     if problema:
         raise ApiError(400, problema)
     return nombre_original, contenido
@@ -91,7 +109,8 @@ def subir_documento(codigo, carpeta):
             if exp["estado"] != "pendiente":
                 raise ApiError(403, "Expediente no editable.")
 
-            nombre_original, contenido = validar_archivo()
+            nombre_original, contenido = validar_archivo(carpeta)
+            vence = fecha_vencimiento_enviada()
             doc = _documento(cur, exp, carpeta, bloquear=True)
 
             cur.execute("SELECT COALESCE(MAX(version), 0) AS ultima FROM documento_versiones WHERE documento_id=%s",
@@ -120,6 +139,10 @@ def subir_documento(codigo, carpeta):
             cur.execute("""UPDATE documentos SET estado='recibido', archivo_nombre=%s, archivo_ruta=%s,
                            archivo_tamano=%s, fecha_subida=%s WHERE id=%s""",
                         (nombre_original, ruta, len(contenido), momento, doc["id"]))
+            if _esquema["vencimiento"]:
+                # La fecha es del archivo: una version nueva sin fecha vuelve a la regla del ano.
+                cur.execute("UPDATE documentos SET fecha_vencimiento=%s WHERE id=%s",
+                            (vence.isoformat() if vence else None, doc["id"]))
             registrar_historial(cur, exp["id"], g.usuario["id"], ACCION_SUBIR if version == 1 else ACCION_VERSION)
     except Exception:
         # Si la transaccion no se confirma, el archivo nuevo no debe quedar huerfano en disco.
@@ -133,7 +156,7 @@ def subir_documento(codigo, carpeta):
     # Las versiones anteriores se conservan: no se borra ningun archivo.
     return jsonify({"ok": True, "mensaje": f"Subido como versión {version}.", "archivo_nombre": nombre_original,
                     "archivo_tamano": len(contenido), "version": version, "codigo_trazabilidad": codigo_doc,
-                    "sha256": sha256}), 200
+                    "sha256": sha256, "fecha_vencimiento": vence.isoformat() if vence else None}), 200
 
 
 def _enviar(ruta, nombre):

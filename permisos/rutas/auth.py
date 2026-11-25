@@ -1,4 +1,5 @@
-"""HU-11: login, logout, sesion, registro y cambio de contrasena."""
+"""HU-11: login, logout, sesion, registro y cambio de contrasena; preferencia
+de aviso de vencimiento (HU-05, Sprint 10)."""
 import threading
 import time
 from collections import deque
@@ -7,10 +8,10 @@ import pymysql
 from flask import Blueprint, g, jsonify, request, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from ..bd import _esquema, col_activo, col_cambio_clave, cursor
+from ..bd import _esquema, col_activo, col_aviso, col_cambio_clave, cursor
 from ..config import EMAIL_RE, LOGIN_MAX_FALLOS, LOGIN_VENTANA_SEGUNDOS, ROLES_REGISTRO
 from ..errores import ApiError
-from ..reglas import problema_de_password
+from ..reglas import AVISOS_PERMITIDOS, problema_de_password
 from ..seguridad import requiere_login
 from ..utiles import texto
 
@@ -163,3 +164,27 @@ def cambiar_contrasena():
             cur.execute("UPDATE usuarios SET password_hash=%s WHERE id=%s",
                         (generate_password_hash(nueva), g.usuario["id"]))
     return jsonify({"ok": True, "mensaje": "Contrasena actualizada."}), 200
+
+
+@bp.route("/perfil", methods=["GET", "POST"])
+@requiere_login
+def perfil():
+    """HU-05 (Sprint 10): con cuantos dias de anticipacion se avisa que un
+    documento vence (15, 30 o 45; 30 por defecto)."""
+    if request.method == "POST":
+        data = request.get_json(silent=True) or {}
+        dias = data.get("aviso_vencimiento_dias")
+        if isinstance(dias, bool) or dias not in AVISOS_PERMITIDOS:
+            raise ApiError(400, "El aviso debe ser de 15, 30 o 45 días.")
+        if not _esquema["aviso"]:
+            raise ApiError(503, "La preferencia aún no está disponible: falta actualizar la base de datos.")
+        with cursor() as cur:
+            cur.execute("UPDATE usuarios SET aviso_vencimiento_dias=%s WHERE id=%s", (dias, g.usuario["id"]))
+        return jsonify({"ok": True, "aviso_vencimiento_dias": dias,
+                        "mensaje": f"Le avisaremos {dias} días antes de que venza un documento."}), 200
+    with cursor() as cur:
+        cur.execute(f"SELECT {col_aviso()} FROM usuarios WHERE id=%s", (g.usuario["id"],))
+        fila = cur.fetchone() or {}
+    return jsonify({"email": g.usuario["email"], "nombre": g.usuario["nombre"], "rol": g.usuario["rol"],
+                    "aviso_vencimiento_dias": int(fila.get("aviso_vencimiento_dias") or 30),
+                    "opciones_aviso": list(AVISOS_PERMITIDOS)}), 200

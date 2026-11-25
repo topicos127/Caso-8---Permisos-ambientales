@@ -87,7 +87,7 @@ jobs:
         env:
           UPLOADS_DIR: /tmp/uploads
         run: |
-          python -m unittest tests/test_semaforo.py tests/test_sprint9.py tests/test_ipe.py tests/test_ipe_api.py tests/test_documentos.py tests/test_equipo.py
+          python -m unittest tests/test_semaforo.py tests/test_sprint9.py tests/test_ipe.py tests/test_ipe_api.py tests/test_documentos.py tests/test_equipo.py tests/test_sprint10.py
 
       - name: Run Robot Framework tests (Login HU-11)
         run: |
@@ -116,6 +116,10 @@ jobs:
       - name: Run Robot Framework tests (Sprint 9)
         run: |
           robot --outputdir tests/sprint9 tests/sprint9/Test_Sprint9.robot
+
+      - name: Run Robot Framework tests (Sprint 10)
+        run: |
+          robot --outputdir tests/sprint10 tests/sprint10/Test_Sprint10.robot
 
       - name: Upload Login test report
         if: always()
@@ -165,6 +169,13 @@ jobs:
         with:
           name: robot-report-sprint9
           path: tests/sprint9/
+
+      - name: Upload Sprint 10 test report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: robot-report-sprint10
+          path: tests/sprint10/
 
   build:
     name: Build and Push Docker Image

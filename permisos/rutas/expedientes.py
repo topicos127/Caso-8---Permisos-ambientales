@@ -6,11 +6,13 @@ import pymysql
 from flask import Blueprint, g, jsonify, request
 from werkzeug.security import generate_password_hash
 
-from ..bd import SQL_ULTIMA_VERSION, _esquema, cargar_expediente, cursor, documentos_de, registrar_historial
+from ..bd import (SQL_ULTIMA_VERSION, _esquema, cargar_expediente, col_sometimiento, col_vencimiento, cursor,
+                  documentos_de, registrar_historial)
 from ..config import (ACCION_ACCESO, ACCION_CREAR, ACCION_CUENTA_PROMOTOR, CATEGORIAS_DOCS, EMAIL_RE,
                       ROLES_INTERNOS)
 from ..errores import ApiError
-from ..reglas import calcular_ipe, calcular_semaforo, calcular_verificacion, hoy, problema_de_password
+from ..reglas import (calcular_ipe, calcular_semaforo, calcular_verificacion, hoy, problema_de_password,
+                      vencimiento_documento)
 from ..seguridad import exigir_gestion, exigir_jefe, exigir_lectura, filtro_de, requiere_login
 from ..utiles import entero, formatear_fechas, paginacion, texto
 
@@ -46,7 +48,7 @@ def listar_expedientes():
         # todos los que coinciden y se pagina despues.
         limite = "" if por_ipe else "LIMIT %s OFFSET %s"
         cur.execute(f"""SELECT e.id, e.codigo, e.proyecto, e.promotor, e.categoria, e.estado, e.fecha_ingreso,
-                               u.nombre AS consultor
+                               {col_sometimiento()}, u.nombre AS consultor
                         FROM expedientes e LEFT JOIN usuarios u ON u.id = e.usuario_id
                         {where} ORDER BY e.fecha_ingreso DESC, e.id DESC {limite}""",
                     params if por_ipe else params + [per_page, offset])
@@ -69,6 +71,7 @@ def listar_expedientes():
     for f in filas:
         del f["id"]
     formatear_fechas(filas, "fecha_ingreso", "%Y-%m-%d")
+    formatear_fechas(filas, "fecha_sometimiento", "%Y-%m-%d")
 
     return jsonify({"expedientes": filas, "paginacion": paginacion(total, page, per_page)})
 
@@ -143,24 +146,46 @@ def detalle_expediente(codigo):
         exp = cargar_expediente(cur, codigo)
         exigir_lectura(g.usuario, exp)
         cur.execute("SELECT d.id, d.carpeta, d.estado, d.archivo_nombre, d.archivo_tamano, d.fecha_subida, "
-                    f"{SQL_ULTIMA_VERSION} FROM documentos d WHERE d.expediente_id=%s ORDER BY d.id", (exp["id"],))
+                    f"{col_vencimiento()}, {SQL_ULTIMA_VERSION} FROM documentos d WHERE d.expediente_id=%s "
+                    "ORDER BY d.id", (exp["id"],))
         docs = cur.fetchall()
         cur.execute("SELECT motivo, fecha FROM aprobaciones WHERE expediente_id=%s ORDER BY fecha DESC LIMIT 1",
                     (exp["id"],))
         aprob = cur.fetchone()
+        # Sprint 10: resolucion de MiAmbiente (la ve quien puede ver el expediente)
+        # y observaciones del jefe (solo la consultora).
+        cur.execute("SELECT r.resultado, r.numero, r.fecha_resolucion, u.nombre AS registrado_por "
+                    "FROM resoluciones r LEFT JOIN usuarios u ON u.id = r.registrado_por "
+                    "WHERE r.expediente_id=%s ORDER BY r.id DESC LIMIT 1", (exp["id"],))
+        resolucion = cur.fetchone()
+        observaciones = []
+        if g.usuario["rol"] in ROLES_INTERNOS:
+            cur.execute("SELECT o.texto, o.fecha, u.nombre AS autor FROM observaciones o "
+                        "LEFT JOIN usuarios u ON u.id = o.autor_id WHERE o.expediente_id=%s "
+                        "ORDER BY o.fecha DESC, o.id DESC", (exp["id"],))
+            observaciones = cur.fetchall()
 
     verificacion = calcular_verificacion(exp["categoria"], docs)
     ipe = calcular_ipe(exp, docs) if g.usuario["rol"] in ROLES_INTERNOS else None  # HU-15
+    for d in docs:
+        vence = vencimiento_documento(d)  # HU-05: fecha real o un ano despues de subido
+        d["vence"] = vence.strftime("%d/%m/%Y") if vence else None
+        d["vencimiento_real"] = bool(d.get("fecha_vencimiento"))
+        d["dias_para_vencer"] = (vence - hoy()).days if vence else None
+        d.pop("fecha_vencimiento", None)
     del exp["id"], exp["usuario_id"]
     exp["acceso_publico"] = bool(exp["acceso_publico"])
     if g.usuario["rol"] not in ROLES_INTERNOS:
         del exp["promotor_email"]  # el correo del promotor solo lo ve la consultora
     formatear_fechas([exp], "fecha_ingreso", "%d/%m/%Y")
+    formatear_fechas([exp], "fecha_sometimiento", "%d/%m/%Y")
     formatear_fechas(docs, "fecha_subida", "%d/%m/%Y %H:%M")
     formatear_fechas([aprob], "fecha", "%d/%m/%Y %H:%M")
+    formatear_fechas([resolucion], "fecha_resolucion", "%d/%m/%Y")
+    formatear_fechas(observaciones, "fecha", "%d/%m/%Y %H:%M")
 
     return jsonify({"expediente": exp, "documentos": docs, "aprobacion": aprob, "verificacion": verificacion,
-                    "ipe": ipe})
+                    "ipe": ipe, "resolucion": resolucion, "observaciones": observaciones})
 
 
 @bp.route("/expedientes/<codigo>/aprobaciones", methods=["GET"])

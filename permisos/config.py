@@ -89,6 +89,13 @@ ACCION_RESOLUCION = "registró aprobación de MiAmbiente"
 ACCION_ACCESO = "cambió acceso público"
 ACCION_CUENTA_PROMOTOR = "creó cuenta del promotor"
 ACCION_REASIGNAR = "reasignó"  # Sprint 9: el jefe pasa el expediente a otro consultor
+# Sprint 10: resolucion real de MiAmbiente y devolucion con observaciones.
+ACCION_RECHAZO = "registró rechazo de MiAmbiente"
+ACCION_DEVOLVER = "devolvió con observaciones"
+
+# HU-01 (Sprint 10): la cartografia es un shapefile: el ZIP trae estos tres.
+CARPETA_CARTOGRAFIA = "Cartografía"
+EXTENSIONES_SHAPEFILE = (".shp", ".shx", ".dbf")
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 RUTAS_SIN_CABECERA = {"/login", "/registro"}

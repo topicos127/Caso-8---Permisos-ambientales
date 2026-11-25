@@ -115,6 +115,13 @@ def sembrar_demo(cur):
         )
         cur.execute("SELECT id FROM expedientes WHERE codigo=%s", (codigo,))
         exp_id = cur.fetchone()[0]
+        # Sprint 10 (HU-08): los ya sometidos guardan su fecha de sometimiento
+        # (la misma del evento "sometió" del historial de abajo).
+        sometido = (ingreso + timedelta(days=min(dias, 6))).date() if estado in ("evaluacion", "aprobado") else None
+        try:
+            cur.execute("UPDATE expedientes SET fecha_sometimiento=%s WHERE id=%s", (sometido, exp_id))
+        except pymysql.MySQLError:
+            pass  # base anterior al Sprint 10: la app agrega la columna al arrancar
 
         borrar_documentos_de_prueba(cur, exp_id)
         subidas = []
