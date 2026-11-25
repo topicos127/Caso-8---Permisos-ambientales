@@ -2267,3 +2267,17 @@ html, body {
 .hero.con-foto .hero-centro .lead { color: rgba(255, 255, 255, 0.95); text-shadow: 0 1px 14px rgba(0, 0, 0, 0.5); }
 .hero.con-foto .hero-iconos li { color: #ffffff; text-shadow: 0 1px 10px rgba(0, 0, 0, 0.6); }
 .hero.con-foto .btn-ghost, .hero.con-foto .btn-borde { background: rgba(255, 255, 255, 0.94); }
+
+/* ---------- Pantalla completa: sin marco, margen ni bisel en ninguna ventana ---------- */
+.landing-wrap { margin: 0; border-radius: 0; border: 0; box-shadow: none; background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.doc-screen { padding: 0; align-items: stretch; justify-content: stretch; }
+.doc-sheet, .doc-sheet.split {
+  max-width: none; width: 100%; min-height: 100vh; border-radius: 0; border: 0; box-shadow: none;
+  padding: 0; gap: 0; background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.doc-sheet.split > .auth-aside { border-radius: 0; min-height: 100vh; }
+.doc-sheet.split { flex-wrap: nowrap; }
+.doc-sheet.split > .auth-aside { flex: 1 1 0; min-width: 0; }
+.doc-sheet.split .doc-body { flex: 0 0 min(560px, 42vw); max-width: none; margin: 0; padding: 40px 56px; background: var(--surface); justify-content: center; }
+@media (max-width: 900px) { .doc-sheet.split { flex-wrap: wrap; } .doc-sheet.split > .auth-aside { flex: 1 1 100%; min-height: 0; } .doc-sheet.split .doc-body { flex: 1 1 100%; padding: 32px 20px; } }
+.shell { border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
