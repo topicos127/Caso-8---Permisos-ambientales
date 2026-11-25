@@ -2243,3 +2243,20 @@ html, body {
 }
 @media (max-width: 900px) { .l-header { position: static; } }
 .content > section > .content-lede:first-child { margin-top: 16px; }
+
+/* ---------- Recorrido de bienvenida ---------- */
+.tour-fondo { position: fixed; inset: 0; z-index: 1300; animation: aparece 0.2s ease; }
+.tour-fondo.centrado { background: rgba(15, 23, 20, 0.55); backdrop-filter: blur(2px); }
+.tour-foco { position: fixed; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(15, 23, 20, 0.58), 0 0 0 3px #ffffff, 0 0 0 6px rgba(var(--brand-rgb), 0.9);
+  pointer-events: none; transition: left 0.28s var(--curva), top 0.28s var(--curva), width 0.28s var(--curva), height 0.28s var(--curva); }
+.tour-tarjeta { position: fixed; padding: 20px 22px 16px; background: #ffffff; border: 1px solid var(--borde-suave); border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(10, 25, 18, 0.35); transition: left 0.28s var(--curva), top 0.28s var(--curva); }
+.tour-pasos { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brand); }
+.tour-tarjeta h3 { margin: 4px 0 6px; font-size: 18px; }
+.tour-tarjeta p { margin: 0 0 16px; font-size: 14.5px; line-height: 1.55; color: var(--text-soft); }
+.tour-acciones { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.tour-botones { display: flex; gap: 8px; }
+.tour-saltar { border: 0; background: transparent; color: var(--text-muted); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; padding: 6px 4px; }
+.tour-saltar:hover { color: var(--text); text-decoration: underline; }
+@media (prefers-reduced-motion: reduce) { .tour-foco, .tour-tarjeta { transition: none; } }
+.tour-tarjeta [hidden] { display: none !important; }

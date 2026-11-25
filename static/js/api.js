@@ -181,6 +181,7 @@ async function cerrarSesion(ev) {
     await fetch('/logout', { method: 'POST', headers: cabecerasApi(), credentials: 'same-origin' });
   } catch (e) { /* aunque falle la red, se limpia la sesion local */ }
   sessionStorage.removeItem('usuario');
+  sessionStorage.removeItem('tour_ok');
   window.location.href = paginaDeAcceso(previo && previo.rol);
 }
 
@@ -509,10 +510,16 @@ async function copiarTexto(texto, aviso = 'Copiado.') {
 // Quien aun no los acepto (cuentas anteriores) los ve una vez al entrar.
 async function revisarTerminos() {
   const u = getUsuario();
-  if (!u || u.debe_cambiar_clave || sessionStorage.getItem('terminos_ok') === '1') return;
+  // Con una obligacion pendiente (contraseña temporal, dos pasos) todavia no es momento de ventanas ni recorridos.
+  if (!u || u.debe_cambiar_clave || u.debe_activar_2fa) return;
+  if (sessionStorage.getItem('terminos_ok') === '1' && sessionStorage.getItem('tour_ok') === '1') return;
   try {
     const s = await apiFetch('/sesion');
-    if (!s.terminos_pendientes) { sessionStorage.setItem('terminos_ok', '1'); return; }
+    if (!s.terminos_pendientes) {
+      sessionStorage.setItem('terminos_ok', '1');
+      ofrecerTour(s);
+      return;
+    }
     abrirModal({
       titulo: 'Términos y privacidad',
       html: '<p>Para seguir usando la plataforma, confirme que leyó y acepta los '
@@ -525,6 +532,7 @@ async function revisarTerminos() {
           const r = await apiFetch('/cuenta/terminos', { method: 'POST', body: '{}' });
           if (!r.ok) { mostrarToast(r.mensaje || 'No se pudo registrar.', 'error'); return false; }
           sessionStorage.setItem('terminos_ok', '1');
+          ofrecerTour(s);   // el recorrido llega justo despues de aceptar
         },
       }],
     });
@@ -685,4 +693,169 @@ function graficoBarrasDia(serie, ariaTexto) {
       <text x="${(x + barra / 2).toFixed(1)}" y="${base + 16}" text-anchor="middle" font-size="10" fill="var(--text-faint)">${i % 2 === 0 ? esc(p.dia) : ''}</text></g>`;
   }).join('');
   return `<svg viewBox="0 0 ${ancho} ${alto}" width="100%" role="img" aria-label="${esc(ariaTexto || '')}"><line x1="0" y1="${base}" x2="${ancho}" y2="${base}" stroke="var(--line-strong)"/>${barras}</svg>`;
+}
+
+// ============== TOUR DE BIENVENIDA ==============
+// Recorrido guiado que cada cuenta ve UNA sola vez: el servidor recuerda que ya lo vio (usuarios.tour_visto_en),
+// asi que no vuelve a salir al volver a entrar, ni desde otro equipo. Se puede repetir desde "Ayuda".
+function pasosDelTour(u) {
+  const nombre = (u.nombre || '').trim().split(/\s+/)[0] || '';
+  const nav = (href) => [`.rail nav a[href="${href}"]`];
+  const buscar = { sel: ['.btn-buscar'], titulo: 'Búsqueda rápida', texto: 'Pulse Ctrl + K (o la tecla /) desde cualquier pantalla para encontrar un expediente, una persona o una acción en un segundo.' };
+  const perfil = { sel: ['.menu-usuario-boton'], titulo: 'Su cuenta', texto: 'Desde aquí abre «Mi perfil»: cambie su contraseña y active la verificación en dos pasos para proteger su acceso.' };
+  const menuMovil = { sel: ['.btn-menu'], titulo: 'Menú', texto: 'Abra el menú para moverse entre las secciones de la plataforma.' };
+  const fin = { centro: true, titulo: '¡Listo!', texto: 'Cuando quiera repetir este recorrido, lo encuentra en «Ayuda». Que le vaya muy bien.' };
+  const intro = (texto) => ({ centro: true, titulo: nombre ? `¡Bienvenido, ${nombre}!` : '¡Bienvenido!', texto });
+
+  if (u.rol === 'admin') {
+    return [
+      intro('Este es el panel de administración de la plataforma. Le mostramos lo esencial en un minuto.'),
+      { sel: ['#tab-resumen'], titulo: 'Resumen', texto: 'Las cifras de toda la plataforma y lo que conviene atender hoy: servicio, respaldos, empresas sin director y más.' },
+      { sel: ['#tab-empresas'], titulo: 'Empresas', texto: 'Cree consultoras, genere el enlace de invitación de su director, desactívelas o restablezca el acceso de un director.' },
+      { sel: ['#tab-respaldos'], titulo: 'Respaldos', texto: 'Cree, verifique, descargue y restaure respaldos de la base de datos y los documentos.' },
+      { sel: ['#tab-servicio'], titulo: 'Servicio y errores', texto: 'El estado de la base de datos y los archivos, y los últimos errores con su código.' },
+      perfil, fin,
+    ];
+  }
+  if (u.rol === 'promotor') {
+    return [
+      intro('Aquí sigue el avance de sus trámites ambientales sin tener que llamar a nadie. Le mostramos cómo.'),
+      menuMovil,
+      { sel: nav('dashboard.html'), titulo: 'Panel', texto: 'Un resumen de sus proyectos y los avisos cuando un plazo está por vencer.' },
+      { sel: nav('expedientes.html'), titulo: 'Mis expedientes', texto: 'El estado de cada proyecto, sus plazos y los documentos recibidos. Puede verlos en lista, tablero, calendario y más.' },
+      { sel: nav('consulta-publica.html'), titulo: 'Consulta pública', texto: 'Busque cualquier proyecto publicado por su código y descargue su resumen.' },
+      buscar, perfil, fin,
+    ];
+  }
+  const comun = [
+    menuMovil,
+    { sel: nav('dashboard.html'), titulo: 'Panel', texto: u.rol === 'jefe'
+      ? 'Lo que necesita atención hoy: plazos por vencer, preparación de cada expediente y la carga de su equipo.'
+      : 'Lo que necesita atención hoy: sus plazos por vencer y qué expediente está menos preparado.' },
+    { sel: nav('expedientes.html'), titulo: u.rol === 'jefe' ? 'Expedientes' : 'Mis expedientes', texto: (u.rol === 'jefe'
+      ? 'Toda la cartera de la consultora' : 'Los expedientes que lleva') + ' en lista, tablero, tabla, cronograma o calendario. Filtre, agrupe y guarde sus vistas favoritas: aparecen en el menú.' },
+    { sel: nav('expediente-nuevo.html'), titulo: 'Nuevo expediente', texto: 'Elija la categoría del proyecto y la plataforma arma la lista de documentos que le corresponde.' },
+    { sel: nav('historial.html'), titulo: 'Historial', texto: 'Quién hizo cada acción y cuándo. Es de solo lectura, así que sirve como evidencia.' },
+  ];
+  if (u.rol === 'jefe') {
+    comun.push(
+      { sel: nav('equipo.html'), titulo: 'Equipo', texto: 'Invite a su gente con un enlace de un solo uso, restablezca contraseñas y reasigne expedientes cuando alguien se vaya.' },
+      { sel: nav('empresa.html'), titulo: 'Mi consultora', texto: 'La marca, los datos de la empresa, las políticas de seguridad, el uso, la exportación de todos sus datos y los accesos.' });
+  }
+  return [intro(u.rol === 'jefe' ? 'Esta es su consultora en la plataforma. Le mostramos lo esencial en un minuto.'
+    : 'Aquí lleva sus expedientes ambientales, con los plazos siempre a la vista. Le mostramos lo esencial.'), ...comun, buscar, perfil, fin];
+}
+
+function elementoVisible(selectores) {
+  for (const s of selectores || []) {
+    const el = document.querySelector(s);
+    if (!el) continue;
+    const r = el.getBoundingClientRect();
+    const dentro = r.width > 0 && r.height > 0 && r.right > 0 && r.left < window.innerWidth && r.bottom > 0 && r.top < window.innerHeight;
+    if (dentro && getComputedStyle(el).visibility !== 'hidden') return el;
+  }
+  return null;
+}
+
+// iniciarTour(): arranca el recorrido. Devuelve false si no hay nada que mostrar en esta pantalla.
+function iniciarTour() {
+  const u = getUsuario();
+  if (!u || document.querySelector('.tour-fondo')) return false;
+  const pasos = pasosDelTour(u).map(p => ({ ...p, el: p.centro ? null : elementoVisible(p.sel) })).filter(p => p.centro || p.el);
+  if (pasos.length < 3) return false;
+
+  const previo = document.activeElement;
+  const fondo = document.createElement('div');
+  fondo.className = 'tour-fondo';
+  fondo.innerHTML = '<div class="tour-foco" hidden></div>'
+    + '<div class="tour-tarjeta" role="dialog" aria-modal="true" aria-labelledby="tour-titulo" aria-describedby="tour-texto">'
+    + '<div class="tour-pasos" id="tour-pasos"></div><h3 id="tour-titulo"></h3><p id="tour-texto"></p>'
+    + '<div class="tour-acciones"><button type="button" class="tour-saltar">Saltar</button><span class="tour-botones">'
+    + '<button type="button" class="btn btn-ghost tour-ant">Anterior</button><button type="button" class="btn btn-brass tour-sig">Siguiente</button></span></div></div>';
+  document.body.appendChild(fondo);
+  const foco = fondo.querySelector('.tour-foco');
+  const tarjeta = fondo.querySelector('.tour-tarjeta');
+  const bAnt = fondo.querySelector('.tour-ant');
+  const bSig = fondo.querySelector('.tour-sig');
+  let i = 0;
+
+  const cerrar = () => {
+    document.removeEventListener('keydown', teclas, true);
+    window.removeEventListener('resize', colocar);
+    fondo.remove();
+    if (previo && previo.focus) previo.focus();
+  };
+
+  function colocar() {
+    const p = pasos[i];
+    const ancho = Math.min(360, window.innerWidth - 24);
+    tarjeta.style.width = ancho + 'px';
+    if (p.centro) {
+      foco.hidden = true;
+      fondo.classList.add('centrado');
+      tarjeta.style.left = Math.max(12, (window.innerWidth - ancho) / 2) + 'px';
+      tarjeta.style.top = Math.max(12, (window.innerHeight - tarjeta.offsetHeight) / 2) + 'px';
+      return;
+    }
+    fondo.classList.remove('centrado');
+    const r = p.el.getBoundingClientRect();
+    const margen = 6;
+    foco.hidden = false;
+    Object.assign(foco.style, { left: r.left - margen + 'px', top: r.top - margen + 'px', width: r.width + margen * 2 + 'px', height: r.height + margen * 2 + 'px' });
+    const alto = tarjeta.offsetHeight;
+    let left, top;
+    if (r.right + 16 + ancho <= window.innerWidth && r.left < 320) {          // a la derecha (menu lateral)
+      left = r.right + 16; top = r.top + r.height / 2 - alto / 2;
+    } else {                                                                      // debajo, o encima si no cabe
+      left = r.left + r.width / 2 - ancho / 2;
+      top = r.bottom + 14;
+      if (top + alto > window.innerHeight - 12) top = r.top - alto - 14;
+    }
+    tarjeta.style.left = Math.min(Math.max(12, left), window.innerWidth - ancho - 12) + 'px';
+    tarjeta.style.top = Math.min(Math.max(12, top), window.innerHeight - alto - 12) + 'px';
+  }
+
+  function mostrar() {
+    const p = pasos[i];
+    document.getElementById('tour-pasos').textContent = `${i + 1} de ${pasos.length}`;
+    document.getElementById('tour-titulo').textContent = p.titulo;
+    document.getElementById('tour-texto').textContent = p.texto;
+    bAnt.hidden = i === 0;
+    bSig.textContent = i === pasos.length - 1 ? 'Terminar' : 'Siguiente';
+    if (p.el) p.el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    colocar();
+    bSig.focus();
+  }
+  const siguiente = () => { if (i === pasos.length - 1) cerrar(); else { i += 1; mostrar(); } };
+  const anterior = () => { if (i > 0) { i -= 1; mostrar(); } };
+
+  function teclas(ev) {
+    if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); cerrar(); }
+    else if (ev.key === 'ArrowRight') { ev.preventDefault(); siguiente(); }
+    else if (ev.key === 'ArrowLeft') { ev.preventDefault(); anterior(); }
+    else if (ev.key === 'Tab') {
+      const items = [...tarjeta.querySelectorAll('button:not([hidden])')];
+      const primero = items[0], ultimo = items[items.length - 1];
+      if (ev.shiftKey && document.activeElement === primero) { ev.preventDefault(); ultimo.focus(); }
+      else if (!ev.shiftKey && document.activeElement === ultimo) { ev.preventDefault(); primero.focus(); }
+    }
+  }
+  bSig.addEventListener('click', siguiente);
+  bAnt.addEventListener('click', anterior);
+  fondo.querySelector('.tour-saltar').addEventListener('click', cerrar);
+  document.addEventListener('keydown', teclas, true);
+  window.addEventListener('resize', colocar);
+  mostrar();
+  return true;
+}
+
+// Despues de los terminos: si la cuenta nunca vio el recorrido, se muestra y se anota YA como visto
+// (una sola vez; si lo cierra a medias, puede repetirlo desde "Ayuda").
+function ofrecerTour(sesionDatos) {
+  if (!sesionDatos || !sesionDatos.tour_pendiente) { sessionStorage.setItem('tour_ok', '1'); return; }
+  setTimeout(async () => {
+    if (!iniciarTour()) return;           // pantalla sin menu (o muy pequeña): se intenta en la siguiente
+    sessionStorage.setItem('tour_ok', '1');
+    try { await apiFetch('/cuenta/tour', { method: 'POST', body: '{}' }); } catch (e) { /* se reintentara */ }
+  }, 900);
 }

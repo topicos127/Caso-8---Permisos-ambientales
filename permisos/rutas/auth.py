@@ -155,10 +155,14 @@ def sesion_actual():
         if _esquema["terminos"]:
             cur.execute("SELECT terminos_aceptados_en FROM usuarios WHERE id=%s", (u["id"],))
             pendientes = cur.fetchone()["terminos_aceptados_en"] is None
+        tour_pendiente = False
+        if _esquema["tour"]:
+            cur.execute("SELECT tour_visto_en FROM usuarios WHERE id=%s", (u["id"],))
+            tour_pendiente = cur.fetchone()["tour_visto_en"] is None
     return jsonify({"email": u["email"], "rol": u["rol"], "nombre": u["nombre"],
                     "debe_cambiar_clave": u["debe_cambiar_clave"], "empresa": empresa,
                     "debe_activar_2fa": u.get("debe_activar_2fa", False),
-                    "terminos_pendientes": pendientes}), 200
+                    "terminos_pendientes": pendientes, "tour_pendiente": tour_pendiente}), 200
 
 
 @bp.route("/registro", methods=["POST"])

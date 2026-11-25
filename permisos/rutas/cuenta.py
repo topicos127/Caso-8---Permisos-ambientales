@@ -183,6 +183,17 @@ def aceptar_terminos():
     return jsonify({"ok": True, "mensaje": "Gracias. Quedó registrada su aceptación."}), 200
 
 
+@bp.route("/cuenta/tour", methods=["POST"])
+@requiere_login
+def tour_visto():
+    """Marca el recorrido de bienvenida como visto. Solo cuenta la primera vez: despues no cambia nada."""
+    if _esquema["tour"]:
+        with cursor() as cur:
+            cur.execute("UPDATE usuarios SET tour_visto_en=%s WHERE id=%s AND tour_visto_en IS NULL",
+                        (ahora(), g.usuario["id"]))
+    return jsonify({"ok": True}), 200
+
+
 @bp.route("/recuperar", methods=["POST"])
 def recuperar():
     """Fija una contrasena nueva con un codigo de recuperacion (sin correo). Cada codigo vale una vez."""

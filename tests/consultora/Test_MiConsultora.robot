@@ -213,6 +213,34 @@ ${CLAVE}          Clave12345
     ${r}=    GET On Session    tdir2    /organizacion/directores
     Should Be True    ${r.json()['soy_titular']}
 
+10 - El recorrido de bienvenida se ofrece una sola vez por cuenta
+    ${s}=    Sufijo Unico
+    Crear Empresa Con Jefe    ${s}
+    # primera vez: pendiente
+    Iniciar Sesion    primera    jefe.pol.${s}@ejemplo.com    ${CLAVE}
+    ${r}=    GET On Session    primera    /sesion
+    Should Be True    ${r.json()['tour_pendiente']}
+    # se anota como visto (y repetirlo no cambia nada)
+    ${r}=    POST On Session    primera    /cuenta/tour    json=${EMPTY}
+    Status Should Be    200    ${r}
+    POST On Session    primera    /cuenta/tour    json=${EMPTY}
+    ${r}=    GET On Session    primera    /sesion
+    Should Not Be True    ${r.json()['tour_pendiente']}
+    # otra sesion nueva (otro equipo): ya no sale
+    Iniciar Sesion    segunda    jefe.pol.${s}@ejemplo.com    ${CLAVE}
+    ${r}=    GET On Session    segunda    /sesion
+    Should Not Be True    ${r.json()['tour_pendiente']}
+    # una cuenta distinta de la misma empresa si lo ve en su primera vez
+    ${token}=    Invitar Como    primera    nueva.${s}@ejemplo.com
+    Registrar Con Invitacion    nueva.${s}@ejemplo.com    ${token}
+    Iniciar Sesion    nueva    nueva.${s}@ejemplo.com    ${CLAVE}
+    ${r}=    GET On Session    nueva    /sesion
+    Should Be True    ${r.json()['tour_pendiente']}
+    # sin sesion no se puede marcar
+    Create Session    anonimo    ${BASE_URL}
+    ${r}=    POST On Session    anonimo    /cuenta/tour    json=${EMPTY}    expected_status=any
+    Status Should Be    401    ${r}
+
 *** Keywords ***
 Crear Empresa Con Jefe
     [Arguments]    ${s}

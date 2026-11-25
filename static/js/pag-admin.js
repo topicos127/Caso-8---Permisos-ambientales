@@ -42,6 +42,7 @@ form.addEventListener('submit', async (e) => {
     aviso(d.mensaje, d.acceso === true);
     if (d.acceso === true) {
       sessionStorage.removeItem('terminos_ok');
+      sessionStorage.removeItem('tour_ok');
       sessionStorage.setItem('usuario', JSON.stringify({
         email: d.email, rol: d.rol, nombre: d.nombre, empresa: null,
         debe_cambiar_clave: d.debe_cambiar_clave === true,

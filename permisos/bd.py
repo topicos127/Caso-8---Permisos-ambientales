@@ -223,7 +223,7 @@ DDL_EMPRESAS = [
 # vencimiento de cada documento y el aviso que elige cada usuario (HU-05).
 _esquema = {"cambio_clave": False, "activo": False, "sometimiento": False, "vencimiento": False,
             "aviso": False, "org": False, "totp": False, "sesion": False, "terminos": False,
-            "org_perfil": False, "org_politica": False, "titular": False}
+            "org_perfil": False, "org_politica": False, "titular": False, "tour": False}
 _columnas_ok = set()
 
 # (tabla, columna, definicion, clave en _esquema)
@@ -241,6 +241,8 @@ COLUMNAS_SPRINT10 = (
     ("usuarios", "sesion_version", "INT NOT NULL DEFAULT 0", "sesion"),
     ("usuarios", "terminos_aceptados_en", "DATETIME NULL", "terminos"),
     # Mi consultora: datos de la empresa, politica de seguridad y titular
+    # Recorrido de bienvenida: se muestra una sola vez por cuenta
+    ("usuarios", "tour_visto_en", "DATETIME NULL", "tour"),
     ("organizaciones", "razon_social", "VARCHAR(200) NULL", "org_razon"),
     ("organizaciones", "ruc", "VARCHAR(40) NULL", "org_ruc"),
     ("organizaciones", "direccion", "VARCHAR(300) NULL", "org_direccion"),

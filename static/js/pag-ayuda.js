@@ -82,6 +82,11 @@ if (usuario) {
         <h3>Primeros pasos</h3>
         <ol class="ayuda-lista">${pasos.map(([t, d]) => `<li><b>${esc(t)}.</b> ${esc(d)}</li>`).join('')}</ol>
       </div>
+      <div class="panel">
+        <h3>Recorrido de bienvenida</h3>
+        <p class="panel-note">Una vuelta rápida por lo esencial de la plataforma. Solo le salió la primera vez que entró; aquí puede repetirlo cuando quiera.</p>
+        <button type="button" class="btn btn-brass" id="btn-tour">Ver el recorrido</button>
+      </div>
       ${atajos}
       <div class="panel">
         <h3>Su cuenta</h3>
@@ -98,3 +103,8 @@ if (usuario) {
       ${preguntas.map(([q, , r]) => `<details class="ayuda-pregunta"><summary>${esc(q)}</summary><p>${esc(r)}</p></details>`).join('')}
     </div>`;
 }
+
+const botonTour = document.getElementById('btn-tour');
+if (botonTour) botonTour.addEventListener('click', () => {
+  if (!iniciarTour()) mostrarToast('Abra el panel para ver el recorrido: aquí no hay nada que señalar.', 'error');
+});

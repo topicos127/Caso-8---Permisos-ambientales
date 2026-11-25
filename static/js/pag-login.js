@@ -53,6 +53,7 @@ form.addEventListener('submit', async (e) => {
     showMessage(data.mensaje, data.acceso === true);
     if (data.acceso === true) {
       sessionStorage.removeItem('terminos_ok');
+      sessionStorage.removeItem('tour_ok');
       sessionStorage.setItem('usuario', JSON.stringify({
         email: data.email || email,
         rol: data.rol,

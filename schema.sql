@@ -51,6 +51,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
     -- Sube con cada cambio de contrasena o "cerrar sesiones": invalida las sesiones abiertas.
     sesion_version INT NOT NULL DEFAULT 0,
     terminos_aceptados_en DATETIME NULL,
+    -- Recorrido de bienvenida: se muestra una sola vez por cuenta.
+    tour_visto_en DATETIME NULL,
     CONSTRAINT fk_usuarios_organizacion FOREIGN KEY (organizacion_id) REFERENCES organizaciones (id)
 );
 
