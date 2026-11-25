@@ -167,6 +167,16 @@ con `Ctrl+K`, exportación de la cartera a Excel y del historial a CSV (sin inye
 propia por empresa (nombre, color y logo, que también salen en el PDF y en la consulta pública), guía
 de primeros pasos en el panel y página de ayuda.
 
+**Mi consultora (director de proyectos).** Siete pestañas: *Marca* (nombre, color y logo), *Datos de la empresa*
+(razón social, RUC, dirección, contacto y pie; salen en el PDF y, el contacto, en la consulta pública),
+*Políticas* (dos pasos obligatorios para el equipo, con la salvaguarda de que el director active primero los suyos;
+cierre por inactividad propio de 15 a 120 minutos y aviso de vencimiento por defecto), *Uso*, *Mis datos* (ZIP con
+cartera, historial, comentarios, equipo y todos los documentos con su índice SHA-256), *Accesos* (registro de inicios
+de sesión y cambios, sin contenido de expedientes) y *Titularidad* (el titular invita a otros directores, asciende o
+degrada roles y transfiere la cuenta). No hay feriados propios por empresa a propósito: los plazos en días hábiles
+dependen de los feriados nacionales y cambiarlos distorsionaría el vencimiento legal. Planes y facturación quedan
+para más adelante.
+
 **Qué no cubre (a propósito).** No hay dominio propio ni avisos por correo. Los textos de términos y
 privacidad son una base de trabajo y **deben revisarse con asesoría legal** antes de su uso comercial.
 La firma S3 se verificó contra botocore (la implementación de referencia de AWS) y contra un servicio S3

@@ -2242,3 +2242,4 @@ html, body {
   .herramientas .busqueda { flex: 1 1 100%; max-width: none; }
 }
 @media (max-width: 900px) { .l-header { position: static; } }
+.content > section > .content-lede:first-child { margin-top: 16px; }

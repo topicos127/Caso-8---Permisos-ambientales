@@ -1,13 +1,14 @@
 // Si ya hay sesión, redirigir directo a la pantalla de inicio de su rol.
-function destinoDe(rol, cambiarClave) {
+function destinoDe(rol, cambiarClave, activar2fa) {
   if (cambiarClave) return 'cuenta.html?obligatorio=1';
+  if (activar2fa) return 'cuenta.html?obligatorio2fa=1';
   return rol === 'admin' ? '/admin/panel' : 'dashboard.html';
 }
 
 try {
   const u = JSON.parse(sessionStorage.getItem('usuario') || 'null');
   if (u && u.email) {
-    window.location.href = destinoDe(u.rol, false);
+    window.location.href = destinoDe(u.rol, false, u.debe_activar_2fa === true);
   }
 } catch (e) { /* ignorar */ }
 
@@ -57,10 +58,11 @@ form.addEventListener('submit', async (e) => {
         rol: data.rol,
         nombre: data.nombre,
         empresa: data.empresa || null,
-        debe_cambiar_clave: data.debe_cambiar_clave === true
+        debe_cambiar_clave: data.debe_cambiar_clave === true,
+        debe_activar_2fa: data.debe_activar_2fa === true
       }));
       // Con una contraseña temporal, lo primero es cambiarla.
-      setTimeout(() => window.location.href = destinoDe(data.rol, data.debe_cambiar_clave === true), 700);
+      setTimeout(() => window.location.href = destinoDe(data.rol, data.debe_cambiar_clave === true, data.debe_activar_2fa === true), 700);
     }
   } catch (err) {
     showMessage('No se pudo conectar con el servidor.', false);

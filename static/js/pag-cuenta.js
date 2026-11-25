@@ -14,6 +14,10 @@ if (usuario) {
   pintarCabecera(usuario.nombre, usuario.email, usuario.rol);
 
   const obligatorio = usuario.debe_cambiar_clave === true;
+  if (usuario.debe_activar_2fa === true) {
+    document.getElementById('aviso-2fa').style.display = 'block';
+    document.querySelectorAll('.rail nav a, .rail-espacios').forEach(a => { a.style.display = 'none'; });
+  }
   if (obligatorio) {
     document.getElementById('aviso-obligatorio').style.display = 'block';
     // Sin la contraseña nueva no hay nada más que hacer: se oculta el menú.

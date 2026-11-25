@@ -40,7 +40,7 @@
   }
 
   // Muestra códigos de recuperación UNA sola vez; no se cierra hasta que la persona confirme que los guardó.
-  function mostrarCodigos(codigos, titulo) {
+  function mostrarCodigos(codigos, titulo, alCerrar) {
     const texto = codigos.join('\n');
     const modal = abrirModal({
       titulo,
@@ -61,7 +61,7 @@
             return false;
           },
         },
-        { texto: 'Ya los guardé', clase: 'btn btn-brass' },
+        { texto: 'Ya los guardé', clase: 'btn btn-brass', alHacerClic: () => { if (alCerrar) alCerrar(); } },
       ],
     });
     return modal;
@@ -137,7 +137,9 @@
       if (!a.ok) return;
       mostrarToast('Verificación en dos pasos activada.', 'exito');
       await cargar();
-      mostrarCodigos(a.codigos, 'Sus códigos de recuperación');
+      const eraObligatorio = usuario.debe_activar_2fa === true;
+      if (eraObligatorio) { usuario.debe_activar_2fa = false; sessionStorage.setItem('usuario', JSON.stringify(usuario)); }
+      mostrarCodigos(a.codigos, 'Sus códigos de recuperación', eraObligatorio ? () => { window.location.href = 'dashboard.html'; } : null);
     });
   }
 

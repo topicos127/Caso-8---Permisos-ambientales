@@ -33,6 +33,11 @@ function requireAuth() {
     window.location.href = 'cuenta.html?obligatorio=1';
     return null;
   }
+  // La consultora exige dos pasos y esta persona aun no los activo: solo puede ir a activarlos.
+  if (u.debe_activar_2fa && !window.location.pathname.endsWith('cuenta.html')) {
+    window.location.href = 'cuenta.html?obligatorio2fa=1';
+    return null;
+  }
   if (u.rol === 'admin' && !PAGINAS_DEL_ADMIN.some(p => window.location.pathname.endsWith(p))) {
     window.location.href = '/admin/panel';
     return null;
@@ -153,10 +158,17 @@ async function apiFetch(url, opciones = {}) {
     throw new Error('No autenticado');
   }
   const cuerpo = await r.json();
+  if (r.status === 403 && cuerpo.activar_2fa_obligatorio) {
+    const u2 = getUsuario();
+    if (u2) { u2.debe_activar_2fa = true; sessionStorage.setItem('usuario', JSON.stringify(u2)); }
+    // Ya en "Mi perfil" no se recarga (seria un bucle): la peticion bloqueada simplemente falla.
+    if (!window.location.pathname.endsWith('cuenta.html')) window.location.href = 'cuenta.html?obligatorio2fa=1';
+    throw new Error('Dos pasos obligatorios');
+  }
   if (r.status === 403 && cuerpo.cambio_clave_obligatorio) {
     const u = getUsuario();
     if (u) { u.debe_cambiar_clave = true; sessionStorage.setItem('usuario', JSON.stringify(u)); }
-    window.location.href = 'cuenta.html?obligatorio=1';
+    if (!window.location.pathname.endsWith('cuenta.html')) window.location.href = 'cuenta.html?obligatorio=1';
     throw new Error('Cambio de contraseña obligatorio');
   }
   return cuerpo;
@@ -406,7 +418,8 @@ function colorDe(texto) {
 
 // Las vistas guardadas de la persona, como atajos en el menu (abren Expedientes con esa vista).
 async function pintarEspacios(rail, u) {
-  if (!u || u.rol === 'admin' || !rail.querySelector('nav')) return;
+  // Con una obligacion pendiente (contraseña temporal, dos pasos) el servidor solo deja ir a "Mi perfil".
+  if (!u || u.rol === 'admin' || u.debe_cambiar_clave || u.debe_activar_2fa || !rail.querySelector('nav')) return;
   try {
     const d = await apiFetch('/vistas');
     const vistas = d.vistas || [];
