@@ -385,5 +385,89 @@ class AvisosDePlazo(unittest.TestCase):
         self.assertTrue(alertas[0]["vencimiento_real"])
 
 
+# ------------------------------------------- calendario de plazos (.ics) ----
+
+class CalendarioDePlazos(unittest.TestCase):
+    from datetime import datetime as _dt
+    HOY = date(2026, 11, 24)
+    AHORA = _dt(2026, 11, 24, 23, 0, 0)
+
+    def exp(self, estado="evaluacion", sometido=date(2026, 11, 2)):
+        return {"codigo": "SP-A8-2026-104", "proyecto": "Puerto Seco Colón, fase 1", "categoria": "III",
+                "estado": estado, "fecha_ingreso": date(2026, 10, 1), "fecha_sometimiento": sometido}
+
+    def ics(self, exp, docs=()):
+        from permisos.calendario import generar_ics
+        return generar_ics(exp, calcular_semaforo(exp, self.HOY), list(docs), self.HOY, self.AHORA)
+
+    def test_estructura_rfc_5545(self):
+        texto = self.ics(self.exp())
+        self.assertTrue(texto.startswith("BEGIN:VCALENDAR\r\nVERSION:2.0\r\n"))
+        self.assertTrue(texto.endswith("END:VCALENDAR\r\n"))
+        self.assertNotIn("\n", texto.replace("\r\n", ""))  # solo CRLF
+        for linea in texto.split("\r\n"):
+            self.assertLessEqual(len(linea.encode("utf-8")), 75, linea)
+        self.assertIn("DTSTAMP:20261124T230000Z", texto)
+        self.assertEqual(texto.count("BEGIN:VEVENT"), texto.count("END:VEVENT"))
+
+    def test_limite_legal_en_dias_habiles(self):
+        limite = sumar_dias_habiles(date(2026, 11, 2), 80)
+        texto = self.ics(self.exp())
+        self.assertIn(f"DTSTART;VALUE=DATE:{limite.strftime('%Y%m%d')}", texto)
+        self.assertIn("UID:SP-A8-2026-104-plazo@permisos-ambientales", texto)
+        self.assertIn("plazo de MiAmbiente", texto.replace("\r\n ", ""))
+        self.assertIn("Colón\\, fase 1", texto.replace("\r\n ", ""))  # la coma va escapada
+
+    def test_resuelto_sin_evento_de_plazo(self):
+        self.assertNotIn("-plazo@", self.ics(self.exp(estado="aprobado")))
+
+    def test_documentos_por_vencer_y_vencidos(self):
+        docs = [{"carpeta": "Anexos Legales", "estado": "recibido", "fecha_subida": date(2026, 11, 1),
+                 "fecha_vencimiento": date(2026, 12, 15)},
+                {"carpeta": "Línea Base", "estado": "recibido", "fecha_subida": date(2025, 1, 1)},  # ya vencio
+                {"carpeta": "Cartografía", "estado": "pendiente"}]
+        texto = self.ics(self.exp(), docs).replace("\r\n ", "")
+        self.assertIn("UID:SP-A8-2026-104-doc-anexos-legales@permisos-ambientales", texto)
+        self.assertIn("DTSTART;VALUE=DATE:20261215", texto)
+        self.assertNotIn("doc-línea-base", texto)
+        self.assertNotIn("Cartografía", texto)
+
+    def test_plegado_no_parte_caracteres(self):
+        from permisos.calendario import plegar
+        linea = "DESCRIPTION:" + "ñ" * 80
+        plegada = plegar(linea)
+        for parte in plegada.split("\r\n"):
+            self.assertLessEqual(len(parte.encode("utf-8")), 75)
+        self.assertEqual(plegada.replace("\r\n ", ""), linea)
+
+
+class RutaCalendario(unittest.TestCase):
+
+    def respuestas(self, promotor_email=None):
+        exp = expediente("pendiente")
+        exp["promotor_email"] = promotor_email
+        return [("FROM expedientes WHERE codigo", "uno", exp), ("FROM documentos", "todos", [])]
+
+    def test_descarga_con_permiso(self):
+        from permisos.rutas import expedientes as rutas_expedientes
+        sesion("jefe")
+        usar(rutas_expedientes, self.respuestas())
+        r = app.test_client().get("/expedientes/SP-S10/plazos.ics")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.headers["Content-Type"].startswith("text/calendar"))
+        self.assertIn("SP-S10_plazos.ics", r.headers["Content-Disposition"])
+        self.assertIn(b"BEGIN:VCALENDAR", r.data)
+
+    def test_promotor_ajeno_no_descarga(self):
+        from permisos.rutas import expedientes as rutas_expedientes
+        sesion("promotor")
+        usar(rutas_expedientes, self.respuestas(promotor_email="otro@ejemplo.com"))
+        self.assertEqual(app.test_client().get("/expedientes/SP-S10/plazos.ics").status_code, 403)
+
+    def test_sin_sesion(self):
+        seguridad.usuario_sesion = lambda: None
+        self.assertEqual(app.test_client().get("/expedientes/SP-S10/plazos.ics").status_code, 401)
+
+
 if __name__ == "__main__":
     unittest.main()

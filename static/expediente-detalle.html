@@ -217,6 +217,12 @@
                 <span>Plazo máximo</span>
               </div>
               <p class="panel-note" id="plazo-nota" style="margin-top:10px;"></p>
+              <!-- Innovacion del Sprint 10: el limite legal y los vencimientos en su calendario. -->
+              <a id="link-calendario" class="btn btn-ghost" style="width:100%;" download>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                Agregar a mi calendario (.ics)
+              </a>
+              <p class="small" style="margin-top:8px;">Para Google Calendar u Outlook: el límite legal y el vencimiento de cada documento, con recordatorio.</p>
             </div>
           </div>
           <div class="panel" id="panel-acceso" style="display:none;">
@@ -765,6 +771,9 @@ if (usuario) {
       document.getElementById('plazo-restantes').textContent = alertas.dias_restantes_legales + unidad;
     }
     document.getElementById('plazo-desde').textContent = habiles ? 'Sometimiento' : 'Ingreso';
+    const linkCal = document.getElementById('link-calendario');
+    linkCal.href = `/expedientes/${encodeURIComponent(codigo)}/plazos.ics`;
+    linkCal.setAttribute('download', `${codigo}_plazos.ics`);
     if (nota) {
       // HU-08 (Sprint 10): el plazo de MiAmbiente corre en días hábiles desde el sometimiento.
       nota.textContent = resuelto

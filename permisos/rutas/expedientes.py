@@ -1,15 +1,17 @@
 """Listado, creacion y detalle de expedientes; aprobaciones y plazos (HU-07);
 acceso publico (HU-09) y cuenta del promotor (Sprint 9)."""
 import secrets
+from datetime import datetime, timezone
 
 import pymysql
-from flask import Blueprint, g, jsonify, request
+from flask import Blueprint, Response, g, jsonify, request
 from werkzeug.security import generate_password_hash
 
 from ..bd import (SQL_ULTIMA_VERSION, _esquema, cargar_expediente, col_sometimiento, col_vencimiento, cursor,
                   documentos_de, registrar_historial)
 from ..config import (ACCION_ACCESO, ACCION_CREAR, ACCION_CUENTA_PROMOTOR, CATEGORIAS_DOCS, EMAIL_RE,
                       ROLES_INTERNOS)
+from ..calendario import generar_ics
 from ..errores import ApiError
 from ..reglas import (calcular_ipe, calcular_semaforo, calcular_verificacion, hoy, problema_de_password,
                       vencimiento_documento)
@@ -271,3 +273,24 @@ def obtener_alertas(codigo):
         exp = cargar_expediente(cur, codigo)
         exigir_lectura(g.usuario, exp)
     return jsonify(calcular_semaforo(exp)), 200
+
+
+@bp.route("/expedientes/<codigo>/plazos.ics", methods=["GET"])
+@requiere_login
+def calendario_de_plazos(codigo):
+    """Innovacion del Sprint 10: el limite legal y los vencimientos de los
+    documentos en un archivo .ics para Google Calendar u Outlook. Solo con
+    sesion y permiso de lectura sobre el expediente (consultor, jefe o su
+    promotor)."""
+    with cursor() as cur:
+        exp = cargar_expediente(cur, codigo)
+        exigir_lectura(g.usuario, exp)
+        cur.execute(f"SELECT carpeta, estado, fecha_subida, {col_vencimiento('')} FROM documentos "
+                    "WHERE expediente_id=%s ORDER BY id", (exp["id"],))
+        docs = cur.fetchall()
+    dia = hoy()
+    ics = generar_ics(exp, calcular_semaforo(exp, dia), docs, dia, datetime.now(timezone.utc))
+    return Response(ics, mimetype="text/calendar",
+                    headers={"Content-Type": "text/calendar; charset=utf-8",
+                             "Content-Disposition": f'attachment; filename="{exp["codigo"]}_plazos.ics"'})
+

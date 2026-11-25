@@ -194,6 +194,30 @@ ${MOTIVO}                Revision interna Robot Sprint 10
     POST On Session    consultor    /expedientes/${COD_CARTO}/documentos/Cartograf%C3%ADa/subir
     ...    files=${archivos}    expected_status=200
 
+# ---------------- Innovacion: calendario de plazos (.ics) ----------------
+
+17 - Calendario Descarga El Limite Legal Y Los Vencimientos
+    Iniciar Sesion Como Consultor
+    ${r}=    GET On Session    consultor    /expedientes/${COD_VENCE}/plazos.ics    expected_status=200
+    Should Start With    ${r.headers['Content-Type']}    text/calendar
+    Should Contain    ${r.headers['Content-Disposition']}    ${COD_VENCE}_plazos.ics
+    ${texto}=    Evaluate    $r.content.decode('utf-8').replace('\\r\\n ', '')
+    Should Start With    ${texto}    BEGIN:VCALENDAR
+    Should Contain    ${texto}    UID:${COD_VENCE}-plazo@permisos-ambientales
+    Should Contain    ${texto}    UID:${COD_VENCE}-doc-anexos-legales@permisos-ambientales
+    Should Contain    ${texto}    BEGIN:VALARM
+
+18 - Calendario Solo Con Permiso Sobre El Expediente
+    Iniciar Sesion Como Promotor
+    GET On Session    promotor    /expedientes/${COD_VENCE}/plazos.ics    expected_status=403
+    Create Session    anonimo    ${BASE_URL}
+    GET On Session    anonimo    /expedientes/${COD_VENCE}/plazos.ics    expected_status=401
+
+19 - Calendario De Un Expediente Resuelto No Trae El Limite Legal
+    Iniciar Sesion Como Consultor
+    ${r}=    GET On Session    consultor    /expedientes/${COD_FLUJO}/plazos.ics    expected_status=200
+    Should Not Contain    ${r.text}    ${COD_FLUJO}-plazo@
+
 *** Keywords ***
 Iniciar Sesion Como Jefe
     [Arguments]    ${alias}=jefe
