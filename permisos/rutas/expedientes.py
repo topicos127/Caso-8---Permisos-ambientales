@@ -55,17 +55,30 @@ def listar_expedientes():
                         {where} ORDER BY e.fecha_ingreso DESC, e.id DESC {limite}""",
                     params if por_ipe else params + [per_page, offset])
         filas = cur.fetchall()
-        docs = documentos_de(cur, [f["id"] for f in filas]) if interno else {}
+        ids = [f["id"] for f in filas]
+        docs = documentos_de(cur, ids) if interno else {}
+        comentarios = {}
+        if interno and ids:
+            marcas = ", ".join(["%s"] * len(ids))
+            cur.execute(f"SELECT expediente_id, COUNT(*) AS n FROM comentarios WHERE expediente_id IN ({marcas}) "
+                        "GROUP BY expediente_id", ids)
+            comentarios = {r["expediente_id"]: int(r["n"]) for r in cur.fetchall()}
 
     for f in filas:
         # HU-13: el jefe ve los plazos de cada expediente en la lista.
         sem = calcular_semaforo(f)
         f["plazo"] = {"estado_semaforo": sem["estado_semaforo"],
                       "dias_restantes_legales": sem["dias_restantes_legales"],
-                      "limite_dias": sem["limite_dias"]}
+                      "limite_dias": sem["limite_dias"],
+                      # Para el cronograma y el calendario: cuando empieza y cuando vence el plazo.
+                      "fecha_inicio": sem.get("fecha_inicio"), "fecha_limite": sem.get("fecha_limite"),
+                      "base_plazo": sem.get("base_plazo")}
         if interno:
             r = calcular_ipe(f, docs[f["id"]])
             f["ipe"] = {"valor": r["ipe"], "banda": r["banda"], "banda_texto": r["banda_texto"]}
+            f["documentos"] = {"recibidos": sum(1 for d in docs[f["id"]] if d["estado"] == "recibido"),
+                               "total": len(docs[f["id"]])}
+            f["comentarios"] = comentarios.get(f["id"], 0)
     if por_ipe:
         # Menor a mayor: primero lo que mas necesita al equipo. Los resueltos al final.
         filas.sort(key=lambda f: (f["estado"] in ("aprobado", "rechazado"), f["ipe"]["valor"], f["codigo"]))

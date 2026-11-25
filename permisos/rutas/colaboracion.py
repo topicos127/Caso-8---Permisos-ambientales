@@ -24,7 +24,7 @@ ETIQUETA_ESTADO = {"pendiente": "Pendiente", "aprobado_interno": "Aprobado inter
                    "evaluacion": "En evaluación", "aprobado": "Aprobado", "rechazado": "Rechazado"}
 ETIQUETA_SEMAFORO = {"en_plazo": "En plazo", "por_vencer": "Por vencer", "vencido": "Vencido", "resuelto": "Resuelto"}
 MAX_VISTAS = 12
-FILTROS_VISTA = {"q", "estado", "categoria", "orden"}
+FILTROS_VISTA = {"q", "estado", "categoria", "orden", "vista", "grupo", "responsable"}
 
 
 def _solo_internos():

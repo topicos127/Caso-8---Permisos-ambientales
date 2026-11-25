@@ -66,51 +66,62 @@
 
     <div class="content">
       <div class="content-head">
-        <h2 id="titulo-lista">Mis expedientes</h2>
+        <div>
+          <h2 id="titulo-lista">Mis expedientes</h2>
+          <p class="sub" id="lede-lista"></p>
+        </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <a href="/exportar/cartera.xlsx" class="btn btn-ghost" id="btnExportar" style="border:1.5px solid var(--line);" download>Exportar Excel</a>
+          <a href="/exportar/cartera.xlsx" class="btn btn-ghost" id="btnExportar" download>Exportar Excel</a>
           <a href="expediente-nuevo.html" class="btn btn-brass" id="btnNuevo">+ Nuevo expediente</a>
         </div>
       </div>
-      <div class="panel" style="padding: 15px; margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
-        <input type="text" id="buscador" placeholder="Buscar por código o proyecto..." style="flex: 1; padding: 10px; border: 1px solid var(--line); border-radius: 4px; font-family: inherit;">
-        
-        <select id="filtro-estado" style="padding: 10px; border: 1px solid var(--line); border-radius: 4px; font-family: inherit;">
-          <option value="">Todos los estados</option>
+
+      <div class="vista-tabs" role="tablist" aria-label="Vistas de los expedientes" id="tabs-vistas"></div>
+
+      <div class="herramientas" id="herramientas">
+        <div class="busqueda">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M19.5 19.5 15 15"/></svg>
+          <input type="search" id="buscador" placeholder="Buscar por código, proyecto o cliente" aria-label="Buscar expedientes">
+        </div>
+        <select id="filtro-estado" aria-label="Estado">
+          <option value="">Estado: todos</option>
           <option value="pendiente">Pendiente de subsanación</option>
           <option value="aprobado_interno" id="opt-aprobado-interno">Aprobado internamente</option>
           <option value="evaluacion">En evaluación</option>
           <option value="aprobado">Aprobado</option>
           <option value="rechazado">Rechazado</option>
         </select>
-
-        <select id="orden" aria-label="Ordenar" style="padding: 10px; border: 1px solid var(--line); border-radius: 4px; font-family: inherit; display:none;">
-          <option value="">Más recientes primero</option>
-          <option value="ipe">IPE: los menos preparados primero</option>
+        <select id="filtro-categoria" aria-label="Categoría">
+          <option value="">Categoría: todas</option>
+          <option value="I">Categoría I</option>
+          <option value="II">Categoría II</option>
+          <option value="III">Categoría III</option>
         </select>
-        <button type="button" class="btn btn-ghost" id="btn-guardar-vista" style="border:1.5px solid var(--line);" title="Guarda los filtros actuales para usarlos con un clic">Guardar vista</button>
+        <select id="filtro-responsable" aria-label="Responsable" hidden></select>
+        <span id="control-agrupar" class="etiqueta-sel">
+          <select id="grupo" aria-label="Agrupar por">
+            <option value="">Agrupar: estado</option>
+            <option value="responsable" class="solo-interno">Agrupar: responsable</option>
+            <option value="categoria">Agrupar: categoría</option>
+            <option value="ninguno">Sin agrupar</option>
+          </select>
+        </span>
+        <select id="orden" aria-label="Ordenar" class="solo-interno">
+          <option value="">Orden: recientes</option>
+          <option value="plazo">Orden: por plazo</option>
+          <option value="ipe">Orden: por IPE</option>
+        </select>
+        <details id="menu-columnas" class="menu-columnas" hidden>
+          <summary class="btn btn-ghost">Columnas</summary>
+          <div class="menu-columnas-lista" id="lista-columnas"></div>
+        </details>
+        <span class="separador"></span>
+        <button type="button" class="btn btn-ghost" id="btn-guardar-vista" title="Guarda la vista actual para abrirla con un clic desde el menú">Guardar vista</button>
       </div>
       <div class="vistas" id="vistas" aria-label="Vistas guardadas" hidden></div>
-      <p class="content-lede" id="lede-lista">Expedientes que gestionas actualmente, con su categoría de impacto y estado de trámite.</p>
 
-      <div class="panel" style="padding:0; overflow-x:auto;">
-        <table class="ledger compacta tarjetas" style="margin:0; width:100%; table-layout:auto;">
-          <thead>
-            <tr>
-              <th style="padding-left:24px; white-space:nowrap;">Código</th>
-              <th>Proyecto</th>
-              <th>Cat.</th>
-              <th class="col-consultor" style="display:none;">Consultor</th>
-              <th style="white-space:nowrap;">Estado</th>
-              <th style="white-space:nowrap;">Plazo</th>
-              <th class="col-ipe" style="white-space:nowrap; display:none;" title="Índice de Preparación del Expediente (0 a 100)">IPE</th>
-              <th style="white-space:nowrap;">Fecha</th>
-              <th style="white-space:nowrap;"></th>
-            </tr>
-          </thead>
-          <tbody id="tabla-expedientes"></tbody>
-        </table>
-      </div>
+      <div id="area-vista" aria-live="polite"></div>
+      <p class="panel-note" id="pie-lista" style="margin-top:12px;"></p>
     </div>
   </div>
 </div>

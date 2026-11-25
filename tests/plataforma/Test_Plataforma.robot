@@ -452,6 +452,33 @@ ${CLAVE}          Clave12345
     ${r}=    DELETE On Session    consultor    /vistas/${id}
     Status Should Be    200    ${r}
 
+28b - El listado trae lo que necesitan el tablero, el cronograma y el calendario
+    Iniciar Sesion Como Consultor    consultor
+    ${r}=    GET On Session    consultor    url=/expedientes?per_page=100
+    ${e}=    Set Variable    ${r.json()['expedientes'][0]}
+    Dictionary Should Contain Key    ${e['plazo']}    fecha_limite
+    Dictionary Should Contain Key    ${e['plazo']}    fecha_inicio
+    Dictionary Should Contain Key    ${e}    documentos
+    Dictionary Should Contain Key    ${e['documentos']}    recibidos
+    Dictionary Should Contain Key    ${e['documentos']}    total
+    Dictionary Should Contain Key    ${e}    comentarios
+    # El cliente (promotor) no recibe datos internos: ni IPE, ni documentos, ni comentarios.
+    Iniciar Sesion Como Promotor    promotor
+    ${r}=    GET On Session    promotor    url=/expedientes?per_page=100
+    ${p}=    Set Variable    ${r.json()['expedientes'][0]}
+    Dictionary Should Not Contain Key    ${p}    ipe
+    Dictionary Should Not Contain Key    ${p}    documentos
+    Dictionary Should Not Contain Key    ${p}    comentarios
+    # Una vista guardada recuerda la pestana y la agrupacion
+    ${filtros}=    Create Dictionary    vista=tablero    grupo=responsable    estado=pendiente
+    ${datos}=    Create Dictionary    nombre=Tablero pendientes    filtros=${filtros}
+    ${r}=    POST On Session    consultor    /vistas    json=${datos}
+    ${id}=    Set Variable    ${r.json()['id']}
+    ${r}=    GET On Session    consultor    /vistas
+    ${guardada}=    Evaluate    [v for v in $r.json()['vistas'] if v['id'] == ${id}][0]
+    Should Be Equal    ${guardada['filtros']['vista']}    tablero
+    DELETE On Session    consultor    /vistas/${id}
+
 29 - Las exportaciones no ejecutan formulas
     Iniciar Sesion Como Consultor    consultor
     ${datos}=    Create Dictionary    proyecto==HYPERLINK("http://x","clic")    promotor=Promotor Prueba    categoria=I

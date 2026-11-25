@@ -393,6 +393,36 @@ function pintarRail() {
   } else if (u.rol === 'admin' && marca) {
     marca.innerHTML = marca.innerHTML.replace('Expedientes ambientales', 'Administración');
   }
+  pintarEspacios(rail, u);
+}
+
+// Colores de las letras de los "espacios" (vistas guardadas): el mismo nombre, siempre el mismo color.
+const COLORES_ESPACIO = ['#7c5ac8', '#2563a8', '#17805a', '#c2410c', '#0e7c86', '#b4261c', '#9a5b00', '#3e4650'];
+function colorDe(texto) {
+  let h = 0;
+  for (const ch of String(texto)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return COLORES_ESPACIO[h % COLORES_ESPACIO.length];
+}
+
+// Las vistas guardadas de la persona, como atajos en el menu (abren Expedientes con esa vista).
+async function pintarEspacios(rail, u) {
+  if (!u || u.rol === 'admin' || !rail.querySelector('nav')) return;
+  try {
+    const d = await apiFetch('/vistas');
+    const vistas = d.vistas || [];
+    let cont = rail.querySelector('.rail-espacios');
+    if (!vistas.length) { if (cont) cont.remove(); return; }
+    if (!cont) {
+      cont = document.createElement('div');
+      cont.className = 'rail-espacios';
+      rail.querySelector('nav').after(cont);
+    }
+    const actual = new URLSearchParams(window.location.search).get('vista');
+    cont.innerHTML = '<h4>Vistas guardadas</h4>' + vistas.map(v =>
+      `<a href="expedientes.html?vista=${esc(v.id)}"${String(v.id) === actual ? ' class="activa"' : ''}>`
+      + `<span class="espacio-ico" style="background:${colorDe(v.nombre)};">${esc((v.nombre || '?')[0].toUpperCase())}</span>`
+      + `<span class="espacio-nombre">${esc(v.nombre)}</span></a>`).join('');
+  } catch (e) { /* sin vistas: el menu queda como esta */ }
 }
 
 // ============== VENTANAS (confirmaciones, avisos que se muestran una vez) ==============
