@@ -14,6 +14,12 @@
 
 <div class="landing-wrap">
 
+  <div class="anuncio" role="region" aria-label="Novedad">
+    <span><b>Nuevo:</b> su cartera en lista, tablero, tabla, cronograma y calendario.</span>
+    <a class="anuncio-btn" href="#producto">Ver las vistas</a>
+    <button type="button" class="anuncio-cerrar" aria-label="Cerrar el aviso">×</button>
+  </div>
+
   <header class="l-header">
     <div class="wrap">
       <a class="l-brand" href="index.html" style="text-decoration:none;">
@@ -52,10 +58,11 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         <a class="btn btn-ghost" href="#problemas">Ver qué resolvemos</a>
       </div>
+      <ul class="hero-iconos" aria-label="Lo que incluye"><li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><path d="M4 6h.01M4 12h.01M4 18h.01"/></svg></span>Lista</li><li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="5" height="16" rx="1.5"/><rect x="10.5" y="4" width="5" height="10" rx="1.5"/><rect x="17.5" y="4" width="3" height="13" rx="1.5"/></svg></span>Tablero</li><li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 10h17M9.5 10v9.5"/></svg></span>Tabla</li><li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h9M8 12h12M6 18h8"/></svg></span>Cronograma</li><li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span>Calendario</li><li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5M9 2h6"/></svg></span>Plazos</li><li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 14l2 2 4-4"/></svg></span>Documentos</li><li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19a9 9 0 1 1 14 0"/><path d="M12 14l4-4"/></svg></span>Preparación</li></ul>
     </div>
     <div class="wrap">
       <div class="hero-escena">
-        <figure class="marco"><div class="marco-barra" aria-hidden="true"><i></i><i></i><i></i><span>permisos-ambientales / panel</span></div><img src="img/landing/panel.webp" width="1600" height="1000" alt="Panel de la consultora con indicadores, avisos de plazo y expedientes por atender" loading="eager" decoding="async"></figure>
+        <figure class="marco"><div class="marco-barra" aria-hidden="true"><i></i><i></i><i></i><span>permisos-ambientales / panel</span></div><img src="img/landing/panel.webp" width="1600" height="1000" alt="Tablero de expedientes por estado, con el plazo, el responsable y el índice de preparación de cada uno" loading="eager" decoding="async"></figure>
         <div class="flotante f1" aria-hidden="true"><svg width="38" height="38" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="14" fill="none" stroke="#f1f3f2" stroke-width="4.5"/><circle cx="17" cy="17" r="14" fill="none" stroke="#e09a1a" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="66 88" transform="rotate(-90 17 17)"/></svg><div><b>Índice de Preparación</b><span>75 · En preparación</span></div></div>
         <div class="flotante f2" aria-hidden="true"><span class="flotante-ico ambar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div><b>Plazo legal</b><span>Vence en 5 días hábiles</span></div></div>
         <div class="flotante f3" aria-hidden="true"><span class="flotante-ico verde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg></span><div><b>Documento recibido</b><span>Línea Base · versión 2</span></div></div>
@@ -174,11 +181,11 @@
         <p class="small">Capturas reales del sistema con expedientes de demostración.</p>
       </div>
       <div class="carrusel" aria-roledescription="carrusel" aria-label="Funcionalidades de la plataforma">
-        <div class="carrusel-puntos" role="tablist" aria-label="Elegir funcionalidad"><button type="button" class="carrusel-punto" role="tab" aria-controls="diapositiva-0" aria-selected="true"><span>Prioridades</span></button><button type="button" class="carrusel-punto" role="tab" aria-controls="diapositiva-1" aria-selected="false"><span>Expediente</span></button><button type="button" class="carrusel-punto" role="tab" aria-controls="diapositiva-2" aria-selected="false"><span>Índice</span></button><button type="button" class="carrusel-punto" role="tab" aria-controls="diapositiva-3" aria-selected="false"><span>Plazos</span></button><button type="button" class="carrusel-punto" role="tab" aria-controls="diapositiva-4" aria-selected="false"><span>Cartera</span></button><button type="button" class="carrusel-punto" role="tab" aria-controls="diapositiva-5" aria-selected="false"><span>Promotor</span></button></div>
+        <div class="carrusel-puntos" role="tablist" aria-label="Elegir funcionalidad"><button type="button" class="carrusel-punto" role="tab" aria-controls="diapositiva-0" aria-selected="true"><span>Panel</span></button><button type="button" class="carrusel-punto" role="tab" aria-controls="diapositiva-1" aria-selected="false"><span>Expediente</span></button><button type="button" class="carrusel-punto" role="tab" aria-controls="diapositiva-2" aria-selected="false"><span>Índice</span></button><button type="button" class="carrusel-punto" role="tab" aria-controls="diapositiva-3" aria-selected="false"><span>Plazos</span></button><button type="button" class="carrusel-punto" role="tab" aria-controls="diapositiva-4" aria-selected="false"><span>Vistas</span></button><button type="button" class="carrusel-punto" role="tab" aria-controls="diapositiva-5" aria-selected="false"><span>Cliente</span></button></div>
         <div class="carrusel-marco">
           <div class="carrusel-pista">
           <article class="diapositiva" id="diapositiva-0" role="group" aria-roledescription="diapositiva" aria-label="1 de 6: Sepa a qué expediente dedicarle el día">
-            <div class="diap-img"><figure class="marco"><div class="marco-barra" aria-hidden="true"><i></i><i></i><i></i><span>permisos-ambientales / panel</span></div><img src="img/landing/prioridades.webp" width="1500" height="741" alt="Expedientes ordenados por su Índice de Preparación, con el más urgente destacado" loading="lazy" decoding="async"></figure></div>
+            <div class="diap-img"><figure class="marco"><div class="marco-barra" aria-hidden="true"><i></i><i></i><i></i><span>permisos-ambientales / panel</span></div><img src="img/landing/prioridades.webp" width="1500" height="938" alt="Panel con gráficos de estado, plazos y preparación, y los expedientes ordenados por prioridad" loading="lazy" decoding="async"></figure></div>
             <div class="diap-texto">
               <span class="kicker">Panel del director</span>
               <h3>Sepa a qué expediente dedicarle el día</h3>
@@ -187,7 +194,7 @@
             </div>
           </article>
           <article class="diapositiva" id="diapositiva-1" role="group" aria-roledescription="diapositiva" aria-label="2 de 6: Cada estudio, completo y con evidencia">
-            <div class="diap-img"><figure class="marco"><div class="marco-barra" aria-hidden="true"><i></i><i></i><i></i><span>permisos-ambientales / expediente</span></div><img src="img/landing/detalle.webp" width="1500" height="1190" alt="Detalle de un expediente con etapas, documentos obligatorios y versiones" loading="lazy" decoding="async"></figure></div>
+            <div class="diap-img"><figure class="marco"><div class="marco-barra" aria-hidden="true"><i></i><i></i><i></i><span>permisos-ambientales / expediente</span></div><img src="img/landing/detalle.webp" width="1500" height="938" alt="Detalle de un expediente con etapas, documentos obligatorios y versiones" loading="lazy" decoding="async"></figure></div>
             <div class="diap-texto">
               <span class="kicker">Detalle del expediente</span>
               <h3>Cada estudio, completo y con evidencia</h3>
@@ -196,7 +203,7 @@
             </div>
           </article>
           <article class="diapositiva" id="diapositiva-2" role="group" aria-roledescription="diapositiva" aria-label="3 de 6: Un puntaje que explica de dónde sale">
-            <div class="diap-img"><figure class="marco marco-angosto"><img src="img/landing/ipe.webp" width="482" height="843" alt="Índice de Preparación con su medidor, los tres factores y las próximas acciones" loading="lazy" decoding="async"></figure></div>
+            <div class="diap-img"><figure class="marco marco-angosto"><img src="img/landing/ipe.webp" width="482" height="844" alt="Índice de Preparación con su medidor, los tres factores y las próximas acciones" loading="lazy" decoding="async"></figure></div>
             <div class="diap-texto">
               <span class="kicker">Índice de Preparación</span>
               <h3>Un puntaje que explica de dónde sale</h3>
@@ -205,7 +212,7 @@
             </div>
           </article>
           <article class="diapositiva" id="diapositiva-3" role="group" aria-roledescription="diapositiva" aria-label="4 de 6: Los plazos se cuentan solos">
-            <div class="diap-img"><figure class="marco marco-angosto"><img src="img/landing/plazo.webp" width="482" height="1025" alt="Plazo legal con días transcurridos, días restantes y el botón para agregarlo al calendario" loading="lazy" decoding="async"></figure></div>
+            <div class="diap-img"><figure class="marco"><div class="marco-barra" aria-hidden="true"><i></i><i></i><i></i><span>permisos-ambientales / cronograma</span></div><img src="img/landing/plazo.webp" width="1500" height="938" alt="Cronograma de plazos por responsable, con la línea de hoy y los vencidos en rojo" loading="lazy" decoding="async"></figure></div>
             <div class="diap-texto">
               <span class="kicker">Plazos legales</span>
               <h3>Los plazos se cuentan solos</h3>
@@ -213,12 +220,12 @@
               <ul class="tour-lista"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>20, 40 u 80 días según la categoría.</span></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Aviso de «por vencer» en el último 25% del plazo.</span></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>El límite legal y los vencimientos se descargan a Google Calendar u Outlook.</span></li></ul>
             </div>
           </article>
-          <article class="diapositiva" id="diapositiva-4" role="group" aria-roledescription="diapositiva" aria-label="5 de 6: La consultora completa en una tabla">
-            <div class="diap-img"><figure class="marco"><div class="marco-barra" aria-hidden="true"><i></i><i></i><i></i><span>permisos-ambientales / expedientes</span></div><img src="img/landing/expedientes.webp" width="1600" height="1000" alt="Lista de expedientes con estado, semáforo de plazo, índice y consultor" loading="lazy" decoding="async"></figure></div>
+          <article class="diapositiva" id="diapositiva-4" role="group" aria-roledescription="diapositiva" aria-label="5 de 6: La cartera, en la vista que prefiera">
+            <div class="diap-img"><figure class="marco"><div class="marco-barra" aria-hidden="true"><i></i><i></i><i></i><span>permisos-ambientales / expedientes</span></div><img src="img/landing/expedientes.webp" width="1600" height="1000" alt="Lista de expedientes agrupada por estado, con responsable, plazo e índice de preparación" loading="lazy" decoding="async"></figure></div>
             <div class="diap-texto">
               <span class="kicker">Toda la cartera</span>
-              <h3>La consultora completa en una tabla</h3>
-              <p>El director de proyectos ve todos los expedientes; cada consultor, solo los suyos. Busque por código, proyecto o promotor y filtre por estado.</p>
+              <h3>La cartera, en la vista que prefiera</h3>
+              <p>Lista, tablero, tabla, cronograma y calendario de los mismos expedientes. El director de proyectos ve toda la consultora; cada consultor, solo lo suyo. Filtre, agrupe y guarde sus vistas favoritas.</p>
               <ul class="tour-lista"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Estado del trámite, semáforo e índice en cada fila.</span></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>El candado marca lo que no está en la consulta pública.</span></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Ordenar por índice pone primero lo que necesita al equipo.</span></li></ul>
             </div>
           </article>

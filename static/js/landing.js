@@ -4,6 +4,17 @@
   'use strict';
   const reducir = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  // ---------- Aviso de novedad ----------
+  const aviso = document.querySelector('.anuncio');
+  if (aviso) {
+    try { if (sessionStorage.getItem('anuncio_cerrado') === '1') aviso.remove(); } catch (e) { /* sin almacenamiento */ }
+    const cerrar = aviso.querySelector('.anuncio-cerrar');
+    if (cerrar) cerrar.addEventListener('click', () => {
+      aviso.remove();
+      try { sessionStorage.setItem('anuncio_cerrado', '1'); } catch (e) { /* sin almacenamiento */ }
+    });
+  }
+
   // ---------- Fotos opcionales ----------
   // <section class="hero" data-foto="img/landing/portada.webp">: si data-foto
   // tiene una ruta, se usa como fondo. Lo mismo en cada .foto-espacio del mosaico.

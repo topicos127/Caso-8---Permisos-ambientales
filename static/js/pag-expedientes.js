@@ -360,7 +360,10 @@ if (usuario) {
       ? 'Sus proyectos y el estado de cada trámite.' : 'Los expedientes que gestiona, en la vista que mejor le sirva.';
   }
   if (!interno) {
+    // El cliente no ve datos internos: ni agrupar por responsable ni ordenar por IPE.
     document.querySelectorAll('.solo-interno').forEach(el => el.remove());
+    const porIpe = document.querySelector('#orden option[value="ipe"]');
+    if (porIpe) porIpe.remove();
   }
 
   // Pestañas de vistas
