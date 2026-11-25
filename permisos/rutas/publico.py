@@ -3,7 +3,7 @@ y archivos del frontend."""
 from flask import Blueprint, jsonify, send_from_directory
 
 from ..bd import _esquema, col_org, cursor
-from ..config import ESTADO_PUBLICO
+from ..config import ESTADO_PUBLICO, VERSION
 from ..empresas import datos_empresa
 from ..errores import ApiError
 
@@ -17,7 +17,7 @@ def index():
 
 @bp.route("/api", methods=["GET"])
 def api_info():
-    return jsonify({"servicio": "Permisos Ambientales - API", "version": "0.9", "estado": "activo"}), 200
+    return jsonify({"servicio": "Permisos Ambientales - API", "version": VERSION, "estado": "activo"}), 200
 
 
 @bp.route("/health", methods=["GET"])

@@ -434,5 +434,44 @@ class PoliticaDeLaEmpresa(unittest.TestCase):
             self.assertFalse(seguridad.usuario_sesion()["debe_activar_2fa"])
 
 
+class ArranqueEnProduccion(unittest.TestCase):
+    """Con HTTPS (produccion) no se arranca con claves de prueba ni sin SECRET_KEY."""
+
+    BUENA = {"secure": True, "secret": "x" * 40, "admin_password": "Una-Clave-Propia-1", "jefe_password": "Otra-Clave-Propia-2"}
+
+    def test_en_local_no_se_exige_nada(self):
+        self.assertEqual(config.problemas_de_produccion(secure=False, secret=None,
+                                                         admin_password=config.ADMIN_PASSWORD_DEFECTO,
+                                                         jefe_password=config.JEFE_PASSWORD_DEFECTO), [])
+
+    def test_produccion_bien_configurada_no_tiene_problemas(self):
+        self.assertEqual(config.problemas_de_produccion(**self.BUENA), [])
+
+    def test_sin_secret_key_o_muy_corta(self):
+        for secreto in (None, "", "corta"):
+            with self.subTest(secreto=secreto):
+                p = config.problemas_de_produccion(**{**self.BUENA, "secret": secreto})
+                self.assertEqual(len(p), 1)
+                self.assertIn("SECRET_KEY", p[0])
+
+    def test_claves_de_prueba_no_valen(self):
+        p = config.problemas_de_produccion(**{**self.BUENA, "admin_password": config.ADMIN_PASSWORD_DEFECTO})
+        self.assertEqual([x.split(":")[0] for x in p], ["ADMIN_PASSWORD"])
+        p = config.problemas_de_produccion(**{**self.BUENA, "jefe_password": config.JEFE_PASSWORD_DEFECTO})
+        self.assertEqual([x.split(":")[0] for x in p], ["JEFE_PASSWORD"])
+
+    def test_todo_mal_lista_todos_los_problemas(self):
+        p = config.problemas_de_produccion(secure=True, secret=None, admin_password=config.ADMIN_PASSWORD_DEFECTO,
+                                           jefe_password=config.JEFE_PASSWORD_DEFECTO)
+        self.assertEqual(len(p), 3)
+
+    def test_la_app_se_niega_a_arrancar_en_produccion_con_claves_de_prueba(self):
+        from permisos import create_app
+        with mock.patch.object(config, "SESSION_COOKIE_SECURE", True), mock.patch.object(config, "SECRET_KEY", None):
+            with self.assertRaises(RuntimeError) as ctx:
+                create_app()
+        self.assertIn("SECRET_KEY", str(ctx.exception))
+
+
 if __name__ == "__main__":
     unittest.main()

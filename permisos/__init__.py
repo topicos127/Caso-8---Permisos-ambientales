@@ -29,6 +29,10 @@ mimetypes.add_type("image/webp", ".webp")  # algunos sistemas no lo conocen y lo
 
 
 def create_app():
+    # En produccion (HTTPS) no se arranca con claves de prueba ni sin SECRET_KEY.
+    problemas = config.problemas_de_produccion()
+    if problemas:
+        raise RuntimeError("Configuración insegura para producción:\n - " + "\n - ".join(problemas))
     # root_path en la raiz del proyecto: "static" se resuelve como antes.
     app = Flask(__name__, root_path=config.BASE_DIR)
 

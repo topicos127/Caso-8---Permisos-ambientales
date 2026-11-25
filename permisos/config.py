@@ -130,3 +130,37 @@ EXTENSIONES_SHAPEFILE = (".shp", ".shx", ".dbf")
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 RUTAS_SIN_CABECERA = {"/login", "/admin/login", "/registro", "/recuperar"}
+
+
+# ---------- Version y arranque en produccion ----------
+
+VERSION = "1.0"
+
+# Valores de prueba: sirven en local y en las pruebas, nunca en produccion.
+ADMIN_PASSWORD_DEFECTO = "Admin2026*"
+JEFE_PASSWORD_DEFECTO = "Jefe2026*"
+
+
+_DEL_ENTORNO = object()
+
+
+def problemas_de_produccion(secure=_DEL_ENTORNO, secret=_DEL_ENTORNO, admin_password=_DEL_ENTORNO,
+                            jefe_password=_DEL_ENTORNO):
+    """Lo que impide arrancar con SESSION_COOKIE_SECURE=true (es decir, en produccion, con HTTPS):
+    claves de prueba o una SECRET_KEY ausente. Devuelve la lista de problemas (vacia si todo esta bien).
+    Sin esto, un despliegue olvidado dejaria al administrador con una contrasena que esta en el README."""
+    if not (SESSION_COOKIE_SECURE if secure is _DEL_ENTORNO else secure):
+        return []
+    secret = SECRET_KEY if secret is _DEL_ENTORNO else secret
+    admin_password = ADMIN_PASSWORD if admin_password is _DEL_ENTORNO else admin_password
+    jefe_password = JEFE_PASSWORD if jefe_password is _DEL_ENTORNO else jefe_password
+    problemas = []
+    if not secret or len(secret) < 32:
+        problemas.append("SECRET_KEY: defina un texto aleatorio de al menos 32 caracteres "
+                         "(si falta, las sesiones se pierden al reiniciar).")
+    if admin_password == ADMIN_PASSWORD_DEFECTO:
+        problemas.append("ADMIN_PASSWORD: sigue la contrasena de prueba; defina una propia.")
+    if jefe_password == JEFE_PASSWORD_DEFECTO:
+        problemas.append("JEFE_PASSWORD: sigue la contrasena de prueba; defina una propia "
+                         "(es la del primer director de proyectos; use JEFE_EMAIL y ORG_POR_DEFECTO para que sea la real).")
+    return problemas

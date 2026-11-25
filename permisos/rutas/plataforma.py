@@ -11,13 +11,13 @@ from flask import Blueprint, jsonify, request, send_file
 from .. import config, registro_errores, respaldos
 from ..almacenamiento import AlmacenamientoError, almacen
 from ..bd import _esquema, cursor
+from ..config import VERSION
 from ..errores import ApiError
 from ..reglas import ahora
 from ..seguridad import requiere_admin
 
 bp = Blueprint("plataforma", __name__)
 
-VERSION = "1.0"
 
 
 def _estado_base():
