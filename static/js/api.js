@@ -184,12 +184,48 @@ function fichaTier(cat) {
   return `<span class="tier"><b>${esc(cat)}</b> ${t[cat] || ''}</span>`;
 }
 
+// Iniciales para el avatar: "Mariela Quintero" -> "MQ".
+function iniciales(nombre) {
+  const partes = String(nombre || '').trim().split(/\s+/).filter(Boolean);
+  if (!partes.length) return '?';
+  const primera = partes[0][0] || '';
+  const ultima = partes.length > 1 ? partes[partes.length - 1][0] : (partes[0][1] || '');
+  return (primera + ultima).toUpperCase();
+}
+
 function pintarTopbar() {
   const u = getUsuario();
   const who = document.querySelector('.who');
   if (u && who) {
+    // Menu de usuario: avatar con iniciales, nombre y rol; abre "Mi perfil" y "Salir".
     const rolTexto = ROL_TEXTO[u.rol] || u.rol;
-    who.innerHTML = `<span class="tag">${rolTexto}</span> <span>${esc(u.nombre || u.email)}</span> <a href="cuenta.html">Mi cuenta</a> <a href="login.html" id="link-salir">Salir</a>`;
+    who.innerHTML = `
+      <div class="menu-usuario">
+        <button type="button" class="menu-usuario-boton" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-usuario-lista">
+          <span class="avatar">${esc(iniciales(u.nombre || u.email))}</span>
+          <span class="menu-usuario-texto"><b>${esc(u.nombre || u.email)}</b><span>${esc(rolTexto)}</span></span>
+          <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="menu-usuario-lista" id="menu-usuario-lista" role="menu" hidden>
+          <div class="menu-usuario-cabecera"><b>${esc(u.nombre || '')}</b><span>${esc(u.email)}</span></div>
+          <a href="cuenta.html" role="menuitem">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+            Mi perfil</a>
+          <a href="login.html" id="link-salir" role="menuitem">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3"/><path d="M14 17l5-5-5-5M19 12H9"/></svg>
+            Salir</a>
+        </div>
+      </div>`;
+    const boton = who.querySelector('.menu-usuario-boton');
+    const lista = who.querySelector('.menu-usuario-lista');
+    const abrir = (si) => {
+      lista.hidden = !si;
+      boton.setAttribute('aria-expanded', si ? 'true' : 'false');
+      if (si) lista.querySelector('a').focus();
+    };
+    boton.addEventListener('click', () => abrir(lista.hidden));
+    document.addEventListener('click', (e) => { if (!who.contains(e.target)) abrir(false); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !lista.hidden) { abrir(false); boton.focus(); } });
     who.querySelector('#link-salir').addEventListener('click', cerrarSesion);
   }
   if (esPromotor()) {

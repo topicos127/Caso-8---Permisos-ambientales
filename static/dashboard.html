@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/estilos.css">
+<script src="js/interaccion.js"></script>
 </head>
 <body>
 <div class="shell">
@@ -21,7 +22,7 @@
           <circle cx="20" cy="20" r="2.2" fill="currentColor" stroke="none"/>
         </svg>
       </div>
-      <div><b>Permisos Ambientales</b><span>Caso 8 · MiAmbiente</span></div>
+      <div><b>Permisos Ambientales</b><span>Expedientes ambientales</span></div>
     </div>
     <nav>
       <a href="dashboard.html" class="active">
@@ -49,7 +50,7 @@
         Consulta pública
       </a>
     </nav>
-    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 10</div>
+    <div class="rail-foot">© 2026 Permisos Ambientales</div>
   </aside>
 
   <div class="main">
@@ -85,7 +86,6 @@
             <h3>Avisos de plazo</h3>
             <p class="panel-note" style="margin:0;">Expedientes cuyo plazo está por vencer o ya venció.</p>
           </div>
-          <span class="chip" style="background:var(--status-warn-bg); color:var(--status-warn);">HU-08</span>
         </div>
         <ul class="reg-list" id="lista-avisos-plazo" style="margin-top:8px;"></ul>
       </div>
@@ -98,7 +98,6 @@
                 <h3>Dónde poner al equipo hoy</h3>
                 <p class="panel-note" style="margin:0;">Los expedientes menos preparados según el Índice de Preparación (IPE), de menor a mayor.</p>
               </div>
-              <span class="chip chip-brand">HU-15</span>
             </div>
             <div style="overflow-x:auto;">
               <table class="ledger tarjetas">
@@ -147,7 +146,7 @@ if (usuario) {
   const ahora = new Date();
   const hora = ahora.getHours();
   const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
-  const nombre = (usuario.nombre || '').split(' ')[0];
+  const nombre = (usuario.nombre || '').trim();  // nombre completo de la persona
   document.getElementById('saludo').textContent = nombre ? `${saludo}, ${nombre}` : saludo;
   document.getElementById('fecha-hoy').textContent = ahora.toLocaleDateString('es-PA',
     { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
