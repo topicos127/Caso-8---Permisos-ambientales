@@ -328,6 +328,19 @@ class Perfil(unittest.TestCase):
         self.assertEqual(r.get_json()["aviso_vencimiento_dias"], 30)
         self.assertEqual(r.get_json()["opciones_aviso"], [15, 30, 45])
 
+    def test_cifras_reales_del_perfil(self):
+        sesion("consultor")
+        expedientes = [
+            {"codigo": "A", "categoria": "I", "estado": "aprobado", "fecha_ingreso": hoy(), "fecha_sometimiento": None},
+            {"codigo": "B", "categoria": "I", "estado": "pendiente", "fecha_ingreso": hoy() - timedelta(days=30),
+             "fecha_sometimiento": None},  # vencido
+            {"codigo": "C", "categoria": "III", "estado": "pendiente", "fecha_ingreso": hoy(), "fecha_sometimiento": None},
+        ]
+        usar(auth, [("FROM usuarios WHERE id", "uno", {"aviso_vencimiento_dias": 30, "fecha_creacion": None}),
+                    ("FROM expedientes e WHERE", "todos", expedientes)])
+        cifras = app.test_client().get("/perfil").get_json()["cifras"]
+        self.assertEqual(cifras, {"expedientes": 3, "en_tramite": 2, "aprobados": 1, "plazos_en_alerta": 1})
+
     def test_solo_15_30_o_45(self):
         sesion("consultor")
         usar(auth, [])

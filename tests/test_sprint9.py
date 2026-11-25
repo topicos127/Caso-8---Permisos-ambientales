@@ -91,7 +91,7 @@ class ConsultaPublica(unittest.TestCase):
     def fila(self, acceso):
         return {"codigo": "SP-A8-2026-001", "proyecto": "Planta Solar Azuero", "promotor": "Energía Verde S.A.",
                 "categoria": "II", "estado": "aprobado_interno", "acceso_publico": acceso,
-                "consultor": "Consultor Uno"}
+                "consultor": "Carlos Herrera"}
 
     def test_sin_acceso_publico_no_entrega_datos(self):
         publico.cursor, _ = base_falsa(self.fila(0))
@@ -102,7 +102,7 @@ class ConsultaPublica(unittest.TestCase):
     def test_con_acceso_publico_muestra_consultor_y_estado_publico(self):
         publico.cursor, _ = base_falsa(self.fila(1))
         exp = self.cliente.get("/consulta/SP-A8-2026-001").get_json()["expediente"]
-        self.assertEqual(exp["consultor"], "Consultor Uno")
+        self.assertEqual(exp["consultor"], "Carlos Herrera")
         self.assertEqual(exp["estado_publico"], "Pendiente de subsanación")
         self.assertTrue(exp["acceso_publico"])
 

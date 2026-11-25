@@ -8,11 +8,11 @@ import pymysql
 from flask import Blueprint, g, jsonify, request, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from ..bd import _esquema, col_activo, col_aviso, col_cambio_clave, cursor
+from ..bd import _esquema, col_activo, col_aviso, col_cambio_clave, col_sometimiento, cursor
 from ..config import EMAIL_RE, LOGIN_MAX_FALLOS, LOGIN_VENTANA_SEGUNDOS, ROLES_REGISTRO
 from ..errores import ApiError
-from ..reglas import AVISOS_PERMITIDOS, problema_de_password
-from ..seguridad import requiere_login
+from ..reglas import AVISOS_PERMITIDOS, calcular_semaforo, problema_de_password
+from ..seguridad import filtro_de, requiere_login
 from ..utiles import texto
 
 bp = Blueprint("auth", __name__)
@@ -182,9 +182,22 @@ def perfil():
             cur.execute("UPDATE usuarios SET aviso_vencimiento_dias=%s WHERE id=%s", (dias, g.usuario["id"]))
         return jsonify({"ok": True, "aviso_vencimiento_dias": dias,
                         "mensaje": f"Le avisaremos {dias} días antes de que venza un documento."}), 200
+    filtro, params = filtro_de(g.usuario)
     with cursor() as cur:
-        cur.execute(f"SELECT {col_aviso()} FROM usuarios WHERE id=%s", (g.usuario["id"],))
+        cur.execute(f"SELECT {col_aviso()}, fecha_creacion FROM usuarios WHERE id=%s", (g.usuario["id"],))
         fila = cur.fetchone() or {}
+        # Cifras del perfil: lo que el usuario puede ver segun su rol.
+        cur.execute(f"""SELECT e.codigo, e.categoria, e.estado, e.fecha_ingreso, {col_sometimiento()}
+                        FROM expedientes e WHERE {filtro}""", params)
+        expedientes = cur.fetchall()
+    en_tramite = [e for e in expedientes if e["estado"] not in ("aprobado", "rechazado")]
+    en_alerta = sum(1 for e in en_tramite
+                    if calcular_semaforo(e)["estado_semaforo"] in ("por_vencer", "vencido"))
+    desde = fila.get("fecha_creacion")
     return jsonify({"email": g.usuario["email"], "nombre": g.usuario["nombre"], "rol": g.usuario["rol"],
+                    "miembro_desde": desde.strftime("%d/%m/%Y") if desde else None,
                     "aviso_vencimiento_dias": int(fila.get("aviso_vencimiento_dias") or 30),
-                    "opciones_aviso": list(AVISOS_PERMITIDOS)}), 200
+                    "opciones_aviso": list(AVISOS_PERMITIDOS),
+                    "cifras": {"expedientes": len(expedientes), "en_tramite": len(en_tramite),
+                               "aprobados": sum(1 for e in expedientes if e["estado"] == "aprobado"),
+                               "plazos_en_alerta": en_alerta}}), 200

@@ -24,11 +24,11 @@ DB_CONFIG = {
 }
 
 USUARIOS = [
-    ("Consultor Uno", "consultor1@ejemplo.com", "Clave123", "consultor"),
-    ("Promotor Uno", "promotor1@ejemplo.com", "Clave456", "promotor"),
+    ("Carlos Herrera", "consultor1@ejemplo.com", "Clave123", "consultor"),
+    ("Luis Batista", "promotor1@ejemplo.com", "Clave456", "promotor"),
     # Sprint 8: segundo consultor, para probar que cada consultor ve solo lo
     # suyo y el jefe ve todo. El jefe lo crea la app al arrancar (app.py).
-    ("Consultor Dos", "consultor2@ejemplo.com", "Clave2026", "consultor"),
+    ("Ana Ríos", "consultor2@ejemplo.com", "Clave2026", "consultor"),
 ]
 
 # codigo, proyecto, promotor, promotor_email, categoria, estado, fecha, email_consultor
@@ -90,7 +90,7 @@ def sembrar_demo(cur):
     # crea aqui si falta (la app no la duplica: busca por correo).
     if not id_usuario(JEFE_EMAIL):
         cur.execute("INSERT INTO usuarios (nombre, email, password_hash, rol) VALUES (%s, %s, %s, 'jefe')",
-                    (os.environ.get("JEFE_NOMBRE", "Jefa de la Consultora"), JEFE_EMAIL,
+                    (os.environ.get("JEFE_NOMBRE", "Mariela Quintero"), JEFE_EMAIL,
                      generate_password_hash(os.environ.get("JEFE_PASSWORD", "Jefe2026*"))))
     jefe = id_usuario(JEFE_EMAIL)
     try:
@@ -180,9 +180,13 @@ def main(demo=False):
                 cur.execute(
                     """INSERT INTO usuarios (nombre, email, password_hash, rol)
                        VALUES (%s, %s, %s, %s)
-                       ON DUPLICATE KEY UPDATE password_hash=VALUES(password_hash)""",
+                       ON DUPLICATE KEY UPDATE password_hash=VALUES(password_hash), nombre=VALUES(nombre)""",
                     (nombre, email, generate_password_hash(password), rol),
                 )
+            # El jefe que crea la app al arrancar traia un nombre de cargo; si nadie
+            # lo cambio, pasa a un nombre de persona (la bienvenida lo usa).
+            cur.execute("UPDATE usuarios SET nombre=%s WHERE email=%s AND nombre='Jefa de la Consultora'",
+                        (os.environ.get("JEFE_NOMBRE", "Mariela Quintero"), JEFE_EMAIL))
 
             # Expedientes + documentos
             for codigo, proyecto, promotor, prom_email, categoria, estado, fecha, email_consultor in EXPEDIENTES:

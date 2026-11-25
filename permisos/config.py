@@ -74,7 +74,7 @@ LOGIN_VENTANA_SEGUNDOS = int(os.environ.get("LOGIN_VENTANA_SEGUNDOS", 60))
 
 # HU-13: usuario jefe de prueba. En Railway conviene definir JEFE_PASSWORD.
 JEFE_EMAIL = os.environ.get("JEFE_EMAIL", "jefe1@ejemplo.com").strip().lower()
-JEFE_NOMBRE = os.environ.get("JEFE_NOMBRE", "Jefa de la Consultora")
+JEFE_NOMBRE = os.environ.get("JEFE_NOMBRE", "Mariela Quintero")
 JEFE_PASSWORD = os.environ.get("JEFE_PASSWORD", "Jefe2026*")
 
 # HU-14: acciones que quedan en el historial.

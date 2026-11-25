@@ -35,7 +35,7 @@ ${CLAVE_PROPIA}           Equipo2026x
     Create Session    anonimo    ${BASE_URL}
     ${r}=    GET On Session    anonimo    /consulta/${EXP_C1}    expected_status=200
     ${exp}=    Set Variable    ${r.json()['expediente']}
-    Should Be Equal    ${exp['consultor']}    Consultor Uno
+    Should Be Equal    ${exp['consultor']}    Carlos Herrera
     Should Be True    $exp['estado_publico'] in ('Pendiente de subsanación', 'En evaluación', 'Aprobado', 'Rechazado')
     Dictionary Should Not Contain Key    ${exp}    promotor_email
 
