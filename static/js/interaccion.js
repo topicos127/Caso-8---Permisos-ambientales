@@ -9,6 +9,11 @@
 // fetch() sin tocar el codigo de cada boton.
 (function () {
   'use strict';
+  // Color por rol: <html data-rol="jefe|consultor|promotor"> antes de que la pagina se pinte.
+  try {
+    const u = JSON.parse(sessionStorage.getItem('usuario') || 'null');
+    if (u && u.rol) document.documentElement.setAttribute('data-rol', u.rol);
+  } catch (e) { /* sin sesion: queda el verde de la marca */ }
   const fetchOriginal = window.fetch.bind(window);
   const VENTANA_MS = 8000;  // un clic "reclama" la siguiente peticion por este tiempo
   let ultimoBoton = null;

@@ -1590,6 +1590,120 @@ html, body {
 .publico-oscuro .tour-lista svg { color: #7fd3a8; }
 .publico-nota { text-align: center; margin-top: 22px; font-size: 14px; color: var(--text-muted); }
 
+/* ============================================================
+   COLOR POR ROL + MENU LATERAL OSCURO
+   El rol (jefe, consultor o promotor) se lee de la sesion y se
+   pone en <html data-rol>. Cada rol cambia el acento de toda la
+   plataforma: menu, avatar, botones suaves, etiquetas y fondo.
+   Los colores de estado (verde, ambar, rojo) no cambian.
+   ============================================================ */
+:root {
+  --brand-rgb: 23, 128, 90;
+  --rail-a: #0f4a36;
+  --rail-b: #0a2b20;
+  --tag-bg: #d4ecdf;
+  --tag-fg: #0f5a3b;
+  --kicker: #12704d;
+}
+html[data-rol="jefe"] { /* verde bosque: el color de la marca */ }
+html[data-rol="consultor"] {
+  --brand: #2563a8; --brand-deep: #1a4a80; --brand-dark: #123560; --brand-pale: #d9e6f5; --brand-rgb: 37, 99, 168;
+  --rail-a: #173f73; --rail-b: #0c2347; --tag-bg: #d9e6f5; --tag-fg: #174576; --kicker: #1a4a80;
+}
+html[data-rol="promotor"] {
+  --brand: #6a3dbf; --brand-deep: #4e2a94; --brand-dark: #35206b; --brand-pale: #e8defa; --brand-rgb: 106, 61, 191;
+  --rail-a: #4a2a8a; --rail-b: #2a1650; --tag-bg: #e8defa; --tag-fg: #4b2a8c; --kicker: #4e2a94;
+}
+
+/* Fondo de la pagina con el acento del rol */
+html, body {
+  background:
+    radial-gradient(1100px 680px at 6% -8%, rgba(var(--brand-rgb), 0.26), transparent 62%),
+    radial-gradient(900px 600px at 102% 2%, rgba(224, 154, 26, 0.14), transparent 60%),
+    radial-gradient(1000px 720px at 62% 112%, rgba(59, 107, 234, 0.12), transparent 62%),
+    var(--canvas);
+  background-attachment: fixed;
+}
+
+/* ---------- Menu lateral oscuro ---------- */
+.rail {
+  background:
+    radial-gradient(120% 60% at 0% 0%, rgba(255, 255, 255, 0.10), transparent 60%),
+    linear-gradient(180deg, var(--rail-a), var(--rail-b));
+  border-right: 0;
+  color: #e6efe9;
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.08);
+}
+.rail-brand b { color: #ffffff; }
+.rail-brand span { color: rgba(255, 255, 255, 0.72); }
+.rail .seal { background: #ffffff; color: var(--brand); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28); }
+.rail nav::before { color: rgba(255, 255, 255, 0.62); }
+.rail nav a { color: #e6efe9; }
+.rail nav a:hover { background: rgba(255, 255, 255, 0.14); color: #ffffff; box-shadow: none; }
+.rail nav a.active {
+  background: #ffffff; color: var(--brand-dark); font-weight: 600;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+}
+.rail nav a.active svg { color: var(--brand); }
+.rail-foot { color: rgba(255, 255, 255, 0.62); border-top-color: rgba(255, 255, 255, 0.16); }
+.rail :focus-visible { outline-color: #ffffff; }
+
+/* ---------- Acento del rol en el resto de la plataforma ---------- */
+.seal { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 4px 10px rgba(var(--brand-rgb), 0.3); }
+.avatar { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 3px 8px rgba(var(--brand-rgb), 0.35); }
+.who .tag, .chip-brand { background: var(--tag-bg); color: var(--tag-fg); }
+.ledger tbody tr:hover td { background: rgba(var(--brand-rgb), 0.05); }
+.btn-ghost::before, .who a::before { background: linear-gradient(100deg, transparent, rgba(var(--brand-rgb), 0.12), transparent); }
+.btn-ghost:hover, .who a:hover { border-color: rgba(var(--brand-rgb), 0.45) !important; }
+.perfil-portada { background: linear-gradient(110deg, var(--brand-dark) 0%, var(--brand) 40%, rgba(var(--brand-rgb), 0.45) 66%, #e9c98f 100%); }
+.selector-aviso button:hover { border-color: rgba(var(--brand-rgb), 0.5); }
+a { color: var(--brand-deep); }
+a:hover { color: var(--brand-dark); }
+.panel h3 a, .reg-list a, .content a:not(.btn) { color: var(--brand-deep); }
+.stat .ico { background: var(--brand-pale); color: var(--brand-deep); }
+.stat.aviso .ico { background: var(--status-warn-bg); color: var(--status-warn); }
+.stat.info .ico { background: var(--status-info-bg); color: var(--status-info); }
+.stat.alerta .ico { background: var(--status-bad-bg); color: var(--status-bad); }
+.menu-usuario-boton:hover { border-color: rgba(var(--brand-rgb), 0.4); }
+.doc-field input:focus, .doc-field select:focus, .doc-field textarea:focus, .search-row input:focus,
+.content input:focus, .content select:focus, .content textarea:focus {
+  border-color: var(--brand) !important; box-shadow: 0 0 0 4px rgba(var(--brand-rgb), 0.16);
+}
+#barra-carga { background: linear-gradient(90deg, transparent, var(--brand), rgba(var(--brand-rgb), 0.45), var(--brand), transparent); background-size: 50% 100%; background-repeat: no-repeat; }
+:focus-visible { outline-color: var(--brand); }
+
+/* En las paginas publicas (sin sesion) el acento sigue siendo el verde de la marca */
+
+/* ============== CASILLAS Y OPCIONES (checkbox y radio) ==============
+   Los campos de texto son de ancho completo; las casillas no. Se
+   reinician y se dibujan con el acento del rol. */
+.doc-field input[type="checkbox"], .doc-field input[type="radio"],
+input[type="checkbox"], input[type="radio"] {
+  -webkit-appearance: none; appearance: none;
+  flex: none; width: 22px; min-width: 22px; height: 22px; min-height: 22px; padding: 0; margin: 0;
+  border: 1.5px solid var(--line-strong); border-radius: 7px;
+  background: #ffffff center / 14px no-repeat;
+  box-shadow: inset 1px 1px 2px rgba(18, 40, 30, 0.08);
+  cursor: pointer; vertical-align: middle;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.25s var(--curva), transform 0.15s var(--curva);
+}
+input[type="radio"] { border-radius: 50%; }
+input[type="checkbox"]:hover, input[type="radio"]:hover { border-color: var(--brand); }
+input[type="checkbox"]:active, input[type="radio"]:active { transform: scale(0.9); }
+input[type="checkbox"]:checked {
+  background-color: var(--brand); border-color: var(--brand);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E");
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 3px 8px rgba(var(--brand-rgb), 0.35);
+}
+input[type="radio"]:checked {
+  background-color: var(--brand); border-color: var(--brand);
+  background-image: radial-gradient(circle, #ffffff 0 34%, transparent 38%);
+}
+input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible {
+  outline: 0; box-shadow: 0 0 0 4px rgba(var(--brand-rgb), 0.25);
+}
+input[type="checkbox"]:disabled, input[type="radio"]:disabled { opacity: 0.5; cursor: not-allowed; }
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
