@@ -6,7 +6,7 @@
 <title>Panel — Permisos Ambientales</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/estilos.css">
 </head>
 <body>
@@ -21,7 +21,7 @@
           <circle cx="20" cy="20" r="2.2" fill="currentColor" stroke="none"/>
         </svg>
       </div>
-      <div><b>Permisos<br>Ambientales</b><span>Caso 8 · MiAmbiente</span></div>
+      <div><b>Permisos Ambientales</b><span>Caso 8 · MiAmbiente</span></div>
     </div>
     <nav>
       <a href="dashboard.html" class="active">
@@ -49,7 +49,7 @@
         Consulta pública
       </a>
     </nav>
-    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 9</div>
+    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 10</div>
   </aside>
 
   <div class="main">
@@ -60,32 +60,78 @@
 
     <div class="content">
       <div class="content-head">
-        <h2>Panel principal</h2>
+        <div>
+          <span class="eyebrow" id="fecha-hoy"></span>
+          <h2 id="saludo">Panel principal</h2>
+          <p class="sub">Esto es lo que necesita atención hoy.</p>
+        </div>
+        <a href="expediente-nuevo.html" class="btn" id="btn-nuevo-panel">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          Nuevo expediente
+        </a>
       </div>
 
       <div class="stat-row">
-        <div class="stat"><div class="num">—</div><div class="lbl">Expedientes activos</div></div>
-        <div class="stat"><div class="num">—</div><div class="lbl">Pendientes de subsanación</div></div>
-        <div class="stat"><div class="num">—</div><div class="lbl">Alertas próximas</div></div>
-        <div class="stat"><div class="num">—</div><div class="lbl">Aprobados por MiAmbiente</div></div>
+        <div class="stat"><div class="top"><span class="lbl">Expedientes</span><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span></div><div class="num">—</div></div>
+        <div class="stat aviso"><div class="top"><span class="lbl">Pendientes de subsanación</span><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 7v5h5"/></svg></span></div><div class="num">—</div></div>
+        <div class="stat info" id="stat-alertas"><div class="top"><span class="lbl">Documentos por vencer</span><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 12v4M12 18.5h.01"/></svg></span></div><div class="num">—</div></div>
+        <div class="stat"><div class="top"><span class="lbl">Aprobados por MiAmbiente</span><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg></span></div><div class="num">—</div></div>
       </div>
 
-      <div class="panel" id="panel-prioridades" style="display:none;">
-        <h3>Dónde poner al equipo hoy</h3>
-        <p class="panel-note">Los expedientes menos preparados, según el Índice de Preparación (IPE): 50% documentos, 30% plazo y 20% vigencia. Listo desde 80; en riesgo por debajo de 50.</p>
-        <ul class="reg-list" id="lista-prioridades"></ul>
+      <!-- HU-08 (Sprint 10): aviso en pantalla cuando un plazo entra en "por vencer" o vence. -->
+      <div class="panel" id="panel-avisos-plazo" style="display:none; border-color:#f2ddb5; background:#fffcf6;">
+        <div class="panel-head">
+          <div>
+            <h3>Avisos de plazo</h3>
+            <p class="panel-note" style="margin:0;">Expedientes cuyo plazo está por vencer o ya venció.</p>
+          </div>
+          <span class="chip" style="background:var(--status-warn-bg); color:var(--status-warn);">HU-08</span>
+        </div>
+        <ul class="reg-list" id="lista-avisos-plazo" style="margin-top:8px;"></ul>
       </div>
 
-      <div class="panel">
-        <h3>Actividad reciente</h3>
-        <p class="panel-note">Últimos movimientos sobre tus expedientes.</p>
-        <ul class="reg-list" id="lista-recientes"></ul>
-      </div>
+      <div class="bento">
+        <div class="col-main">
+          <div class="panel" id="panel-prioridades" style="display:none; padding:0;">
+            <div class="panel-head" style="padding:20px 22px 14px;">
+              <div>
+                <h3>Dónde poner al equipo hoy</h3>
+                <p class="panel-note" style="margin:0;">Los expedientes menos preparados según el Índice de Preparación (IPE), de menor a mayor.</p>
+              </div>
+              <span class="chip chip-brand">HU-15</span>
+            </div>
+            <div style="overflow-x:auto;">
+              <table class="ledger tarjetas">
+                <thead><tr><th style="padding-left:22px;">Expediente</th><th>Preparación</th><th>Próxima acción</th><th></th></tr></thead>
+                <tbody id="lista-prioridades"></tbody>
+              </table>
+            </div>
+            <p class="small" style="padding:14px 22px; border-top:1px solid var(--line-soft);">IPE = 50% documentos + 30% plazo + 20% vigencia. Listo desde 80 · en riesgo por debajo de 50.</p>
+          </div>
 
-      <div class="panel">
-        <h3>Alertas próximas</h3>
-        <p class="panel-note">Documentos con vigencia por vencer.</p>
-        <ul class="reg-list" id="lista-alertas"></ul>
+          <div class="panel">
+            <h3>Actividad reciente</h3>
+            <p class="panel-note">Últimos expedientes registrados.</p>
+            <ul class="reg-list" id="lista-recientes"></ul>
+          </div>
+        </div>
+
+        <div class="col-side">
+          <div class="panel" id="panel-urgente" style="display:none;">
+            <div class="panel-head"><h3>El más urgente</h3><span class="chip">IPE</span></div>
+            <div id="urgente-medidor" style="margin-top:10px;"></div>
+            <div class="consejo bad" style="margin-top:16px;">
+              <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 8v5M12 16.5h.01"/><circle cx="12" cy="12" r="9"/></svg></span>
+              <span id="urgente-texto"></span>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>Documentos por vencer</h3>
+            <p class="panel-note" id="nota-vencimiento">Según la fecha de vencimiento de cada documento (o un año desde que se subió). <a href="cuenta.html">Cambiar el aviso</a></p>
+            <ul class="reg-list" id="lista-alertas"></ul>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -97,6 +143,18 @@ const usuario = requireAuth();
 if (usuario) {
   pintarTopbar();
 
+  // Saludo y fecha de hoy.
+  const ahora = new Date();
+  const hora = ahora.getHours();
+  const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
+  const nombre = (usuario.nombre || '').split(' ')[0];
+  document.getElementById('saludo').textContent = nombre ? `${saludo}, ${nombre}` : saludo;
+  document.getElementById('fecha-hoy').textContent = ahora.toLocaleDateString('es-PA',
+    { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  if (esPromotor()) document.getElementById('btn-nuevo-panel').style.display = 'none';
+
+  const vacio = (texto) => `<li style="color:var(--ink-faint);">${texto}</li>`;
+
   apiFetch('/dashboard').then(d => {
     const nums = document.querySelectorAll('.stat .num');
     if (d.metricas && nums.length >= 4) {
@@ -104,21 +162,33 @@ if (usuario) {
       nums[1].textContent = d.metricas.pendientes;
       nums[2].textContent = d.metricas.alertas;
       nums[3].textContent = d.metricas.aprobados;
+      if (d.metricas.alertas > 0) document.getElementById('stat-alertas').classList.add('alerta');
     }
 
     // HU-15: solo la consultora ve las prioridades (el promotor no recibe el dato).
     if (Array.isArray(d.prioridades) && (esJefe() || esConsultor())) {
       document.getElementById('panel-prioridades').style.display = 'block';
-      const ulP = document.getElementById('lista-prioridades');
-      ulP.innerHTML = d.prioridades.length ? '' : '<li style="color:var(--ink-faint);">No hay expedientes abiertos.</li>';
+      const tb = document.getElementById('lista-prioridades');
+      tb.innerHTML = d.prioridades.length ? ''
+        : '<tr><td colspan="4" class="sin-etiqueta" data-label="" style="padding:22px; color:var(--ink-faint);">No hay expedientes abiertos.</td></tr>';
       d.prioridades.forEach(p => {
-        ulP.innerHTML += `<li>
-          <span><span class="code">${esc(p.codigo)}</span>${esc(p.proyecto)}
-            <br><span style="font-size:13px; color:var(--ink-soft);">${esc(p.proxima_accion || 'Sin acciones pendientes')}</span></span>
-          <span style="text-align:right; white-space:nowrap;">${etiquetaIpe({ valor: p.ipe, banda: p.banda, banda_texto: p.banda_texto })}
-            <br><a href="expediente-detalle.html?codigo=${encodeURIComponent(p.codigo)}">Ver</a></span>
-        </li>`;
+        const url = 'expediente-detalle.html?codigo=' + encodeURIComponent(p.codigo);
+        tb.innerHTML += `<tr>
+          <td data-label="Expediente" style="padding-left:22px;"><div style="display:flex; flex-direction:column; gap:3px;">
+            <b style="font-weight:600;">${esc(p.proyecto)}</b><span class="mono" style="font-size:12px; color:var(--ink-faint);">${esc(p.codigo)}</span></div></td>
+          <td data-label="Preparación">${celdaIpe({ valor: p.ipe, banda: p.banda, banda_texto: p.banda_texto })}</td>
+          <td data-label="Próxima acción">${esc(p.proxima_accion || 'Sin acciones pendientes')}</td>
+          <td data-label="" style="text-align:right; padding-right:22px;"><a class="btn btn-ghost" style="min-height:34px; padding:0 12px; font-size:13px;" href="${url}">Abrir</a></td>
+        </tr>`;
       });
+
+      const primero = d.prioridades[0];
+      if (primero) {
+        document.getElementById('panel-urgente').style.display = 'block';
+        document.getElementById('urgente-medidor').innerHTML = medidorIpe(primero.ipe, primero.banda, primero.banda_texto);
+        document.getElementById('urgente-texto').innerHTML =
+          `<b style="color:var(--ink);">Empiece por ${esc(primero.proyecto)}.</b> ${esc(primero.proxima_accion || 'Revise el expediente.')}`;
+      }
     }
 
     const ulR = document.getElementById('lista-recientes');
@@ -128,20 +198,41 @@ if (usuario) {
         ulR.innerHTML += `<li><span><span class="code">${esc(r.codigo)}</span>${esc(r.proyecto)}</span> <span class="${claseEstado(r.estado)}">${textoEstado(r.estado)}</span></li>`;
       });
     } else {
-      ulR.innerHTML = '<li style="color:var(--ink-faint);">Sin expedientes registrados.</li>';
+      ulR.innerHTML = vacio('Sin expedientes registrados.');
     }
 
-       const ulA = document.getElementById('lista-alertas');
+    // HU-08: avisos de plazo para todos los roles (el promotor incluido).
+    const avisos = d.avisos_plazo || [];
+    if (avisos.length) {
+      document.getElementById('panel-avisos-plazo').style.display = 'block';
+      document.getElementById('lista-avisos-plazo').innerHTML = avisos.map(a => {
+        const n = a.dias_restantes_legales;
+        const unidad = a.base_plazo === 'sometimiento' ? 'días hábiles' : 'días';
+        const texto = n < 0 ? `venció hace ${-n} ${unidad}` : n === 0 ? 'vence hoy' : `vence en ${n} ${unidad}`;
+        const clase = a.estado_semaforo === 'vencido' ? 'status status-bad' : 'status status-warn';
+        const quien = a.base_plazo === 'sometimiento' ? 'Plazo de MiAmbiente' : 'Plazo de preparación';
+        return `<li><span><span class="code">${esc(a.codigo)}</span>${esc(a.proyecto)}
+            <br><span class="small">${quien}: ${texto}</span></span>
+          <span style="display:flex; gap:10px; align-items:center;"><span class="${clase}">${a.estado_semaforo === 'vencido' ? 'Vencido' : 'Por vencer'}</span>
+          <a href="expediente-detalle.html?codigo=${encodeURIComponent(a.codigo)}">Ver</a></span></li>`;
+      }).join('');
+    }
+    if (d.aviso_vencimiento_dias) {
+      document.getElementById('nota-vencimiento').innerHTML =
+        `Le avisamos ${esc(d.aviso_vencimiento_dias)} días antes del vencimiento de cada documento. <a href="cuenta.html">Cambiar</a>`;
+    }
+
+    const ulA = document.getElementById('lista-alertas');
     ulA.innerHTML = '';
     if (d.alertas && d.alertas.length) {
       d.alertas.forEach(a => {
         ulA.innerHTML += `<li>
-          <span><span class="code">${esc(a.codigo)}</span> ${esc(a.descripcion)}</span> 
+          <span><span class="code">${esc(a.codigo)}</span>${esc(a.descripcion)}</span>
           <a href="expediente-detalle.html?codigo=${encodeURIComponent(a.codigo)}">Ver</a>
         </li>`;
       });
     } else {
-      ulA.innerHTML = '<li style="color:var(--ink-faint);">Sin alertas próximas en este momento.</li>';
+      ulA.innerHTML = vacio(`Ningún documento vence en los próximos ${esc(d.aviso_vencimiento_dias || 30)} días.`);
     }
   }).catch(console.error);
 }

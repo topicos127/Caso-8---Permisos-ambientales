@@ -6,7 +6,7 @@
 <title>Detalle de expediente — Permisos Ambientales</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/estilos.css">
 </head>
 <body>
@@ -21,7 +21,7 @@
           <circle cx="20" cy="20" r="2.2" fill="currentColor" stroke="none"/>
         </svg>
       </div>
-      <div><b>Permisos<br>Ambientales</b><span>Caso 8 · MiAmbiente</span></div>
+      <div><b>Permisos Ambientales</b><span>Caso 8 · MiAmbiente</span></div>
     </div>
     <nav>
       <a href="dashboard.html">
@@ -49,7 +49,7 @@
         Consulta pública
       </a>
     </nav>
-    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 9</div>
+    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 10</div>
   </aside>
 
   <div class="main">
@@ -71,27 +71,14 @@
       </div>
 
       <!-- LÍNEA DE TIEMPO (TIMELINE) -->
-      <div class="panel" id="panel-timeline" style="padding: 24px;">
-        <h3 style="margin-bottom: 20px;">Estado del trámite</h3>
-        <div style="display: flex; align-items: center; justify-content: space-between; position: relative;">
-          <div style="position: absolute; top: 15px; left: 0; width: 100%; height: 4px; background: #e8e1cf; z-index: 1;"></div>
-          <div style="position: relative; z-index: 2; text-align: center; width: 100px;">
-            <div id="step-creado" style="width: 34px; height: 34px; border-radius: 50%; background: #e8e1cf; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: bold; border: 2px solid white; box-shadow: 0 0 0 2px #e8e1cf;">1</div>
-            <div style="font-size: 12.5px; font-weight: 600; color: var(--ink-soft);">Creado</div>
-          </div>
-          <div style="position: relative; z-index: 2; text-align: center; width: 100px;">
-            <div id="step-interno" style="width: 34px; height: 34px; border-radius: 50%; background: #e8e1cf; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: bold; border: 2px solid white; box-shadow: 0 0 0 2px #e8e1cf;">2</div>
-            <div style="font-size: 12.5px; font-weight: 600; color: var(--ink-soft);">Aprobado internamente</div>
-          </div>
-          <div style="position: relative; z-index: 2; text-align: center; width: 100px;">
-            <div id="step-evaluacion" style="width: 34px; height: 34px; border-radius: 50%; background: #e8e1cf; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: bold; border: 2px solid white; box-shadow: 0 0 0 2px #e8e1cf;">3</div>
-            <div style="font-size: 12.5px; font-weight: 600; color: var(--ink-soft);">En evaluación</div>
-          </div>
-          <div style="position: relative; z-index: 2; text-align: center; width: 100px;">
-            <div id="step-aprobado" style="width: 34px; height: 34px; border-radius: 50%; background: #e8e1cf; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: bold; border: 2px solid white; box-shadow: 0 0 0 2px #e8e1cf;">4</div>
-            <div style="font-size: 12.5px; font-weight: 600; color: var(--ink-soft);">Aprobado por MiAmbiente</div>
-          </div>
-        </div>
+      <div class="panel" id="panel-timeline">
+        <h3 style="margin-bottom:16px;">Etapas del trámite</h3>
+        <ol class="etapas">
+          <li class="etapa"><div class="linea"><span class="punto" id="step-creado">1</span><span class="tramo"></span></div><span class="nombre">Creado</span></li>
+          <li class="etapa"><div class="linea"><span class="punto" id="step-interno">2</span><span class="tramo"></span></div><span class="nombre">Aprobado internamente</span></li>
+          <li class="etapa"><div class="linea"><span class="punto" id="step-evaluacion">3</span><span class="tramo"></span></div><span class="nombre">En evaluación</span></li>
+          <li class="etapa"><div class="linea"><span class="punto" id="step-aprobado">4</span><span class="tramo"></span></div><span class="nombre">Aprobado por MiAmbiente</span></li>
+        </ol>
       </div>
 
       <div class="panel" id="panel-resumen">
@@ -103,107 +90,146 @@
         </div>
       </div>
 
-      <div class="panel" id="panel-ipe" style="display:none;">
-        <h3>Índice de Preparación (IPE)</h3>
-        <p class="panel-note">50% documentos, 30% plazo legal y 20% vigencia. Listo desde 80; en riesgo por debajo de 50.</p>
-        <div class="fact-row" style="margin-top:12px;">
-          <div class="fact"><span class="k">IPE</span><span id="ipe-valor"></span></div>
-          <div class="fact"><span class="k">DOCUMENTOS</span><span class="v" id="ipe-documentos"></span></div>
-          <div class="fact"><span class="k">PLAZO</span><span class="v" id="ipe-plazo"></span></div>
-          <div class="fact"><span class="k">VIGENCIA</span><span class="v" id="ipe-vigencia"></span></div>
+      <div class="bento">
+        <div class="col-main">
+          <div class="panel" id="panel-docs">
+            <h3>Documentos del expediente</h3>
+            <p class="panel-note" id="panel-note-docs">
+              Haz click en una carpeta para subir el archivo correspondiente. Solo se aceptan archivos PDF y ZIP (máx. 20 MB).
+            </p>
+            <div class="doc-field" id="campo-vencimiento" style="display:none; max-width:320px; margin:4px 0 0;">
+          <label for="input-vencimiento">Fecha de vencimiento del próximo archivo (opcional)</label>
+          <input type="date" id="input-vencimiento">
+          <span class="small">Si el documento vence (paz y salvo, certificados), anótela antes de subirlo. Sin fecha, se estima un año.</span>
         </div>
-        <h4 style="margin-top:18px; font-size:13px;">Próximas acciones</h4>
-        <ul class="reg-list" id="ipe-acciones" style="margin-top:8px;"></ul>
-      </div>
-
-      <div class="panel" id="panel-docs">
-        <h3>Documentos del expediente</h3>
-        <p class="panel-note" id="panel-note-docs">
-          Haz click en una carpeta para subir el archivo correspondiente. Solo se aceptan archivos PDF y ZIP (máx. 20 MB).
-        </p>
         <ul class="checklist" id="lista-docs" style="margin-top:14px;"></ul>
-        <div id="upload-status" class="doc-msg" style="margin-top:14px;"></div>
-        <button type="button" id="btnZip" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line);">Descargar expediente completo (.zip)</button>
-        <button type="button" id="btnPdf" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line); margin-left: 8px;">Descargar resumen (PDF)</button>
-        <a id="link-historial" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line); margin-left: 8px; display:none;">Ver historial</a>
-      </div>
-
-      <div class="panel" id="panel-aprobacion">
-        <h3>Aprobación interna</h3>
-        <p class="panel-note" id="aprobacion-note">
-          El jefe de la consultora aprueba internamente el expediente antes de someterlo a MiAmbiente, cuando todos los documentos estén completos.
-        </p>
-
-        <div id="aprobacion-form" style="display:none;">
-          <div class="doc-field">
-            <label>Motivo de aprobación</label>
-            <textarea id="input-motivo" rows="3" placeholder="Ej. Documentación verificada y completa..."></textarea>
+            <div id="upload-status" class="doc-msg" style="margin-top:14px;"></div>
+            <button type="button" id="btnZip" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line);">Descargar expediente completo (.zip)</button>
+            <button type="button" id="btnPdf" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line); margin-left: 8px;">Descargar resumen (PDF)</button>
+            <a id="link-historial" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line); margin-left: 8px; display:none;">Ver historial</a>
           </div>
-          <button class="btn btn-brass" id="btnAprobar">Aprobar internamente</button>
-        </div>
+          <div class="panel" id="panel-verificacion" style="display:none;">
+            <h3>Verificación de requisitos</h3>
+            <p class="panel-note" id="verif-resumen"></p>
+            <ul class="checklist" id="verif-lista" style="margin-top:14px;"></ul>
+            <div class="checklist-warn" id="verif-warn" style="display:none;">
+              El expediente no puede someterse a MiAmbiente mientras falten documentos obligatorios.
+            </div>
+            <div class="doc-msg" id="verif-ok" style="margin-top:14px;"></div>
+          </div>
+          <div class="panel" id="panel-aprobacion">
+            <h3>Aprobación interna</h3>
+            <p class="panel-note" id="aprobacion-note">
+              El jefe de la consultora aprueba internamente el expediente antes de someterlo a MiAmbiente, cuando todos los documentos estén completos.
+            </p>
 
-        <div id="aprobacion-aviso-faltantes" class="checklist-warn" style="display:none;">
-          No se puede aprobar internamente mientras falten documentos obligatorios.
-        </div>
+            <div id="aprobacion-form" style="display:none;">
+              <div class="doc-field">
+                <label>Motivo de aprobación</label>
+                <textarea id="input-motivo" rows="3" placeholder="Ej. Documentación verificada y completa..."></textarea>
+              </div>
+              <button class="btn btn-brass" id="btnAprobar">Aprobar internamente</button>
+            </div>
 
-        <div id="aprobacion-info"></div>
+            <!-- Sprint 10: el jefe devuelve el expediente con lo que hay que corregir. -->
+            <div id="devolver-form" style="display:none; margin-top:18px; padding-top:16px; border-top:1px solid var(--line-soft);">
+              <div class="doc-field">
+                <label for="input-observaciones">Devolver al consultor con observaciones</label>
+                <textarea id="input-observaciones" rows="3" placeholder="Ej. Falta la firma del promotor en los Anexos Legales."></textarea>
+              </div>
+              <button type="button" class="btn btn-ghost" id="btnDevolver">Devolver con observaciones</button>
+            </div>
+            <div id="observaciones-lista" style="margin-top:14px;"></div>
 
-        <div id="aprobacion-btn-someter" style="display:none; margin-top:16px;">
-          <button class="btn btn-brass" id="btnSometer">Someter a MiAmbiente</button>
-        </div>
+            <div id="aprobacion-aviso-faltantes" class="checklist-warn" style="display:none;">
+              No se puede aprobar internamente mientras falten documentos obligatorios.
+            </div>
 
-        <div id="aprobacion-btn-simular" style="display:none; margin-top:16px;">
-          <button class="btn btn-brass" id="btnSimularMiAmbiente">Simular aprobación de MiAmbiente</button>
-        </div>
+            <div id="aprobacion-info"></div>
 
-        <div id="aprobacion-completa" style="display:none; margin-top:16px; padding:12px; background:var(--status-ok-bg); border-left:3px solid var(--status-ok);">
-          <strong style="color:var(--status-ok);">✅ Expediente aprobado por MiAmbiente.</strong>
-          <p style="font-size:13.5px; margin-top:4px;">El permiso está listo.</p>
-        </div>
-      </div>
+            <div id="aprobacion-btn-someter" style="display:none; margin-top:16px;">
+              <button class="btn btn-brass" id="btnSometer">Someter a MiAmbiente</button>
+            </div>
 
-      <div class="panel" id="panel-acceso" style="display:none;">
-        <h3>Acceso público y cuenta del promotor</h3>
-        <p class="panel-note" id="acceso-estado"></p>
-        <button type="button" class="btn btn-ghost mt-3" id="btnAcceso" style="border:1.5px solid var(--line); display:none;"></button>
-        <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--line);">
-          <p class="panel-note" id="promotor-nota"></p>
-          <button type="button" class="btn btn-brass mt-3" id="btnCuentaPromotor" style="display:none;">Crear acceso del promotor</button>
-          <div id="promotor-resultado" class="doc-msg" style="margin-top:12px;"></div>
-        </div>
-      </div>
+            <!-- Sprint 10: resolucion real de MiAmbiente (antes era un boton simulado). -->
+            <div id="aprobacion-btn-simular" style="display:none; margin-top:16px;">
+              <h4 style="margin-bottom:10px;">Registrar la resolución de MiAmbiente</h4>
+              <div class="doc-field-row">
+                <div class="doc-field">
+                  <label for="res-resultado">Resultado</label>
+                  <select id="res-resultado">
+                    <option value="aprobado">Aprobado</option>
+                    <option value="rechazado">Rechazado</option>
+                  </select>
+                </div>
+                <div class="doc-field">
+                  <label for="res-numero">Número de resolución</label>
+                  <input type="text" id="res-numero" maxlength="60" placeholder="Ej. DEIA-IA-123-2026">
+                </div>
+              </div>
+              <div class="doc-field" style="max-width:260px;">
+                <label for="res-fecha">Fecha de la resolución</label>
+                <input type="date" id="res-fecha">
+              </div>
+              <button class="btn btn-brass" id="btnResolucion">Registrar resolución</button>
+            </div>
 
-      <div class="panel" id="panel-plazos" style="display:none;">
-        <h3>Plazo legal de respuesta</h3>
-        <p class="panel-note">Según la Ley 41 de 1998, MiAmbiente tiene un plazo máximo de respuesta según la categoría del proyecto.</p>
-        <div style="margin-top:16px;">
-          <div class="fact-row">
-            <div class="fact"><span class="k">CATEGORÍA</span><span class="v" id="plazo-categoria">—</span></div>
-            <div class="fact"><span class="k">DÍAS TRANSCURRIDOS</span><span class="v" id="plazo-transcurridos">—</span></div>
-            <div class="fact"><span class="k">DÍAS RESTANTES</span><span class="v" id="plazo-restantes">—</span></div>
-            <div class="fact"><span class="k">ESTADO</span><span id="plazo-estado">—</span></div>
+            <div id="aprobacion-completa" style="display:none; margin-top:16px; padding:14px; background:var(--status-ok-bg); border-radius:12px;">
+              <strong style="color:var(--status-ok); display:inline-flex; align-items:center; gap:8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>Expediente aprobado por MiAmbiente.</strong>
+              <p style="font-size:13.5px; margin-top:4px;" id="resolucion-aprobado">El permiso está listo.</p>
+            </div>
+
+            <div id="aprobacion-rechazada" style="display:none; margin-top:16px; padding:14px; background:var(--status-bad-bg); border-radius:12px;">
+              <strong style="color:var(--status-bad);">MiAmbiente rechazó el expediente.</strong>
+              <p style="font-size:13.5px; margin-top:4px;" id="resolucion-rechazado"></p>
+            </div>
           </div>
         </div>
-        <div style="margin-top:20px;">
-          <div style="height:10px; background:#e8e1cf; border-radius:5px; overflow:hidden;">
-            <div id="plazo-barra" style="height:100%; width:0%; background:#2e7d4f; transition:width 0.5s;"></div>
+        <div class="col-side">
+          <div class="panel" id="panel-ipe" style="display:none;">
+            <div class="panel-head"><h3>Índice de Preparación</h3><span class="chip chip-brand">HU-15</span></div>
+            <div id="ipe-valor" style="margin-top:10px;"></div>
+            <div class="factores">
+              <div class="factor" id="ipe-documentos"></div>
+              <div class="factor" id="ipe-plazo"></div>
+              <div class="factor" id="ipe-vigencia"></div>
+            </div>
+            <h4 style="margin-top:18px;">Próximas acciones</h4>
+            <ul class="acciones-ipe" id="ipe-acciones"></ul>
           </div>
-          <div style="display:flex; justify-content:space-between; margin-top:6px; font-family:var(--mono); font-size:11px; color:var(--ink-faint);">
-            <span>Ingreso</span>
-            <span>Plazo máximo</span>
+          <div class="panel" id="panel-plazos" style="display:none;">
+            <h3>Plazo legal de respuesta</h3>
+            <p class="panel-note">Según la Ley 41 de 1998, MiAmbiente tiene un plazo máximo de respuesta según la categoría del proyecto.</p>
+            <div style="margin-top:16px;">
+              <div class="fact-row">
+                <div class="fact"><span class="k">CATEGORÍA</span><span class="v" id="plazo-categoria">—</span></div>
+                <div class="fact"><span class="k">DÍAS TRANSCURRIDOS</span><span class="v" id="plazo-transcurridos">—</span></div>
+                <div class="fact"><span class="k">DÍAS RESTANTES</span><span class="v" id="plazo-restantes">—</span></div>
+                <div class="fact"><span class="k">ESTADO</span><span id="plazo-estado">—</span></div>
+              </div>
+            </div>
+            <div style="margin-top:20px;">
+              <div class="plazo-barra">
+                <div id="plazo-barra" style="width:0%; background:#1f9d67;"></div>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:12px; color:var(--ink-faint);">
+                <span id="plazo-desde">Ingreso</span>
+                <span>Plazo máximo</span>
+              </div>
+              <p class="panel-note" id="plazo-nota" style="margin-top:10px;"></p>
+            </div>
           </div>
-          <p class="panel-note" id="plazo-nota" style="margin-top:10px;"></p>
+          <div class="panel" id="panel-acceso" style="display:none;">
+            <h3>Acceso público y cuenta del promotor</h3>
+            <p class="panel-note" id="acceso-estado"></p>
+            <button type="button" class="btn btn-ghost mt-3" id="btnAcceso" style="border:1.5px solid var(--line); display:none;"></button>
+            <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--line);">
+              <p class="panel-note" id="promotor-nota"></p>
+              <button type="button" class="btn btn-brass mt-3" id="btnCuentaPromotor" style="display:none;">Crear acceso del promotor</button>
+              <div id="promotor-resultado" class="doc-msg" style="margin-top:12px;"></div>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div class="panel" id="panel-verificacion" style="display:none;">
-        <h3>Verificación de requisitos</h3>
-        <p class="panel-note" id="verif-resumen"></p>
-        <ul class="checklist" id="verif-lista" style="margin-top:14px;"></ul>
-        <div class="checklist-warn" id="verif-warn" style="display:none;">
-          El expediente no puede someterse a MiAmbiente mientras falten documentos obligatorios.
-        </div>
-        <div class="doc-msg" id="verif-ok" style="margin-top:14px;"></div>
       </div>
 
     </div>
@@ -226,7 +252,7 @@ if (usuario) {
   if (!esPromotorUsuario) {
     const linkHistorial = document.getElementById('link-historial');
     linkHistorial.href = 'historial.html?codigo=' + encodeURIComponent(codigo);
-    linkHistorial.style.display = 'inline-block';
+    linkHistorial.style.display = 'inline-flex';
   }
 
   let estadoExpedienteActual = 'pendiente';
@@ -386,6 +412,20 @@ if (usuario) {
         info.textContent = `↳ ${doc.archivo_nombre}${doc.archivo_tamano ? ' · ' + formatearTamano(doc.archivo_tamano) : ''}${doc.fecha_subida ? ' · ' + doc.fecha_subida : ''}`;
         li.appendChild(info);
 
+        // HU-05 (Sprint 10): vencimiento real del documento, o estimado a un año.
+        if (doc.vence) {
+          const vence = document.createElement('div');
+          vence.style.fontSize = '12.5px';
+          vence.style.marginTop = '4px';
+          const dias = doc.dias_para_vencer;
+          const aviso = dias != null && dias < 30;
+          vence.style.color = dias != null && dias < 0 ? 'var(--status-bad)' : aviso ? 'var(--status-warn)' : 'var(--ink-faint)';
+          vence.style.fontWeight = aviso ? '600' : '400';
+          const cuando = dias < 0 ? `venció hace ${-dias} días` : `vence el ${doc.vence} (en ${dias} días)`;
+          vence.textContent = (doc.vencimiento_real ? 'Vigencia: ' : 'Vigencia estimada: ') + cuando;
+          li.appendChild(vence);
+        }
+
         if (doc.codigo_trazabilidad) {
           const traza = document.createElement('div');
           traza.style.fontFamily = 'var(--mono)';
@@ -490,12 +530,29 @@ if (usuario) {
     if (verif.puede_someter) {
       warn.style.display = 'none';
       ok.className = 'doc-msg show ok';
-      ok.textContent = '✔ Todos los documentos obligatorios están completos.';
+      ok.textContent = 'Todos los documentos obligatorios están completos.';
     } else {
       warn.style.display = 'block';
       ok.className = 'doc-msg';
       ok.textContent = '';
     }
+  }
+
+  let resolucionActual = null;
+  let observacionesActuales = [];
+
+  function pintarObservaciones() {
+    const cont = document.getElementById('observaciones-lista');
+    if (!observacionesActuales.length) { cont.innerHTML = ''; return; }
+    cont.innerHTML = '<h4 style="margin-bottom:8px;">Observaciones del jefe</h4>' + observacionesActuales.map(o =>
+      `<div style="margin-top:8px; padding:12px 14px; background:var(--status-warn-bg); border-radius:12px;">
+        <div style="font-size:12px; color:var(--status-warn); font-weight:600;">${esc(o.fecha)} · ${esc(o.autor || 'Jefe')}</div>
+        <div style="margin-top:4px; font-size:14px;">${esc(o.texto)}</div>
+      </div>`).join('');
+  }
+
+  function textoResolucion(r) {
+    return r ? `Resolución ${r.numero} del ${r.fecha_resolucion}${r.registrado_por ? ', registrada por ' + r.registrado_por : ''}.` : '';
   }
 
   async function renderAprobacion(estado, verif) {
@@ -507,6 +564,20 @@ if (usuario) {
     const btnSometerDiv = document.getElementById('aprobacion-btn-someter');
     const btnSimularDiv = document.getElementById('aprobacion-btn-simular');
     const completaDiv = document.getElementById('aprobacion-completa');
+    const rechazadaDiv = document.getElementById('aprobacion-rechazada');
+    const devolverDiv = document.getElementById('devolver-form');
+
+    rechazadaDiv.style.display = 'none';
+    devolverDiv.style.display = 'none';
+    pintarObservaciones();
+    if (resolucionActual) {
+      document.getElementById('resolucion-aprobado').textContent = textoResolucion(resolucionActual);
+      document.getElementById('resolucion-rechazado').textContent = textoResolucion(resolucionActual);
+    }
+    // Sprint 10: el jefe puede devolver lo que aún no se ha sometido.
+    if (!esPromotorUsuario && esJefe() && (estado === 'pendiente' || estado === 'aprobado_interno')) {
+      devolverDiv.style.display = 'block';
+    }
 
     formDiv.style.display = 'none';
     avisoFaltantes.style.display = 'none';
@@ -525,6 +596,9 @@ if (usuario) {
       } else if (estado === 'aprobado') {
         note.textContent = 'El expediente fue aprobado por MiAmbiente.';
         completaDiv.style.display = 'block';
+      } else if (estado === 'rechazado') {
+        note.textContent = 'MiAmbiente emitió su resolución.';
+        rechazadaDiv.style.display = 'block';
       }
       await cargarRegistroAprobaciones(infoDiv);
       return;
@@ -542,16 +616,22 @@ if (usuario) {
         avisoFaltantes.style.display = 'block';
       }
     } else if (estado === 'aprobado_interno') {
-      note.innerHTML = '<span style="color:var(--status-ok);">✔ Expediente aprobado internamente.</span> Listo para someter a MiAmbiente.';
+      note.innerHTML = '<span style="color:var(--status-ok);">Expediente aprobado internamente.</span> Listo para someter a MiAmbiente.';
       btnSometerDiv.style.display = 'block';
       await cargarRegistroAprobaciones(infoDiv);
     } else if (estado === 'evaluacion') {
       note.textContent = 'El expediente fue sometido a MiAmbiente. Está en evaluación.';
       btnSimularDiv.style.display = 'block';
+      const fechaRes = document.getElementById('res-fecha');
+      fechaRes.max = new Date().toISOString().slice(0, 10);
       await cargarRegistroAprobaciones(infoDiv);
     } else if (estado === 'aprobado') {
       note.textContent = 'Expediente aprobado por MiAmbiente.';
       completaDiv.style.display = 'block';
+      await cargarRegistroAprobaciones(infoDiv);
+    } else if (estado === 'rechazado') {
+      note.textContent = 'MiAmbiente emitió su resolución.';
+      rechazadaDiv.style.display = 'block';
       await cargarRegistroAprobaciones(infoDiv);
     }
   }
@@ -621,13 +701,20 @@ if (usuario) {
     const panel = document.getElementById('panel-ipe');
     if (!ipe) { panel.style.display = 'none'; return; }
     panel.style.display = 'block';
-    document.getElementById('ipe-valor').innerHTML = etiquetaIpe({ valor: ipe.ipe, banda: ipe.banda, banda_texto: ipe.banda_texto });
-    document.getElementById('ipe-documentos').textContent = ipe.componentes.documentos + ' / 100';
-    document.getElementById('ipe-plazo').textContent = ipe.componentes.plazo + ' / 100';
-    document.getElementById('ipe-vigencia').textContent = ipe.componentes.vigencia + ' / 100';
+    document.getElementById('ipe-valor').innerHTML = medidorIpe(ipe.ipe, ipe.banda, ipe.banda_texto);
+    const bandaDe = (v) => v >= 80 ? 'listo' : v >= 50 ? 'en_preparacion' : 'en_riesgo';
+    const factor = (id, nombre, valor, peso, detalle) => {
+      document.getElementById(id).innerHTML = anilloIpe(valor, bandaDe(valor))
+        + `<div class="txt"><b>${nombre} · ${esc(valor)}</b><span>${detalle}</span></div>`
+        + `<span class="chip">Peso ${peso}%</span>`;
+    };
+    const c = ipe.componentes;
+    factor('ipe-documentos', 'Documentos', c.documentos, 50, 'Recibidos de los requeridos');
+    factor('ipe-plazo', 'Plazo', c.plazo, 30, c.plazo === 100 ? 'En plazo o resuelto' : c.plazo === 50 ? 'Por vencer' : 'Vencido');
+    factor('ipe-vigencia', 'Vigencia', c.vigencia, 20, c.vigencia === 100 ? 'Nada vence en 30 días' : 'Hay documentos por vencer');
     const ul = document.getElementById('ipe-acciones');
     ul.innerHTML = ipe.acciones.length
-      ? ipe.acciones.map((a, i) => `<li><span>${i + 1}. ${esc(a.texto)}</span></li>`).join('')
+      ? ipe.acciones.map(a => `<li>${esc(a.texto)}</li>`).join('')
       : '<li style="color:var(--ink-faint);">No hay acciones pendientes.</li>';
   }
 
@@ -636,7 +723,7 @@ if (usuario) {
       const ap = await apiFetch('/expedientes/' + codigo + '/aprobaciones');
       if (ap.aprobaciones && ap.aprobaciones.length) {
         infoDiv.innerHTML = ap.aprobaciones.map(a =>
-          `<div style="margin-top:10px; padding:12px; background:var(--paper); border-left:3px solid var(--status-ok);">
+          `<div style="margin-top:10px; padding:12px 14px; background:var(--surface-2); border-radius:12px;">
             <div style="font-family:var(--mono); font-size:11px; color:var(--ink-faint);">${esc(a.fecha)} · ${esc(a.aprobado_por_nombre || 'Usuario')}</div>
             <div style="margin-top:4px; font-size:14px;">${esc(a.motivo)}</div>
           </div>`
@@ -648,10 +735,10 @@ if (usuario) {
   // HU-07: el backend decide el estado del semaforo (en_plazo, por_vencer,
   // vencido o resuelto) y el limite de la categoria. Aqui solo se pinta.
   const SEMAFORO = {
-    en_plazo:   { clase: 'status status-ok',   texto: 'En plazo',   color: '#2e7d4f' },
-    por_vencer: { clase: 'status status-warn', texto: 'Por vencer', color: '#b3812f' },
-    vencido:    { clase: 'status status-bad',  texto: 'Vencido',    color: '#a23b2e' },
-    resuelto:   { clase: 'status status-info', texto: 'Resuelto',   color: '#8a8478' },
+    en_plazo:   { clase: 'status status-ok',      texto: 'En plazo',   color: '#1f9d67' },
+    por_vencer: { clase: 'status status-warn',    texto: 'Por vencer', color: '#e09a1a' },
+    vencido:    { clase: 'status status-bad',     texto: 'Vencido',    color: '#e04b3f' },
+    resuelto:   { clase: 'status status-neutral', texto: 'Resuelto',   color: '#c9cfcb' },
   };
 
   function renderPlazos(alertas) {
@@ -670,10 +757,21 @@ if (usuario) {
     document.getElementById('plazo-estado').innerHTML = `<span class="${sem.clase}">${sem.texto}</span>`;
 
     const nota = document.getElementById('plazo-nota');
+    const fmt = (iso) => iso ? iso.split('-').reverse().join('/') : '';
+    const habiles = alertas.base_plazo === 'sometimiento';
+    if (!resuelto) {
+      const unidad = habiles ? ' días hábiles' : ' días';
+      document.getElementById('plazo-transcurridos').textContent = alertas.dias_transcurridos + unidad;
+      document.getElementById('plazo-restantes').textContent = alertas.dias_restantes_legales + unidad;
+    }
+    document.getElementById('plazo-desde').textContent = habiles ? 'Sometimiento' : 'Ingreso';
     if (nota) {
+      // HU-08 (Sprint 10): el plazo de MiAmbiente corre en días hábiles desde el sometimiento.
       nota.textContent = resuelto
         ? 'El expediente ya fue resuelto: el plazo dejó de correr.'
-        : `Plazo de ${limite} días. Se marca "Por vencer" cuando quedan ${alertas.umbral_por_vencer} días o menos.`;
+        : habiles
+          ? `Plazo de MiAmbiente: ${limite} días hábiles desde el sometimiento (${fmt(alertas.fecha_inicio)}), sin fines de semana ni feriados. Vence el ${fmt(alertas.fecha_limite)}. Se marca "Por vencer" cuando quedan ${alertas.umbral_por_vencer} días hábiles o menos.`
+          : `Aún no se somete: se mide la preparación en días calendario desde el ingreso (${limite} días, hasta el ${fmt(alertas.fecha_limite)}). Al someter, el plazo de MiAmbiente corre en días hábiles.`;
     }
 
     const barra = document.getElementById('plazo-barra');
@@ -704,17 +802,37 @@ if (usuario) {
         'pendiente': ['step-creado'],
         'aprobado_interno': ['step-creado', 'step-interno'],
         'evaluacion': ['step-creado', 'step-interno', 'step-evaluacion'],
-        'aprobado': ['step-creado', 'step-interno', 'step-evaluacion', 'step-aprobado']
+        'aprobado': ['step-creado', 'step-interno', 'step-evaluacion', 'step-aprobado'],
+        'rechazado': ['step-creado', 'step-interno', 'step-evaluacion']
       };
       
+      // Etapas alcanzadas en verde; la siguiente, en curso.
       const pasosActivos = pasos[e.estado] || ['step-creado'];
-      pasosActivos.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-          el.style.background = '#b3812f'; // Color bronce
-          el.style.boxShadow = '0 0 0 2px #b3812f';
-        }
+      const orden = ['step-creado', 'step-interno', 'step-evaluacion', 'step-aprobado'];
+      orden.forEach(id => {
+        const li = document.getElementById(id).closest('.etapa');
+        li.classList.remove('hecha', 'actual');
       });
+      pasosActivos.forEach(id => document.getElementById(id).closest('.etapa').classList.add('hecha'));
+      const ultima = document.getElementById('step-aprobado').closest('.etapa');
+      ultima.classList.remove('rechazada');
+      ultima.querySelector('.nombre').textContent = 'Aprobado por MiAmbiente';
+      if (e.estado === 'rechazado') {
+        // Sprint 10: la resolución puede ser un rechazo.
+        ultima.classList.add('rechazada');
+        ultima.querySelector('.nombre').textContent = 'Rechazado por MiAmbiente';
+      } else {
+        const siguiente = orden[pasosActivos.length];
+        if (siguiente) document.getElementById(siguiente).closest('.etapa').classList.add('actual');
+      }
+
+      resolucionActual = d.resolucion || null;
+      observacionesActuales = d.observaciones || [];
+      // HU-05: la fecha de vencimiento se pide solo a quien puede subir archivos.
+      const campoVence = document.getElementById('campo-vencimiento');
+      campoVence.style.display = (!esPromotorUsuario && e.estado === 'pendiente') ? 'block' : 'none';
+      const manana = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+      document.getElementById('input-vencimiento').min = manana;
 
       renderDocumentos(d.documentos);
       renderIpe(d.ipe);
@@ -772,6 +890,8 @@ if (usuario) {
 
     const formData = new FormData();
     formData.append('archivo', archivo);
+    const vence = document.getElementById('input-vencimiento');
+    if (vence && vence.value) formData.append('fecha_vencimiento', vence.value);
 
     try {
       const resp = await fetch(
@@ -786,7 +906,9 @@ if (usuario) {
       const data = await resp.json();
 
       if (data.ok) {
-        mensaje(`✔ ${data.archivo_nombre} subido como versión ${data.version} · ${data.codigo_trazabilidad}`, 'ok');
+        mensaje(`${data.archivo_nombre} subido como versión ${data.version} · ${data.codigo_trazabilidad}`
+          + (data.fecha_vencimiento ? ` · vence el ${data.fecha_vencimiento.split('-').reverse().join('/')}` : ''), 'ok');
+        if (vence) vence.value = '';
         await cargarExpediente();
       } else {
         mensaje(data.mensaje || 'Error al subir el archivo.', 'error');
@@ -895,19 +1017,45 @@ if (usuario) {
     });
   }
 
-  const btnSimularMiAmbiente = document.getElementById('btnSimularMiAmbiente');
-  if (btnSimularMiAmbiente) {
-    btnSimularMiAmbiente.addEventListener('click', async () => {
-      if (!confirm('¿Simular que MiAmbiente aprobó el expediente?')) return;
-      const r = await apiFetch(`/expedientes/${codigo}/aprobar-miambiente`, {
+  // Sprint 10: resolución real de MiAmbiente (resultado, número y fecha).
+  const btnResolucion = document.getElementById('btnResolucion');
+  if (btnResolucion) {
+    btnResolucion.addEventListener('click', async () => {
+      const resultado = document.getElementById('res-resultado').value;
+      const numero = document.getElementById('res-numero').value.trim();
+      const fecha = document.getElementById('res-fecha').value;
+      if (!numero || !fecha) { mostrarToast('Escriba el número y la fecha de la resolución.', 'error'); return; }
+      const texto = resultado === 'aprobado' ? 'aprobó' : 'rechazó';
+      if (!confirm(`¿Registrar que MiAmbiente ${texto} el expediente con la resolución ${numero}?`)) return;
+      const r = await apiFetch(`/expedientes/${codigo}/resolucion`, {
         method: 'POST',
-        body: JSON.stringify({})
+        body: JSON.stringify({ resultado, numero, fecha })
       });
       if (r.ok) {
-        mostrarToast('Expediente aprobado por MiAmbiente.', 'exito');
+        mostrarToast(r.mensaje || 'Resolución registrada.', 'exito');
         setTimeout(() => location.reload(), 1500);
       } else {
-        mostrarToast(r.mensaje || 'Error al aprobar.', 'error');
+        mostrarToast(r.mensaje || 'No se pudo registrar la resolución.', 'error');
+      }
+    });
+  }
+
+  // Sprint 10: el jefe devuelve el expediente al consultor con observaciones.
+  const btnDevolver = document.getElementById('btnDevolver');
+  if (btnDevolver) {
+    btnDevolver.addEventListener('click', async () => {
+      const observaciones = document.getElementById('input-observaciones').value.trim();
+      if (!observaciones) { mostrarToast('Escriba qué debe corregir el consultor.', 'error'); return; }
+      if (!confirm('¿Devolver el expediente al consultor con estas observaciones?')) return;
+      const r = await apiFetch(`/expedientes/${codigo}/devolver`, {
+        method: 'POST',
+        body: JSON.stringify({ observaciones })
+      });
+      if (r.ok) {
+        mostrarToast(r.mensaje || 'Expediente devuelto.', 'exito');
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        mostrarToast(r.mensaje || 'No se pudo devolver el expediente.', 'error');
       }
     });
   }

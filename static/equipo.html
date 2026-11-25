@@ -6,7 +6,7 @@
 <title>Equipo — Permisos Ambientales</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/estilos.css">
 </head>
 <body>
@@ -21,7 +21,7 @@
           <circle cx="20" cy="20" r="2.2" fill="currentColor" stroke="none"/>
         </svg>
       </div>
-      <div><b>Permisos<br>Ambientales</b><span>Caso 8 · MiAmbiente</span></div>
+      <div><b>Permisos Ambientales</b><span>Caso 8 · MiAmbiente</span></div>
     </div>
     <nav>
       <a href="dashboard.html">
@@ -49,7 +49,7 @@
         Consulta pública
       </a>
     </nav>
-    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 9</div>
+    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 10</div>
   </aside>
 
   <div class="main">
@@ -119,14 +119,14 @@
 <style>
   .form-alta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; margin-top: 14px; }
   .form-alta .campo { display: flex; flex-direction: column; gap: 6px; }
-  .form-alta label { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.03em; }
+  .form-alta label { font-size: 13px; font-weight: 600; color: var(--ink); }
   .form-alta input, .acciones select {
-    padding: 9px 10px; border: 1px solid var(--line); border-radius: 4px; font: inherit; font-size: 14px; background: var(--surface); min-width: 0;
+    min-height: 44px; padding: 8px 12px; border: 1px solid var(--line-strong); border-radius: 12px; font: inherit; font-size: 14px; background: var(--surface-2); min-width: 0;
   }
   .acciones { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; }
   .acciones .btn { padding: 6px 12px; font-size: 13px; }
-  #aviso-equipo.ok { border-left: 4px solid var(--status-ok, #2e7d4f); }
-  #aviso-equipo.error { border-left: 4px solid var(--status-bad, #a23b2e); }
+  #aviso-equipo.ok { background: var(--status-ok-bg); color: var(--status-ok); }
+  #aviso-equipo.error { background: var(--status-bad-bg); color: var(--status-bad); }
   @media (max-width: 640px) {
     .form-alta { grid-template-columns: minmax(0, 1fr); }
     .acciones { justify-content: flex-end; }

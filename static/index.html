@@ -3,95 +3,322 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Consulta pública — Permisos Ambientales</title>
+<title>Permisos Ambientales</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/estilos.css">
 </head>
 <body>
 
-<svg class="topo-bg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-  <g fill="none" stroke="#16213e" stroke-width="1">
-    <path d="M-50 120 C 250 60, 450 180, 700 110 S 1150 60, 1650 140" opacity="0.05"/>
-    <path d="M-50 220 C 300 170, 500 280, 780 210 S 1200 160, 1650 250" opacity="0.06"/>
-    <path d="M-50 330 C 260 260, 520 380, 800 310 S 1250 270, 1650 360" opacity="0.05"/>
-    <path d="M-50 470 C 280 410, 560 520, 830 450 S 1280 400, 1650 500" opacity="0.06"/>
-    <path d="M-50 600 C 300 540, 540 650, 820 580 S 1220 540, 1650 630" opacity="0.05"/>
-    <path d="M-50 740 C 260 680, 520 800, 810 720 S 1260 680, 1650 770" opacity="0.06"/>
-    <path d="M-50 850 C 300 800, 560 900, 840 830 S 1260 790, 1650 870" opacity="0.05"/>
-  </g>
-</svg>
+<div class="landing-wrap">
 
-<div style="position:relative; z-index:1; min-height:100vh; display:flex; flex-direction:column;">
-
-  <header style="display:flex; align-items:center; justify-content:space-between; padding:20px 40px; border-bottom:1px solid var(--line); background:var(--surface);">
-    <div style="display:flex; align-items:center; gap:12px; color:var(--ink);">
-      <div class="seal" style="width:36px; height:36px;">
-        <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.1" style="width:22px; height:22px;">
-          <circle cx="20" cy="20" r="17"/>
-          <path d="M6 24c4-4 8 4 12 0s8-6 12 0" opacity="0.6"/>
-          <path d="M7 16c4-3 8 3 12 0s8-5 12 0" opacity="0.45"/>
-          <circle cx="20" cy="20" r="2.2" fill="currentColor" stroke="none"/>
-        </svg>
+  <header class="l-header">
+    <div class="wrap">
+      <a class="l-brand" href="index.html" style="text-decoration:none;">
+        <span class="seal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19c9 0 14-6 14-14-8 0-14 5-14 14z"/><path d="M5 19l7-7"/></svg></span>
+        Permisos Ambientales
+      </a>
+      <nav class="l-nav" aria-label="Secciones">
+        <a href="#producto">Producto</a>
+        <a href="#como">Cómo funciona</a>
+        <a href="#roles">Roles</a>
+        <a href="#seguridad">Seguridad</a>
+        <a href="#consulta">Consulta pública</a>
+      </nav>
+      <div class="l-acciones">
+        <a class="btn-texto" href="login.html">Entrar</a>
+        <a class="btn" href="registro.html">Crear cuenta</a>
       </div>
-      <div>
-        <b style="font-family:var(--serif); font-size:15px;">Permisos Ambientales</b>
-        <div style="font-family:var(--mono); font-size:11px; color:var(--ink-soft);">Consulta pública · MiAmbiente</div>
-      </div>
-    </div>
-    <div style="display:flex; gap:10px;">
-      <a href="login.html" class="btn btn-ghost" style="border:1.5px solid var(--line);">Iniciar sesión</a>
-      <a href="registro.html" class="btn btn-brass">Registrarse</a>
     </div>
   </header>
 
-  <main style="flex:1; padding:60px 40px; max-width:920px; margin:0 auto; width:100%;">
-    <h1 style="font-size:clamp(28px,4vw,40px); line-height:1.15; margin-bottom:14px; max-width:22ch;">Consulta el estado de un proyecto ambiental</h1>
-    <p class="content-lede" style="margin:0 0 40px; max-width:56ch;">
-      Ingresa el código de expediente para consultar el estado, la categoría de impacto y el promotor responsable.
-      Solo se muestra información pública — sin datos personales, conforme a la Ley 81 de 2019.
-    </p>
+  <section class="hero">
+    <svg class="contour" viewBox="0 0 1100 700" fill="none" aria-hidden="true">
+      <ellipse cx="550" cy="350" rx="520" ry="300" stroke="#17805A" stroke-opacity="0.07" transform="rotate(14 550 350)"/>
+      <ellipse cx="540" cy="356" rx="440" ry="248" stroke="#17805A" stroke-opacity="0.08" transform="rotate(11 550 350)"/>
+      <ellipse cx="530" cy="362" rx="360" ry="198" stroke="#17805A" stroke-opacity="0.09" transform="rotate(8 550 350)"/>
+      <ellipse cx="522" cy="366" rx="280" ry="150" stroke="#17805A" stroke-opacity="0.11" transform="rotate(5 550 350)"/>
+      <ellipse cx="516" cy="368" rx="200" ry="104" stroke="#17805A" stroke-opacity="0.13" transform="rotate(2 550 350)"/>
+      <ellipse cx="512" cy="370" rx="120" ry="60" stroke="#17805A" stroke-opacity="0.16"/>
+    </svg>
+    <div class="wrap">
+      <div class="hero-texto">
+        <span class="eyebrow-chip">Para consultoras ambientales en Panamá</span>
+        <h1>Cada estudio de impacto ambiental, listo antes de llegar a MiAmbiente.</h1>
+        <p class="lead">Organice sus expedientes por categoría, vea cada plazo legal en un semáforo y sepa cuál atender hoy con el Índice de Preparación del Expediente.</p>
+        <div class="btn-row">
+          <a class="btn" href="login.html">Entrar a la plataforma
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="btn btn-ghost" href="#consulta">Consultar un proyecto</a>
+        </div>
+        <span class="nota">La decisión oficial sigue siendo de MiAmbiente. La plataforma ayuda a que el expediente llegue completo.</span>
+      </div>
 
-    <div class="panel">
+      <div class="hero-vista" aria-label="Vista previa del panel">
+        <div class="vista-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <b style="font-family:var(--serif); font-size:16px;">Dónde poner al equipo hoy</b>
+            <span class="chip">Ejemplo</span>
+          </div>
+          <div class="vista-kpis">
+            <div><b>8</b>Activos</div>
+            <div style="border-color:#f3cfcb; background:#fffbfa;"><b style="color:var(--status-bad);">5</b>Plazos en alerta</div>
+            <div><b>78</b>IPE promedio</div>
+          </div>
+          <div>
+            <div class="vista-fila"><span id="demo-anillo-1"></span><div class="txt">Eco-Lodge Boquete<span>IPE 33 · faltan 3 documentos</span></div><span class="status status-bad">Vencido</span></div>
+            <div class="vista-fila"><span id="demo-anillo-2"></span><div class="txt">Hidroeléctrica Bocas<span>IPE 68 · falta Cartografía</span></div><span class="status status-warn">2 días</span></div>
+            <div class="vista-fila"><span id="demo-anillo-3"></span><div class="txt">Puerto Seco Colón<span>IPE 100 · sometido</span></div><span class="status status-info">En evaluación</span></div>
+          </div>
+        </div>
+        <div class="vista-flotante"><span>Próxima acción sugerida</span>Suba la Evidencia Foro Público: el índice pasa de 75 a 85.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="franja" aria-label="Lo que cubre">
+    <div class="wrap">
+      <div><b>I · II · III</b><span>Categorías con sus documentos obligatorios: 3, 4 y 5</span></div>
+      <div><b>20 · 40 · 80 días</b><span>Plazos legales con alerta en el último 25%</span></div>
+      <div><b>PDF y ZIP</b><span>Hasta 20 MB, revisados antes de guardarse</span></div>
+      <div><b>SHA-256</b><span>Huella única por versión; nada se borra</span></div>
+    </div>
+  </section>
+
+  <section class="wrap seccion" aria-labelledby="t-problema">
+    <div class="seccion-titulo">
+      <span class="kicker">El problema</span>
+      <h2 id="t-problema">Un expediente incompleto se descubre tarde, cuando el plazo ya corre.</h2>
+    </div>
+    <div class="comparar">
+      <div class="antes">
+        <span class="etq">Hoy en muchas consultoras</span>
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="#b4261c" stroke-width="2.4" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Documentos repartidos entre correos, carpetas compartidas y memorias USB.</div>
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="#b4261c" stroke-width="2.4" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Plazos en una hoja de cálculo que alguien debe recordar abrir.</div>
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="#b4261c" stroke-width="2.4" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Archivos que se sobrescriben sin saber cuál fue la versión enviada.</div>
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="#b4261c" stroke-width="2.4" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>El promotor llama para preguntar cómo va su trámite.</div>
+      </div>
+      <div class="ahora">
+        <span class="etq">Con Permisos Ambientales</span>
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="#7fd3a8" stroke-width="2.6" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>Un expediente digital por proyecto, con la lista de documentos de su categoría.</div>
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="#7fd3a8" stroke-width="2.6" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>Semáforo de plazos que avisa antes de que venzan.</div>
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="#7fd3a8" stroke-width="2.6" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>Cada subida es una versión nueva con su huella; ninguna se pierde.</div>
+        <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="#7fd3a8" stroke-width="2.6" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>El promotor entra con su propia cuenta y ve el estado de sus trámites.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="producto" class="wrap seccion" aria-labelledby="t-producto">
+    <div class="seccion-titulo">
+      <span class="kicker">El producto</span>
+      <h2 id="t-producto">Todo lo que la consultora necesita para preparar el expediente</h2>
+    </div>
+    <div class="funciones">
+      <div class="funcion destacada">
+        <div class="txt">
+          <span class="chip chip-brand" style="align-self:flex-start;">Nuestra innovación</span>
+          <h3>Índice de Preparación del Expediente</h3>
+          <p>Un puntaje de 0 a 100 que junta tres cosas: los documentos que tiene (50%), cómo va el plazo (30%) y si algún documento está por vencer (20%). La lista se ordena sola, del más urgente al más listo, y cada expediente dice qué hacer a continuación.</p>
+        </div>
+        <div style="flex:0 1 300px; display:flex; flex-direction:column; align-items:center; gap:10px; margin:0 auto;">
+          <div id="demo-medidor" style="width:240px;"></div>
+          <div class="btn-row" style="justify-content:center; gap:6px;">
+            <span class="status status-ok">Listo ≥ 80</span><span class="status status-warn">En preparación 50–79</span><span class="status status-bad">En riesgo &lt; 50</span>
+          </div>
+        </div>
+      </div>
+      <div class="funcion"><span class="ico" style="background:var(--status-warn-bg); color:var(--status-warn);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5M9 2h6"/></svg></span><h3>Semáforo de plazos</h3><p>En plazo, por vencer o vencido, con los días exactos que quedan según la categoría.</p></div>
+      <div class="funcion"><span class="ico" style="background:var(--status-info-bg); color:var(--status-info);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 14h6M9 17h4"/></svg></span><h3>Documentos con versiones</h3><p>Cada archivo recibe un código de trazabilidad. Si corrige un documento, la versión anterior queda como evidencia.</p></div>
+      <div class="funcion"><span class="ico" style="background:var(--status-violet-bg); color:var(--status-violet);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span><h3>Aprobación interna con motivo</h3><p>El jefe revisa y aprueba antes de someter. El motivo queda escrito en el historial.</p></div>
+      <div class="funcion"><span class="ico" style="background:var(--surface-3); color:var(--text-soft);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><h3>Historial de auditoría</h3><p>Quién hizo qué y cuándo, en hora de Panamá. Es de solo lectura: nadie lo edita ni lo borra.</p></div>
+      <div class="funcion"><span class="ico" style="background:var(--brand-pale); color:var(--status-ok);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z"/></svg></span><h3>Consulta pública controlada</h3><p>Cualquiera consulta el estado con el código, solo si la consultora lo permite. Sin documentos ni datos personales.</p></div>
+      <div class="funcion"><span class="ico" style="background:var(--surface-3); color:var(--text-soft);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/></svg></span><h3>También en el celular</h3><p>Las pantallas se adaptan al teléfono para revisar un trámite desde campo.</p></div>
+    </div>
+  </section>
+
+  <section id="como" class="banda-gris" aria-labelledby="t-como">
+    <div class="wrap seccion">
+      <div class="seccion-titulo">
+        <span class="kicker">Cómo funciona</span>
+        <h2 id="t-como">Del registro al sometimiento, en cuatro pasos</h2>
+      </div>
+      <ol class="pasos">
+        <li><span class="n">1</span><b>Registrar el expediente</b><span>El consultor crea el proyecto y elige su categoría. El sistema arma la lista de documentos y empieza a contar el plazo.</span></li>
+        <li><span class="n">2</span><b>Completar los documentos</b><span>Sube PDF y ZIP. El índice sube con cada documento y le dice qué falta.</span></li>
+        <li><span class="n">3</span><b>Aprobación interna</b><span>Con todo completo, el jefe aprueba y deja el motivo por escrito.</span></li>
+        <li><span class="n">4</span><b>Someter y dar seguimiento</b><span>El expediente pasa a evaluación de MiAmbiente y el promotor sigue el estado desde su cuenta.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="roles" class="wrap seccion" aria-labelledby="t-roles">
+    <div class="seccion-titulo">
+      <span class="kicker">Para cada persona</span>
+      <h2 id="t-roles">Cada quien ve lo que le toca</h2>
+    </div>
+    <div class="roles">
+      <div class="rol"><span class="av" style="background:var(--brand-pale); color:var(--status-ok);">JC</span><b>Jefe de la consultora</b><span>Ve toda la cartera ordenada por prioridad, aprueba internamente, administra el equipo y decide qué es público.</span></div>
+      <div class="rol"><span class="av" style="background:var(--status-info-bg); color:var(--status-info);">CO</span><b>Consultor ambiental</b><span>Trabaja sus expedientes: crea, sube versiones, somete y crea la cuenta del promotor.</span></div>
+      <div class="rol"><span class="av" style="background:var(--status-violet-bg); color:var(--status-violet);">PR</span><b>Promotor del proyecto</b><span>Entra con la cuenta que le crea su consultor y sigue solo los trámites de su empresa.</span></div>
+      <div class="rol"><span class="av" style="background:var(--surface-3); color:var(--text-soft);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></span><b>Ciudadano</b><span>Sin cuenta, consulta el estado de un proyecto con su código, si la consultora lo publicó.</span></div>
+    </div>
+  </section>
+
+  <section id="seguridad" class="wrap seccion" aria-labelledby="t-seg">
+    <div class="caja-seguridad">
+      <div class="seccion-titulo" style="margin:0;">
+        <span class="kicker">Seguridad y transparencia</span>
+        <h2 id="t-seg" style="font-size:clamp(24px,2.6vw,30px);">Pensado para expedientes que deben resistir una revisión</h2>
+      </div>
+      <div class="lista-check">
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Se rechazan PDF con JavaScript y ZIP con ejecutables o rutas inseguras.</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Los documentos no se eliminan; cada versión conserva su huella SHA-256.</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Tras 5 intentos fallidos por minuto, el acceso se pausa.</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>El promotor cambia su contraseña temporal al primer ingreso.</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Historial de solo lectura, guardado junto con cada acción.</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>La consulta pública nunca muestra documentos ni datos personales.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="consulta" class="wrap seccion" aria-labelledby="t-consulta">
+    <div class="seccion-titulo">
+      <span class="kicker">Consulta pública · sin cuenta</span>
+      <h2 id="t-consulta">Consulte el estado de un estudio de impacto ambiental</h2>
+      <p class="small">Escriba el código del expediente. Solo se muestra información pública, sin documentos ni datos personales, conforme a la Ley 81 de 2019.</p>
+    </div>
+    <div class="consulta-caja">
       <div class="search-row">
-        <input type="text" id="inputCodigo" placeholder="Ej. SP-A8-2026-001">
-        <button class="btn btn-brass" id="btnBuscar">Buscar</button>
+        <label for="inputCodigo" class="sr-only">Código del expediente</label>
+        <input type="text" id="inputCodigo" placeholder="Ej. SP-A8-2026-001" class="mono">
+        <button class="btn" id="btnBuscar">Consultar</button>
+      </div>
+
+      <div id="panelResultado" style="display:none;">
+        <div style="display:flex; flex-wrap:wrap; justify-content:space-between; gap:14px; align-items:flex-start; margin-bottom:18px;">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <span class="case-tag" id="rCodigo" style="align-self:flex-start;"></span>
+            <h3 id="rProyecto" style="font-size:22px;"></h3>
+          </div>
+          <button type="button" id="btnPdf" class="btn btn-ghost">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+            Resumen ejecutivo (PDF)
+          </button>
+        </div>
+        <div style="background:var(--surface-2); border-radius:16px; padding:18px 20px; margin-bottom:18px;">
+          <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:14px;"><b style="font-size:14px;">Estado del trámite</b><span id="rEstado"></span></div>
+          <ol class="resultado-estados" id="rEtapas">
+            <li data-etapa="pendiente"><div class="linea"><span class="p"></span><span class="t"></span></div>Pendiente de subsanación</li>
+            <li data-etapa="evaluacion"><div class="linea"><span class="p"></span><span class="t"></span></div>En evaluación</li>
+            <li data-etapa="aprobado"><div class="linea"><span class="p"></span><span class="t"></span></div>Aprobado</li>
+          </ol>
+        </div>
+        <div class="fact-row">
+          <div class="fact"><span class="k">Promotor</span><span class="v" id="rPromotor"></span></div>
+          <div class="fact"><span class="k">Consultor responsable</span><span class="v" id="rConsultor"></span></div>
+          <div class="fact"><span class="k">Categoría</span><span id="rCategoria"></span></div>
+        </div>
+      </div>
+
+      <div id="panelNoEncontrado" class="doc-msg error show" style="display:none;">No se encontró ningún expediente con ese código.</div>
+      <div id="panelSinAcceso" class="consejo" style="display:none;">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+        <span><b style="color:var(--ink);">Este proyecto no está disponible para consulta pública.</b> La consultora responsable no ha habilitado su publicación.</span>
       </div>
     </div>
+  </section>
 
-    <div class="panel" id="panelResultado" style="display:none;">
-      <h3>Resultado</h3>
-      <div class="fact-row mt-3">
-        <div class="fact"><span class="k">CÓDIGO</span><span class="v"><span class="case-tag" id="rCodigo"></span></span></div>
-        <div class="fact"><span class="k">PROYECTO</span><span class="v" id="rProyecto"></span></div>
-        <div class="fact"><span class="k">PROMOTOR</span><span class="v" id="rPromotor"></span></div>
-        <div class="fact"><span class="k">CONSULTOR RESPONSABLE</span><span class="v" id="rConsultor"></span></div>
-        <div class="fact"><span class="k">CATEGORÍA</span><span id="rCategoria"></span></div>
-        <div class="fact"><span class="k">ESTADO</span><span id="rEstado"></span></div>
+  <section class="wrap seccion" aria-labelledby="t-pronto">
+    <div class="seccion-titulo" style="margin-bottom:18px;">
+      <span class="kicker">Próximamente</span>
+      <h2 id="t-pronto" style="font-size:clamp(22px,2.4vw,26px);">En desarrollo para la siguiente entrega</h2>
+    </div>
+    <div class="pronto">
+      <div><b>Calendario de plazos</b><span>Exportar los límites legales a su calendario.</span></div>
+      <div><b>Plazo en días hábiles</b><span>Contado desde el sometimiento, sin fines de semana ni feriados.</span></div>
+      <div><b>Vencimiento real de documentos</b><span>Fecha de cada documento y aviso con la anticipación que usted elija.</span></div>
+      <div><b>Resolución de MiAmbiente</b><span>Registrar aprobado o rechazado, con número y fecha.</span></div>
+    </div>
+  </section>
+
+  <section class="wrap seccion" aria-labelledby="t-faq" style="display:flex; flex-wrap:wrap; gap:32px;">
+    <div class="seccion-titulo" style="flex:1 1 280px;">
+      <span class="kicker">Preguntas frecuentes</span>
+      <h2 id="t-faq" style="font-size:clamp(24px,2.6vw,30px);">Lo que suelen preguntarnos</h2>
+    </div>
+    <div style="flex:2 1 520px;">
+      <details class="faq" open><summary>¿Reemplaza el trámite ante MiAmbiente?</summary><p>No. La plataforma organiza el trabajo dentro de la consultora para que el estudio llegue completo. La evaluación y la resolución siguen siendo de MiAmbiente.</p></details>
+      <details class="faq"><summary>¿Qué archivos puedo subir?</summary><p>PDF y ZIP de hasta 20 MB. La cartografía va en ZIP.</p></details>
+      <details class="faq"><summary>¿Puedo borrar un documento que subí por error?</summary><p>No se borra: sube una versión nueva y la anterior queda como evidencia.</p></details>
+      <details class="faq"><summary>¿El promotor ve los expedientes de otros clientes?</summary><p>No. Solo ve los expedientes asociados a su correo.</p></details>
+    </div>
+  </section>
+
+  <section class="cierre" aria-labelledby="t-cierre">
+    <svg class="contour" viewBox="0 0 700 500" fill="none" aria-hidden="true">
+      <ellipse cx="350" cy="250" rx="330" ry="220" stroke="#fff" stroke-opacity="0.07" transform="rotate(-14 350 250)"/>
+      <ellipse cx="358" cy="242" rx="260" ry="170" stroke="#fff" stroke-opacity="0.08" transform="rotate(-10 350 250)"/>
+      <ellipse cx="366" cy="236" rx="190" ry="122" stroke="#fff" stroke-opacity="0.10" transform="rotate(-6 350 250)"/>
+      <ellipse cx="372" cy="232" rx="120" ry="76" stroke="#fff" stroke-opacity="0.13"/>
+    </svg>
+    <div class="wrap">
+      <div>
+        <h2 id="t-cierre">Vea su cartera ordenada por prioridad</h2>
+        <p>Entre con su cuenta o cree una de consultor para empezar a registrar expedientes.</p>
       </div>
-      <button type="button" id="btnPdf" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line);">Descargar resumen ejecutivo (PDF)</button>
+      <div class="btn-row">
+        <a class="btn" href="login.html">Entrar a la plataforma</a>
+        <a class="btn btn-borde" href="registro.html">Crear cuenta de consultor</a>
+      </div>
     </div>
+  </section>
 
-    <div class="panel" id="panelNoEncontrado" style="display:none; border-left:3px solid var(--status-bad);">
-      <p style="color:var(--status-bad); font-size:14px;">No se encontró ningún expediente con ese código.</p>
+  <footer class="l-footer">
+    <div class="wrap">
+      <span>Permisos Ambientales · herramienta de consultoras. La decisión oficial corresponde a MiAmbiente.</span>
+      <span>Universidad Tecnológica de Panamá · Tópicos Especiales I · Caso 8</span>
     </div>
-
-    <div class="panel" id="panelSinAcceso" style="display:none; border-left:3px solid var(--status-warn);">
-      <p style="color:var(--status-warn); font-size:14px;">Este proyecto no está disponible para consulta pública. La consultora responsable no ha habilitado su publicación.</p>
-    </div>
-
-    <p class="small" style="margin-top:40px; max-width:56ch;">
-      ¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a> para gestionar tus expedientes o dar seguimiento a tus trámites.
-    </p>
-  </main>
-
-  <footer style="padding:20px 40px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11px; color:var(--ink-faint); text-align:center;">
-    SEMESTRE II · 2026 · Caso 8 · Universidad Tecnológica de Panamá
   </footer>
 </div>
 
 <script src="js/lib/jspdf.umd.min.js"></script>
+<script>
+const IPE_COLOR = { listo: '#1f9d67', en_preparacion: '#e09a1a', en_riesgo: '#e04b3f' };
+function anilloDemo(v, banda) {
+  const largo = (87.96 * v / 100).toFixed(1);
+  return '<svg width="30" height="30" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="14" fill="none" stroke="#f1f3f2" stroke-width="4.5"/>'
+    + `<circle cx="17" cy="17" r="14" fill="none" stroke="${IPE_COLOR[banda]}" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="${largo} 88" transform="rotate(-90 17 17)"/></svg>`;
+}
+document.getElementById('demo-anillo-1').innerHTML = anilloDemo(33, 'en_riesgo');
+document.getElementById('demo-anillo-2').innerHTML = anilloDemo(68, 'en_preparacion');
+document.getElementById('demo-anillo-3').innerHTML = anilloDemo(100, 'listo');
+(function () {
+  const v = 75, arco = 'M20 112 A100 100 0 0 1 220 112', ang = Math.PI * (1 - v / 100);
+  const x = (120 + 100 * Math.cos(ang)).toFixed(1), y = (112 - 100 * Math.sin(ang)).toFixed(1);
+  document.getElementById('demo-medidor').innerHTML = '<div class="medidor"><svg viewBox="0 0 240 132" role="img" aria-label="Ejemplo: índice 75 de 100">'
+    + `<path d="${arco}" fill="none" stroke="#fbe3e0" stroke-width="14" stroke-dasharray="155 400"/>`
+    + `<path d="${arco}" fill="none" stroke="#fbebd0" stroke-width="14" stroke-dasharray="0 159 92 400"/>`
+    + `<path d="${arco}" fill="none" stroke="#dcf0e5" stroke-width="14" stroke-dasharray="0 253 62 400"/>`
+    + `<path d="${arco}" fill="none" stroke="#e09a1a" stroke-width="14" stroke-linecap="round" stroke-dasharray="${(314.16 * v / 100).toFixed(1)} 400"/>`
+    + `<circle cx="${x}" cy="${y}" r="9" fill="#fff" stroke="#e09a1a" stroke-width="4"/></svg>`
+    + '<div class="cifra"><b>75<small>/100</small></b></div></div>';
+})();
+
+// HU-07: tres estados publicos. aprobado_interno se muestra como pendiente.
+function pintarEtapas(estado) {
+  const orden = ['pendiente', 'evaluacion', 'aprobado'];
+  const actual = estado === 'aprobado_interno' ? 'pendiente' : estado;
+  const i = orden.indexOf(actual);
+  document.querySelectorAll('#rEtapas li').forEach((li, k) => {
+    li.classList.toggle('hecho', i >= 0 && k < i);
+    li.classList.toggle('on', k === i);
+  });
+}
+new MutationObserver(() => {
+  if (window.expActual) pintarEtapas(window.expActual.estado);
+}).observe(document.getElementById('panelResultado'), { attributes: true, attributeFilter: ['style'] });
+</script>
 <script>
 function claseEstado(estado) {
   if (estado === 'aprobado') return 'status status-ok';
@@ -128,6 +355,7 @@ async function buscar() {
     }
     const d = await r.json();
     expActual = d.expediente;
+    window.expActual = expActual;
 
     document.getElementById('rCodigo').textContent = expActual.codigo;
     document.getElementById('rProyecto').textContent = expActual.proyecto;

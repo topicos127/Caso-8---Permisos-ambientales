@@ -59,14 +59,17 @@ const PLAZO_ETIQUETA = {
   en_plazo:   ['status status-ok',   'En plazo'],
   por_vencer: ['status status-warn', 'Por vencer'],
   vencido:    ['status status-bad',  'Vencido'],
-  resuelto:   ['status status-info', 'Resuelto'],
+  resuelto:   ['status status-neutral', 'Resuelto'],
 };
 
 function etiquetaPlazo(plazo) {
   if (!plazo) return '—';
   const [clase, texto] = PLAZO_ETIQUETA[plazo.estado_semaforo] || ['status status-info', '—'];
-  const dias = plazo.estado_semaforo === 'resuelto' || plazo.dias_restantes_legales == null
-    ? '' : ` · ${esc(plazo.dias_restantes_legales)} d`;
+  const n = plazo.dias_restantes_legales;
+  let dias = '';
+  if (plazo.estado_semaforo !== 'resuelto' && n != null) {
+    dias = n < 0 ? ` · hace ${esc(-n)} d` : n === 0 ? ' · vence hoy' : ` · ${esc(n)} d`;
+  }
   return `<span class="${clase}">${texto}${dias}</span>`;
 }
 
@@ -76,6 +79,46 @@ const IPE_CLASE = { listo: 'status status-ok', en_preparacion: 'status status-wa
 function etiquetaIpe(ipe) {
   if (!ipe) return '—';
   return `<span class="${IPE_CLASE[ipe.banda] || 'status status-info'}">${esc(ipe.valor)} · ${esc(ipe.banda_texto)}</span>`;
+}
+
+// Nuevo UI/UX: color de cada banda del IPE (listo, en preparacion, en riesgo).
+const IPE_COLOR = { listo: '#1f9d67', en_preparacion: '#e09a1a', en_riesgo: '#e04b3f' };
+
+// Anillo pequeño con el valor del IPE, para tablas y listas.
+function anilloIpe(valor, banda, tam = 34) {
+  const v = Math.max(0, Math.min(100, Number(valor) || 0));
+  const color = IPE_COLOR[banda] || '#8a929b';
+  const largo = (87.96 * v / 100).toFixed(1);
+  return `<svg width="${tam}" height="${tam}" viewBox="0 0 34 34" role="img" aria-label="IPE ${v} de 100">`
+    + '<circle cx="17" cy="17" r="14" fill="none" stroke="#f1f3f2" stroke-width="4.5"/>'
+    + `<circle cx="17" cy="17" r="14" fill="none" stroke="${color}" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="${largo} 88" transform="rotate(-90 17 17)"/>`
+    + '</svg>';
+}
+
+// Celda de IPE: anillo + numero + banda.
+function celdaIpe(ipe) {
+  if (!ipe) return '—';
+  return `<span class="ipe-celda">${anilloIpe(ipe.valor, ipe.banda)}`
+    + `<span class="val"><b>${esc(ipe.valor)}</b><span class="banda-${esc(ipe.banda)}">${esc(ipe.banda_texto)}</span></span></span>`;
+}
+
+// Medidor de media luna (0 a 100) con el tramo de cada banda tintado al fondo.
+function medidorIpe(valor, banda, textoBanda) {
+  const v = Math.max(0, Math.min(100, Number(valor) || 0));
+  const color = IPE_COLOR[banda] || '#8a929b';
+  const ang = Math.PI * (1 - v / 100);
+  const x = (120 + 100 * Math.cos(ang)).toFixed(1);
+  const y = (112 - 100 * Math.sin(ang)).toFixed(1);
+  const arco = 'M20 112 A100 100 0 0 1 220 112';
+  const clase = IPE_CLASE[banda] || 'status status-info';
+  return `<div class="medidor"><svg viewBox="0 0 240 132" role="img" aria-label="Índice ${v} de 100">`
+    + `<path d="${arco}" fill="none" stroke="#fbe3e0" stroke-width="14" stroke-dasharray="155 400"/>`
+    + `<path d="${arco}" fill="none" stroke="#fbebd0" stroke-width="14" stroke-dasharray="0 159 92 400"/>`
+    + `<path d="${arco}" fill="none" stroke="#dcf0e5" stroke-width="14" stroke-dasharray="0 253 62 400"/>`
+    + (v > 0 ? `<path d="${arco}" fill="none" stroke="${color}" stroke-width="14" stroke-linecap="round" stroke-dasharray="${(314.16 * v / 100).toFixed(1)} 400"/>` : '')
+    + `<circle cx="${x}" cy="${y}" r="9" fill="#fff" stroke="${color}" stroke-width="4"/></svg>`
+    + `<div class="cifra"><b>${v}<small>/100</small></b>`
+    + (textoBanda ? `<span class="${clase}">${esc(textoBanda)}</span>` : '') + '</div></div>';
 }
 
 async function apiFetch(url, opciones = {}) {
@@ -112,7 +155,7 @@ async function cerrarSesion(ev) {
 function claseEstado(estado) {
   if (estado === 'aprobado') return 'status status-ok';
   if (estado === 'evaluacion') return 'status status-info';
-  if (estado === 'aprobado_interno') return 'status status-warn';
+  if (estado === 'aprobado_interno') return 'status status-violet';
   if (estado === 'pendiente') return 'status status-warn';
   if (estado === 'rechazado') return 'status status-bad';
   return 'status status-info';
@@ -146,7 +189,7 @@ function pintarTopbar() {
   const who = document.querySelector('.who');
   if (u && who) {
     const rolTexto = ROL_TEXTO[u.rol] || u.rol;
-    who.innerHTML = `<span class="tag">${rolTexto}</span> ${esc(u.nombre || u.email)} <a href="cuenta.html">Mi cuenta</a> <a href="login.html" id="link-salir">Salir</a>`;
+    who.innerHTML = `<span class="tag">${rolTexto}</span> <span>${esc(u.nombre || u.email)}</span> <a href="cuenta.html">Mi cuenta</a> <a href="login.html" id="link-salir">Salir</a>`;
     who.querySelector('#link-salir').addEventListener('click', cerrarSesion);
   }
   if (esPromotor()) {
@@ -174,8 +217,12 @@ function mostrarToast(mensaje, tipo = 'exito') {
   const toast = document.createElement('div');
   toast.className = `toast ${tipo}`;
   
-  const icon = tipo === 'exito' ? '✅' : '⚠️';
-  toast.innerHTML = `<span>${icon}</span> <span>${esc(mensaje)}</span>`;
+  const icono = tipo === 'exito'
+    ? '<path d="M5 12l5 5 9-10"/>'
+    : '<path d="M12 7v6M12 17h.01"/>';
+  toast.setAttribute('role', 'status');
+  toast.innerHTML = '<span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" '
+    + `stroke-linecap="round">${icono}</svg></span> <span>${esc(mensaje)}</span>`;
   
   container.appendChild(toast);
 
