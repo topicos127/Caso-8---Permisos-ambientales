@@ -210,6 +210,32 @@ ${CLAVE}          Clave12345
     ${r}=    GET On Session    anonimo    /plataforma/estado    expected_status=any
     Status Should Be    401    ${r}
 
+16b - La administracion tiene su propia puerta (/admin) y no entra por el login normal
+    Create Session    anonimo    ${BASE_URL}
+    ${admin}=    Create Dictionary    email=${ADMIN_EMAIL}    password=${ADMIN_PASSWORD}
+    ${r}=    POST On Session    anonimo    /login    json=${admin}    expected_status=any
+    Status Should Be    401    ${r}
+    Should Not Be True    ${r.json()['acceso']}
+    ${jefe}=    Create Dictionary    email=${JEFE_EMAIL}    password=${JEFE_PASSWORD}
+    ${r}=    POST On Session    anonimo    /admin/login    json=${jefe}    expected_status=any
+    Status Should Be    401    ${r}
+    ${r}=    POST On Session    anonimo    /admin/login    json=${admin}
+    Status Should Be    200    ${r}
+    Should Be Equal    ${r.json()['rol']}    admin
+    Create Session    publico    ${BASE_URL}
+    ${r}=    GET On Session    publico    /admin
+    Should Contain    ${r.headers['X-Robots-Tag']}    noindex
+    ${r}=    GET On Session    publico    /admin/panel
+    Status Should Be    200    ${r}
+    # Los archivos del panel no se sirven por su nombre ni se enlazan desde la pagina publica.
+    ${r}=    GET On Session    publico    /plataforma.html    expected_status=any
+    Status Should Be    404    ${r}
+    ${r}=    GET On Session    publico    /admin.html    expected_status=any
+    Status Should Be    404    ${r}
+    ${portada}=    GET On Session    publico    /
+    Should Not Contain    ${portada.text}    /admin
+    Should Not Contain    ${portada.text}    plataforma.html
+
 # ---------------------------------------------------------------- Seguridad de la cuenta
 17 - Dos pasos: se activa, se exige al entrar y un codigo no se reutiliza
     ${sufijo}=    Sufijo Unico

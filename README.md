@@ -102,7 +102,7 @@ revisar **Usage** la primera semana.
 - **Consultor:** `consultor1@ejemplo.com` / `Clave123`
 - **Consultor 2:** `consultor2@ejemplo.com` / `Clave2026`
 - **Promotor:** `promotor1@ejemplo.com` / `Clave456`
-- **Administrador de la plataforma:** `admin@ejemplo.com` / `Admin2026*` (lo crea la app al arrancar; no ve expedientes)
+- **Administrador de la plataforma:** `admin@ejemplo.com` / `Admin2026*` (lo crea la app al arrancar; no ve expedientes). **Entra por su propia URL: `http://localhost:5000/admin`** (el panel queda en `/admin/panel`). No se enlaza desde la página pública, `login.html` no acepta esta cuenta y `plataforma.html` ya no se sirve por su nombre.
 - **Segunda empresa («Ambiental del Pacífico»):** jefe `jefe2@ejemplo.com` / `Jefe2026*` y consultor `consultor3@ejemplo.com` / `Clave2026`. Sirve para comprobar que una consultora no ve lo de otra.
 
 Desde el Sprint 9 todas cumplen la política de contraseñas. Si tu base local se creó

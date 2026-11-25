@@ -8,7 +8,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from .. import limitador, totp
 from ..bd import _esquema, col_activo, col_aviso, col_cambio_clave, col_org, col_sesion, col_sometimiento, col_totp, cursor
-from ..config import EMAIL_RE, ROLES_REGISTRO
+from ..config import EMAIL_RE, ROL_ADMIN, ROLES_REGISTRO
 from ..empresas import datos_empresa
 from ..errores import ApiError
 from ..limitador import _fallos  # noqa: F401  (las pruebas limpian auth._fallos)
@@ -32,6 +32,18 @@ def abrir_sesion(usuario_id, version):
 
 @bp.route("/login", methods=["POST"])
 def login():
+    """Acceso de consultoras y clientes. Las cuentas de administracion NO entran por aqui:
+    tienen su propio acceso en /admin."""
+    return _acceso(solo_admin=False)
+
+
+@bp.route("/admin/login", methods=["POST"])
+def login_admin():
+    """Acceso exclusivo de la administracion de la plataforma (la pagina esta en /admin)."""
+    return _acceso(solo_admin=True)
+
+
+def _acceso(solo_admin):
     data = request.get_json(silent=True) or {}
     email = str(data.get("email", "") or "").strip().lower()
     password = str(data.get("password", "") or "")
@@ -40,7 +52,7 @@ def login():
     if not email or not password:
         return jsonify({"acceso": False, "mensaje": "Debe ingresar correo y contrasena."}), 401
 
-    clave = (request.remote_addr, email)
+    clave = (request.remote_addr, email) if not solo_admin else ("admin", request.remote_addr, email)
     if limitador.bloqueado(clave):
         return jsonify({"acceso": False, "mensaje":
                         "Demasiados intentos fallidos. Espere un minuto e intente de nuevo."}), 429
@@ -51,7 +63,9 @@ def login():
         u = cur.fetchone()
         empresa = datos_empresa(cur, u["organizacion_id"]) if u and _esquema["org"] else None
 
-    if u and check_password_hash(u["password_hash"], password):
+    # Una cuenta solo entra por su puerta: la de administracion por /admin, las demas por /login.
+    # Si no corresponde, la respuesta es la de unas credenciales incorrectas (no revela nada).
+    if u and check_password_hash(u["password_hash"], password) and (u["rol"] == ROL_ADMIN) == solo_admin:
         if not u["activo"]:
             # La cuenta existe y la clave es correcta, pero el jefe la desactivo.
             limitador.limpiar(clave)

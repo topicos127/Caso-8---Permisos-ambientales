@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es" data-rol="admin">
+<head>
+<meta charset="UTF-8">
+<base href="/">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administración — Permisos Ambientales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilos.css">
+<script src="js/interaccion.js"></script>
+</head>
+<body>
+
+<div class="doc-screen">
+  <div class="doc-sheet split">
+
+    <section class="auth-aside" aria-label="Presentación">
+      <svg class="contour" viewBox="0 0 620 620" fill="none" aria-hidden="true">
+        <ellipse cx="310" cy="310" rx="300" ry="250" stroke="#fff" stroke-opacity="0.07" transform="rotate(-18 310 310)"/>
+        <ellipse cx="318" cy="300" rx="250" ry="205" stroke="#fff" stroke-opacity="0.08" transform="rotate(-14 310 310)"/>
+        <ellipse cx="326" cy="292" rx="200" ry="162" stroke="#fff" stroke-opacity="0.09" transform="rotate(-10 310 310)"/>
+        <ellipse cx="334" cy="286" rx="152" ry="120" stroke="#fff" stroke-opacity="0.11" transform="rotate(-6 310 310)"/>
+        <ellipse cx="340" cy="282" rx="104" ry="80" stroke="#fff" stroke-opacity="0.13" transform="rotate(-2 310 310)"/>
+        <ellipse cx="344" cy="280" rx="58" ry="42" stroke="#fff" stroke-opacity="0.16"/>
+      </svg>
+
+      <a class="auth-brand" href="/admin" style="color:inherit; text-decoration:none;">
+        <span class="seal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19c9 0 14-6 14-14-8 0-14 5-14 14z"/><path d="M5 19l7-7"/></svg>
+        </span>
+        <span><b>Permisos Ambientales</b><span>Expediente digital para consultoras</span></span>
+      </a>
+
+      <div style="display:flex; flex-direction:column;">
+        <span class="auth-chip">Acceso restringido</span>
+        <h2>Administración de la plataforma.</h2>
+        <p>Empresas, respaldos y estado del servicio. Esta cuenta no ve expedientes ni documentos de ninguna consultora.</p>
+      </div>
+
+      
+    </section>
+
+    <div class="doc-body">
+      <div class="doc-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      </div>
+      <h1>Acceso de administración</h1>
+      <p class="doc-lede">Solo para el equipo que administra la plataforma.</p>
+
+      <form id="adminForm">
+        <div class="doc-field">
+          <label for="email">Correo electrónico</label>
+          <input type="email" id="email" required autocomplete="username">
+        </div>
+        <div class="doc-field">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" required autocomplete="current-password">
+        </div>
+        <div class="doc-field" id="campo-codigo" hidden>
+          <label for="codigo">Código de verificación</label>
+          <input type="text" id="codigo" maxlength="14" placeholder="6 dígitos de su app, o un código de recuperación" autocomplete="one-time-code" spellcheck="false">
+        </div>
+        <button type="submit" id="submitBtn" class="btn-stamp">Entrar</button>
+      </form>
+
+      <div id="message" class="doc-msg" role="status"></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/pag-admin.js"></script>
+</body>
+</html>

@@ -129,4 +129,4 @@ CARPETA_CARTOGRAFIA = "Cartografía"
 EXTENSIONES_SHAPEFILE = (".shp", ".shx", ".dbf")
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-RUTAS_SIN_CABECERA = {"/login", "/registro", "/recuperar"}
+RUTAS_SIN_CABECERA = {"/login", "/admin/login", "/registro", "/recuperar"}

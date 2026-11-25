@@ -55,4 +55,10 @@ Iniciar Sesion Como Consultor De La Otra Empresa
 
 Iniciar Sesion Como Administrador
     [Arguments]    ${alias}=admin
-    Iniciar Sesion    ${alias}    ${ADMIN_EMAIL}    ${ADMIN_PASSWORD}
+    [Documentation]    La administracion entra por su propia puerta: POST /admin/login (la pagina esta en /admin).
+    ${headers}=    Create Dictionary    X-Requested-With=fetch
+    Create Session    ${alias}    ${BASE_URL}    headers=${headers}
+    ${datos}=    Create Dictionary    email=${ADMIN_EMAIL}    password=${ADMIN_PASSWORD}
+    ${resp}=    POST On Session    ${alias}    /admin/login    json=${datos}
+    Status Should Be    200    ${resp}
+    Should Be True    ${resp.json()['acceso']}

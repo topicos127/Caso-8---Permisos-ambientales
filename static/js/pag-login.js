@@ -1,7 +1,7 @@
 // Si ya hay sesión, redirigir directo a la pantalla de inicio de su rol.
 function destinoDe(rol, cambiarClave) {
   if (cambiarClave) return 'cuenta.html?obligatorio=1';
-  return rol === 'admin' ? 'plataforma.html' : 'dashboard.html';
+  return rol === 'admin' ? '/admin/panel' : 'dashboard.html';
 }
 
 try {

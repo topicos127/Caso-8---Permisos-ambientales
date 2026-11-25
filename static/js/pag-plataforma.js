@@ -18,7 +18,7 @@ if (usuario) {
       if (nombre === 'empresas') cargarEmpresas().catch(console.error);
       if (nombre === 'respaldos') cargarRespaldos().catch(console.error);
       if (nombre === 'servicio') cargarServicio().catch(console.error);
-      history.replaceState(null, '', '#' + nombre);
+      history.replaceState(null, '', window.location.pathname + '#' + nombre);
     }
     pestanas.forEach(p => document.getElementById('tab-' + p).addEventListener('click', () => abrirPestana(p)));
 

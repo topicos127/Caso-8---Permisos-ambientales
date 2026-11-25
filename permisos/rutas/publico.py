@@ -48,6 +48,28 @@ def consulta_publica(codigo):
     return jsonify({"expediente": exp, "empresa": marca}), 200
 
 
+# El panel de administracion vive en una URL propia (/admin y /admin/panel): no esta enlazado
+# desde la pagina publica y sus archivos no se sirven por su nombre.
+ARCHIVOS_DE_ADMIN = {"admin.html", "plataforma.html"}
+
+
+@bp.route("/admin", methods=["GET"])
+@bp.route("/admin/", methods=["GET"])
+def admin_acceso():
+    resp = send_from_directory("static", "admin.html")
+    resp.headers["X-Robots-Tag"] = "noindex, nofollow"
+    return resp
+
+
+@bp.route("/admin/panel", methods=["GET"])
+def admin_panel():
+    resp = send_from_directory("static", "plataforma.html")
+    resp.headers["X-Robots-Tag"] = "noindex, nofollow"
+    return resp
+
+
 @bp.route("/<path:filename>")
 def static_files(filename):
+    if filename in ARCHIVOS_DE_ADMIN:
+        raise ApiError(404, "No encontrado")
     return send_from_directory("static", filename)

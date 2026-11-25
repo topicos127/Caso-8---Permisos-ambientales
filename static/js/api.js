@@ -27,14 +27,14 @@ function getUsuario() {
 
 function requireAuth() {
   const u = getUsuario();
-  if (!u || !u.email) { window.location.href = 'login.html'; return null; }
+  if (!u || !u.email) { window.location.href = paginaDeAcceso(); return null; }
   // Sprint 9: con una contraseña temporal, solo "Mi cuenta" está disponible.
   if (u.debe_cambiar_clave && !window.location.pathname.endsWith('cuenta.html')) {
     window.location.href = 'cuenta.html?obligatorio=1';
     return null;
   }
   if (u.rol === 'admin' && !PAGINAS_DEL_ADMIN.some(p => window.location.pathname.endsWith(p))) {
-    window.location.href = 'plataforma.html';
+    window.location.href = '/admin/panel';
     return null;
   }
   return u;
@@ -65,7 +65,12 @@ function esAdmin() {
 }
 
 // Paginas que el administrador puede abrir; cualquier otra lo lleva a la plataforma.
-const PAGINAS_DEL_ADMIN = ['plataforma.html', 'cuenta.html', 'ayuda.html'];
+const PAGINAS_DEL_ADMIN = ['/admin/panel', 'cuenta.html', 'ayuda.html', 'estado.html'];
+
+// A donde se manda a quien no tiene sesion: la administracion tiene su propia entrada (/admin).
+function paginaDeAcceso(rol) {
+  return (rol === 'admin' || window.location.pathname.startsWith('/admin')) ? '/admin' : 'login.html';
+}
 
 // HU-07/HU-13: etiqueta corta del plazo para las listas.
 const PLAZO_ETIQUETA = {
@@ -142,8 +147,9 @@ async function apiFetch(url, opciones = {}) {
   ));
   const r = await fetch(url, Object.assign({}, opciones, { headers, credentials: 'same-origin' }));
   if (r.status === 401) {
+    const previo = getUsuario();
     sessionStorage.removeItem('usuario');
-    window.location.href = 'login.html';
+    window.location.href = paginaDeAcceso(previo && previo.rol);
     throw new Error('No autenticado');
   }
   const cuerpo = await r.json();
@@ -158,11 +164,12 @@ async function apiFetch(url, opciones = {}) {
 
 async function cerrarSesion(ev) {
   if (ev) ev.preventDefault();
+  const previo = getUsuario();
   try {
     await fetch('/logout', { method: 'POST', headers: cabecerasApi(), credentials: 'same-origin' });
   } catch (e) { /* aunque falle la red, se limpia la sesion local */ }
   sessionStorage.removeItem('usuario');
-  window.location.href = 'login.html';
+  window.location.href = paginaDeAcceso(previo && previo.rol);
 }
 
 function claseEstado(estado) {
@@ -340,7 +347,7 @@ function itemsDeMenu(rol) {
   const panel = { href: 'dashboard.html', icono: 'panel', texto: 'Panel' };
   const ayuda = { href: 'ayuda.html', icono: 'ayuda', texto: 'Ayuda' };
   if (rol === 'admin') {
-    return [{ href: 'plataforma.html', icono: 'plataforma', texto: 'Plataforma' },
+    return [{ href: '/admin/panel', icono: 'plataforma', texto: 'Plataforma' },
             { href: 'estado.html', icono: 'estado', texto: 'Estado del servicio' }, ayuda];
   }
   if (rol === 'promotor') {
@@ -360,7 +367,7 @@ function itemsDeMenu(rol) {
 }
 
 // Las pantallas de detalle pertenecen a "Expedientes".
-const PAGINA_PADRE = { 'expediente-detalle.html': 'expedientes.html' };
+const PAGINA_PADRE = { 'expediente-detalle.html': 'expedientes.html', 'panel': '/admin/panel' };
 
 function pintarRail() {
   const rail = document.querySelector('.rail');
