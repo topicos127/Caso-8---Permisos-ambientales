@@ -18,6 +18,8 @@ ZONA = ZoneInfo("America/Panama")
 # ---------- Sesion ----------
 
 SECRET_KEY = os.environ.get("SECRET_KEY")
+# La sesion se cierra tras estos minutos sin actividad (cada peticion la renueva).
+SESION_MINUTOS = int(os.environ.get("SESION_MINUTOS", 120))
 SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() == "true"
 
 # ---------- Base de datos ----------
@@ -58,6 +60,16 @@ ESTADOS_RESUELTOS = {"aprobado", "rechazado"}
 # cuenta la crea el consultor (o el jefe) desde el expediente.
 ROLES_REGISTRO = {"consultor"}  # el jefe tampoco se registra solo
 ROLES_INTERNOS = {"consultor", "jefe"}
+# El administrador de la plataforma crea las empresas y no ve expedientes.
+ROL_ADMIN = "admin"
+ROLES_CON_EMPRESA = {"consultor", "jefe", "promotor"}
+
+# Empresa que recibe los datos anteriores a la separacion por empresa.
+ORG_POR_DEFECTO = os.environ.get("ORG_POR_DEFECTO", "Consultora Demo")
+# Colores que una empresa puede elegir (se validan: nada de CSS libre).
+COLORES_EMPRESA = ("#17805a", "#2563a8", "#6a3dbf", "#b4261c", "#9a5b00", "#0e7c86", "#3e4650", "#c2410c")
+INVITACION_HORAS = int(os.environ.get("INVITACION_HORAS", 72))
+CODIGOS_RECUPERACION = 8
 
 # HU-07: los tres estados que ven el promotor y el publico.
 ESTADO_PUBLICO = {
@@ -76,6 +88,24 @@ LOGIN_VENTANA_SEGUNDOS = int(os.environ.get("LOGIN_VENTANA_SEGUNDOS", 60))
 JEFE_EMAIL = os.environ.get("JEFE_EMAIL", "jefe1@ejemplo.com").strip().lower()
 JEFE_NOMBRE = os.environ.get("JEFE_NOMBRE", "Mariela Quintero")
 JEFE_PASSWORD = os.environ.get("JEFE_PASSWORD", "Jefe2026*")
+# Administrador de la plataforma. En el despliegue definir ADMIN_PASSWORD.
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@ejemplo.com").strip().lower()
+ADMIN_NOMBRE = os.environ.get("ADMIN_NOMBRE", "Administración de la plataforma")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "Admin2026*")
+
+# ---------- Archivos y respaldos ----------
+
+# local: disco (UPLOADS_DIR). s3: cualquier servicio compatible (R2, Backblaze, MinIO, AWS).
+ALMACENAMIENTO = os.environ.get("ALMACENAMIENTO", "local").lower()
+S3_ENDPOINT = os.environ.get("S3_ENDPOINT", "")
+S3_REGION = os.environ.get("S3_REGION", "auto")
+S3_BUCKET = os.environ.get("S3_BUCKET", "")
+S3_ACCESS_KEY = os.environ.get("S3_ACCESS_KEY", "")
+S3_SECRET_KEY = os.environ.get("S3_SECRET_KEY", "")
+BACKUP_DIR = os.environ.get("BACKUP_DIR", "/app/respaldos")
+RESPALDO_AUTOMATICO = os.environ.get("RESPALDO_AUTOMATICO", "false").lower() == "true"
+RESPALDO_HORA = int(os.environ.get("RESPALDO_HORA", 2))        # hora de Panama
+RESPALDOS_CONSERVAR = int(os.environ.get("RESPALDOS_CONSERVAR", 14))
 
 # HU-14: acciones que quedan en el historial.
 ACCION_CREAR = "creó"
@@ -89,6 +119,7 @@ ACCION_RESOLUCION = "registró aprobación de MiAmbiente"
 ACCION_ACCESO = "cambió acceso público"
 ACCION_CUENTA_PROMOTOR = "creó cuenta del promotor"
 ACCION_REASIGNAR = "reasignó"  # Sprint 9: el jefe pasa el expediente a otro consultor
+ACCION_RESPONSABLE = "cambió el responsable"
 # Sprint 10: resolucion real de MiAmbiente y devolucion con observaciones.
 ACCION_RECHAZO = "registró rechazo de MiAmbiente"
 ACCION_DEVOLVER = "devolvió con observaciones"
@@ -98,4 +129,4 @@ CARPETA_CARTOGRAFIA = "Cartografía"
 EXTENSIONES_SHAPEFILE = (".shp", ".shx", ".dbf")
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-RUTAS_SIN_CABECERA = {"/login", "/registro"}
+RUTAS_SIN_CABECERA = {"/login", "/registro", "/recuperar"}

@@ -1,6 +1,18 @@
--- Sistema de Permisos Ambientales — Esquema Sprint 10
+-- Sistema de Permisos Ambientales — Esquema (plataforma multiempresa)
 CREATE DATABASE IF NOT EXISTS permisos_ambientales;
 USE permisos_ambientales;
+
+-- Cada consultora es una empresa: sus usuarios y expedientes no se mezclan con los de otra.
+CREATE TABLE IF NOT EXISTS organizaciones (
+    id INT NOT NULL AUTO_INCREMENT,
+    nombre VARCHAR(150) NOT NULL,
+    color VARCHAR(7) NOT NULL DEFAULT '#17805a',
+    logo_ruta VARCHAR(500) NULL,
+    activa BOOLEAN NOT NULL DEFAULT TRUE,
+    fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_organizacion_nombre (nombre)
+);
 
 CREATE TABLE IF NOT EXISTS usuarios (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -16,7 +28,17 @@ CREATE TABLE IF NOT EXISTS usuarios (
     -- La app la agrega sola a las bases anteriores al arrancar.
     activo BOOLEAN NOT NULL DEFAULT TRUE,
     -- Sprint 10 (HU-05): con cuantos dias de anticipacion se avisa el vencimiento (15, 30 o 45).
-    aviso_vencimiento_dias INT NOT NULL DEFAULT 30
+    aviso_vencimiento_dias INT NOT NULL DEFAULT 30,
+    -- Empresa a la que pertenece (NULL solo para el administrador de la plataforma).
+    organizacion_id INT NULL,
+    -- Verificacion en dos pasos (TOTP). El secreto se guarda cifrado.
+    totp_secreto VARCHAR(255) NULL,
+    totp_activo BOOLEAN NOT NULL DEFAULT FALSE,
+    totp_ultimo_paso BIGINT NOT NULL DEFAULT 0,
+    -- Sube con cada cambio de contrasena o "cerrar sesiones": invalida las sesiones abiertas.
+    sesion_version INT NOT NULL DEFAULT 0,
+    terminos_aceptados_en DATETIME NULL,
+    CONSTRAINT fk_usuarios_organizacion FOREIGN KEY (organizacion_id) REFERENCES organizaciones (id)
 );
 
 CREATE TABLE IF NOT EXISTS expedientes (
@@ -32,7 +54,9 @@ CREATE TABLE IF NOT EXISTS expedientes (
     acceso_publico BOOLEAN NOT NULL DEFAULT TRUE,
     -- Sprint 10 (HU-08): desde esta fecha corre el plazo de MiAmbiente en dias habiles.
     fecha_sometimiento DATE NULL,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    organizacion_id INT NULL,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+    CONSTRAINT fk_expedientes_organizacion FOREIGN KEY (organizacion_id) REFERENCES organizaciones (id)
 );
 
 CREATE TABLE IF NOT EXISTS documentos (
@@ -124,4 +148,59 @@ CREATE TABLE IF NOT EXISTS observaciones (
     PRIMARY KEY (id),
     FOREIGN KEY (expediente_id) REFERENCES expedientes (id),
     FOREIGN KEY (autor_id) REFERENCES usuarios (id)
+);
+
+-- Invitaciones: la unica forma de crear una cuenta nueva. Solo se guarda el SHA-256 del enlace.
+CREATE TABLE IF NOT EXISTS invitaciones (
+    id INT NOT NULL AUTO_INCREMENT,
+    token_hash CHAR(64) NOT NULL,
+    organizacion_id INT NOT NULL,
+    rol VARCHAR(20) NOT NULL,
+    email VARCHAR(255) NULL,
+    creada_por INT NOT NULL,
+    fecha_creacion DATETIME NOT NULL,
+    expira DATETIME NOT NULL,
+    usada_en DATETIME NULL,
+    usada_por INT NULL,
+    revocada BOOLEAN NOT NULL DEFAULT FALSE,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_invitacion_token (token_hash),
+    FOREIGN KEY (organizacion_id) REFERENCES organizaciones (id),
+    FOREIGN KEY (creada_por) REFERENCES usuarios (id)
+);
+
+-- Codigos de recuperacion (un solo uso): sirven para entrar sin el telefono o fijar una contrasena nueva.
+CREATE TABLE IF NOT EXISTS codigos_recuperacion (
+    id INT NOT NULL AUTO_INCREMENT,
+    usuario_id INT NOT NULL,
+    codigo_hash CHAR(64) NOT NULL,
+    fecha_creacion DATETIME NOT NULL,
+    usado_en DATETIME NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_codigo_recuperacion (codigo_hash),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
+);
+
+-- Comentarios internos de cada expediente (el promotor no los ve).
+CREATE TABLE IF NOT EXISTS comentarios (
+    id INT NOT NULL AUTO_INCREMENT,
+    expediente_id INT NOT NULL,
+    usuario_id INT NOT NULL,
+    texto TEXT NOT NULL,
+    fecha DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    KEY ix_comentarios_expediente (expediente_id),
+    FOREIGN KEY (expediente_id) REFERENCES expedientes (id),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
+);
+
+-- Filtros guardados de cada usuario.
+CREATE TABLE IF NOT EXISTS vistas_guardadas (
+    id INT NOT NULL AUTO_INCREMENT,
+    usuario_id INT NOT NULL,
+    nombre VARCHAR(60) NOT NULL,
+    filtros VARCHAR(1000) NOT NULL,
+    fecha DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
 );

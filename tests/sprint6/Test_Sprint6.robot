@@ -8,18 +8,26 @@ Resource          ../recursos/sesion.resource
 ${BASE_URL}       http://localhost:5000
 
 *** Test Cases ***
-01 - Validar Registro De Nuevo Usuario Valido (POST /registro)
-    [Documentation]    Verifica que se pueda registrar un usuario nuevo con clave segura (Mayuscula + Numero) o devuelva 409 si existe.
-    Create Session    api    ${BASE_URL}
-    ${data}=    Create Dictionary    
-    ...    nombre=Usuario Robot
-    ...    email=robot_test@ejemplo.com
-    ...    password=Clave12345
-    ...    rol=consultor
-    
-    ${response}=    POST On Session    api    /registro    json=${data}    expected_status=any
-    ${status}=    Convert To Integer    ${response.status_code}
-    Should Be True    ${status} in [201, 409]    El registro falló con un código inesperado: ${status}
+01 - Validar Registro Por Invitacion (POST /registro)
+    [Documentation]    El registro es solo por invitacion: el jefe genera un enlace de un solo uso y la persona
+    ...                crea su cuenta con el. Si la cuenta ya existe (corrida anterior), la invitacion responde 409.
+    Iniciar Sesion Como Jefe    jefe
+    ${invitar}=    Create Dictionary    email=robot_test@ejemplo.com
+    ${inv}=    POST On Session    jefe    /invitaciones    json=${invitar}    expected_status=any
+    ${status}=    Convert To Integer    ${inv.status_code}
+    Should Be True    ${status} in [201, 409]    La invitacion fallo con un codigo inesperado: ${status}
+    IF    ${status} == 201
+        Create Session    anonimo    ${BASE_URL}
+        ${data}=    Create Dictionary
+        ...    nombre=Usuario Robot
+        ...    email=robot_test@ejemplo.com
+        ...    password=Clave12345
+        ...    rol=consultor
+        ...    invitacion=${inv.json()['token']}
+        ...    acepto_terminos=${True}
+        ${response}=    POST On Session    anonimo    /registro    json=${data}    expected_status=any
+        Status Should Be    201    ${response}
+    END
 
 02 - Validar Login Con Usuario Registrado
     [Documentation]    Verifica que el usuario creado en el paso anterior pueda iniciar sesión.
@@ -76,3 +84,14 @@ ${BASE_URL}       http://localhost:5000
     ${response}=    GET On Session    api    url=/expedientes/SP-A8-2026-001/pdf
     Status Should Be    200    ${response}
     Should Contain    ${response.headers['Content-Type']}    application/pdf
+
+08 - Validar Que El Registro Abierto Esta Cerrado (sin invitacion)
+    [Documentation]    Sin invitacion nadie crea una cuenta: el servidor responde 403, aunque los datos sean validos.
+    Create Session    api    ${BASE_URL}
+    ${data}=    Create Dictionary
+    ...    nombre=Intruso Abierto
+    ...    email=intruso_abierto@ejemplo.com
+    ...    password=Clave12345
+    ...    rol=consultor
+    ${response}=    POST On Session    api    /registro    json=${data}    expected_status=403
+    Status Should Be    403    ${response}

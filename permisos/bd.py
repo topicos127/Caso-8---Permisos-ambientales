@@ -5,7 +5,8 @@ from contextlib import contextmanager
 import pymysql
 from werkzeug.security import generate_password_hash
 
-from .config import DB_CONFIG, JEFE_EMAIL, JEFE_NOMBRE, JEFE_PASSWORD
+from .config import (ADMIN_EMAIL, ADMIN_NOMBRE, ADMIN_PASSWORD, DB_CONFIG, JEFE_EMAIL, JEFE_NOMBRE, JEFE_PASSWORD,
+                     ORG_POR_DEFECTO)
 from .errores import ApiError
 from .reglas import ahora, problema_de_password
 
@@ -32,8 +33,8 @@ COLUMNAS_EXPEDIENTE = ("id, codigo, proyecto, promotor, promotor_email, categori
 
 
 def columnas_expediente():
-    """Sprint 10 (HU-08): con la fecha de sometimiento si la columna existe."""
-    return f"{COLUMNAS_EXPEDIENTE}, {col_sometimiento('')}"
+    """Con la fecha de sometimiento y la empresa, si esas columnas existen."""
+    return f"{COLUMNAS_EXPEDIENTE}, {col_sometimiento('')}, {col_org('')}"
 
 
 def cargar_expediente(cur, codigo):
@@ -141,19 +142,90 @@ CREATE TABLE IF NOT EXISTS observaciones (
 """
 
 
+# Separacion por empresa, invitaciones, recuperacion de acceso, comentarios y vistas guardadas.
+DDL_EMPRESAS = [
+    """CREATE TABLE IF NOT EXISTS organizaciones (
+        id INT NOT NULL AUTO_INCREMENT,
+        nombre VARCHAR(150) NOT NULL,
+        color VARCHAR(7) NOT NULL DEFAULT '#17805a',
+        logo_ruta VARCHAR(500) NULL,
+        activa BOOLEAN NOT NULL DEFAULT TRUE,
+        fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_organizacion_nombre (nombre)
+    )""",
+    """CREATE TABLE IF NOT EXISTS invitaciones (
+        id INT NOT NULL AUTO_INCREMENT,
+        token_hash CHAR(64) NOT NULL,
+        organizacion_id INT NOT NULL,
+        rol VARCHAR(20) NOT NULL,
+        email VARCHAR(255) NULL,
+        creada_por INT NOT NULL,
+        fecha_creacion DATETIME NOT NULL,
+        expira DATETIME NOT NULL,
+        usada_en DATETIME NULL,
+        usada_por INT NULL,
+        revocada BOOLEAN NOT NULL DEFAULT FALSE,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_invitacion_token (token_hash),
+        FOREIGN KEY (organizacion_id) REFERENCES organizaciones (id),
+        FOREIGN KEY (creada_por) REFERENCES usuarios (id)
+    )""",
+    """CREATE TABLE IF NOT EXISTS codigos_recuperacion (
+        id INT NOT NULL AUTO_INCREMENT,
+        usuario_id INT NOT NULL,
+        codigo_hash CHAR(64) NOT NULL,
+        fecha_creacion DATETIME NOT NULL,
+        usado_en DATETIME NULL,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_codigo_recuperacion (codigo_hash),
+        FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
+    )""",
+    """CREATE TABLE IF NOT EXISTS comentarios (
+        id INT NOT NULL AUTO_INCREMENT,
+        expediente_id INT NOT NULL,
+        usuario_id INT NOT NULL,
+        texto TEXT NOT NULL,
+        fecha DATETIME NOT NULL,
+        PRIMARY KEY (id),
+        KEY ix_comentarios_expediente (expediente_id),
+        FOREIGN KEY (expediente_id) REFERENCES expedientes (id),
+        FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
+    )""",
+    """CREATE TABLE IF NOT EXISTS vistas_guardadas (
+        id INT NOT NULL AUTO_INCREMENT,
+        usuario_id INT NOT NULL,
+        nombre VARCHAR(60) NOT NULL,
+        filtros VARCHAR(1000) NOT NULL,
+        fecha DATETIME NOT NULL,
+        PRIMARY KEY (id),
+        FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
+    )""",
+]
+
 # Sprint 9: el promotor recibe una contrasena temporal y debe cambiarla. La
 # columna se agrega al arrancar si la base es anterior; mientras no exista, las
 # consultas la reemplazan por un 0 constante y la regla simplemente no aplica.
 # Sprint 10: lo mismo con la fecha de sometimiento (HU-08), la fecha de
 # vencimiento de cada documento y el aviso que elige cada usuario (HU-05).
 _esquema = {"cambio_clave": False, "activo": False, "sometimiento": False, "vencimiento": False,
-            "aviso": False}
+            "aviso": False, "org": False, "totp": False, "sesion": False, "terminos": False}
+_columnas_ok = set()
 
 # (tabla, columna, definicion, clave en _esquema)
 COLUMNAS_SPRINT10 = (
     ("expedientes", "fecha_sometimiento", "DATE NULL", "sometimiento"),
     ("documentos", "fecha_vencimiento", "DATE NULL", "vencimiento"),
     ("usuarios", "aviso_vencimiento_dias", "INT NOT NULL DEFAULT 30", "aviso"),
+    # Separacion por empresa
+    ("usuarios", "organizacion_id", "INT NULL", "org_usuarios"),
+    ("expedientes", "organizacion_id", "INT NULL", "org_expedientes"),
+    # Verificacion en dos pasos y control de sesiones
+    ("usuarios", "totp_secreto", "VARCHAR(255) NULL", "totp_secreto"),
+    ("usuarios", "totp_activo", "BOOLEAN NOT NULL DEFAULT FALSE", "totp_activo"),
+    ("usuarios", "totp_ultimo_paso", "BIGINT NOT NULL DEFAULT 0", "totp_paso"),
+    ("usuarios", "sesion_version", "INT NOT NULL DEFAULT 0", "sesion"),
+    ("usuarios", "terminos_aceptados_en", "DATETIME NULL", "terminos"),
 )
 
 
@@ -173,13 +245,44 @@ def col_aviso(alias=""):
     return f"{_pref(alias)}aviso_vencimiento_dias" if _esquema["aviso"] else "30 AS aviso_vencimiento_dias"
 
 
+def col_org(alias="e"):
+    """Empresa a la que pertenece la fila (usuario o expediente)."""
+    return f"{_pref(alias)}organizacion_id" if _esquema["org"] else "NULL AS organizacion_id"
+
+
+def col_sesion(alias=""):
+    return f"{_pref(alias)}sesion_version" if _esquema["sesion"] else "0 AS sesion_version"
+
+
+def col_totp(alias=""):
+    if _esquema["totp"]:
+        p = _pref(alias)
+        return f"{p}totp_activo, {p}totp_secreto, {p}totp_ultimo_paso"
+    return "0 AS totp_activo, NULL AS totp_secreto, 0 AS totp_ultimo_paso"
+
+
 def _asegurar_columna(cur, tabla, columna, definicion, clave):
     cur.execute("SELECT COUNT(*) AS n FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() "
                 "AND TABLE_NAME = %s AND COLUMN_NAME = %s", (tabla, columna))
     if cur.fetchone()["n"] == 0:
         cur.execute(f"ALTER TABLE {tabla} ADD COLUMN {columna} {definicion}")
-        print(f"Sprint 10: columna {tabla}.{columna} agregada.", flush=True)
-    _esquema[clave] = True
+        print(f"Base de datos: columna {tabla}.{columna} agregada.", flush=True)
+    _columnas_ok.add(clave)
+    if clave in _esquema:
+        _esquema[clave] = True
+
+
+def _asegurar_fk(cur, tabla, nombre, columna, referencia):
+    cur.execute("SELECT COUNT(*) AS n FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() "
+                "AND TABLE_NAME = %s AND CONSTRAINT_NAME = %s", (tabla, nombre))
+    if cur.fetchone()["n"] == 0:
+        cur.execute(f"ALTER TABLE {tabla} ADD CONSTRAINT {nombre} FOREIGN KEY ({columna}) REFERENCES {referencia}")
+
+
+def _derivar_banderas():
+    """Las funciones que usan varias columnas solo se activan si estan todas."""
+    _esquema["org"] = {"org_usuarios", "org_expedientes"} <= _columnas_ok
+    _esquema["totp"] = {"totp_secreto", "totp_activo", "totp_paso"} <= _columnas_ok
 
 
 def col_cambio_clave():
@@ -221,6 +324,8 @@ def inicializar_bd():
         cur.execute(DDL_VERSIONES)
         cur.execute(DDL_RESOLUCIONES)
         cur.execute(DDL_OBSERVACIONES)
+        for ddl in DDL_EMPRESAS:
+            cur.execute(ddl)
     for tabla, columna, definicion, clave in COLUMNAS_SPRINT10:
         try:
             with cursor() as cur:
@@ -228,8 +333,13 @@ def inicializar_bd():
         except pymysql.MySQLError as e:
             # Sin la columna la app sigue con la regla anterior (plan B:
             # sql/sprint10_manual.sql).
-            print(f"AVISO: no se pudo agregar {tabla}.{columna} ({e!r}); se usa la regla del Sprint 9 "
-                  "hasta que exista.", flush=True)
+            print(f"AVISO: no se pudo agregar {tabla}.{columna} ({e!r}); la funcion que la usa queda "
+                  "inactiva hasta que exista.", flush=True)
+    _derivar_banderas()
+    if _esquema["org"]:
+        with cursor() as cur:
+            _asegurar_fk(cur, "usuarios", "fk_usuarios_organizacion", "organizacion_id", "organizaciones (id)")
+            _asegurar_fk(cur, "expedientes", "fk_expedientes_organizacion", "organizacion_id", "organizaciones (id)")
     try:
         with cursor() as cur:
             _asegurar_columna_cambio_clave(cur)
@@ -246,15 +356,58 @@ def inicializar_bd():
         # desactivar responde 503 hasta que exista (plan B: sql/sprint9_manual.sql).
         print(f"AVISO: no se pudo agregar usuarios.activo ({e!r}); "
               "no se podra desactivar consultores hasta que exista la columna.", flush=True)
+    org_defecto = _preparar_empresa_por_defecto()
     with cursor() as cur:
         cur.execute("SELECT id FROM usuarios WHERE email=%s", (JEFE_EMAIL,))
         if not cur.fetchone():
             try:
-                cur.execute("INSERT INTO usuarios (nombre, email, password_hash, rol) VALUES (%s, %s, %s, 'jefe')",
-                            (JEFE_NOMBRE, JEFE_EMAIL, generate_password_hash(JEFE_PASSWORD)))
-                print(f"Sprint 8: usuario jefe creado ({JEFE_EMAIL}).", flush=True)
+                columna, marca, valor = (", organizacion_id", ", %s", (org_defecto,)) if org_defecto else ("", "", ())
+                cur.execute(f"INSERT INTO usuarios (nombre, email, password_hash, rol{columna}) "
+                            f"VALUES (%s, %s, %s, 'jefe'{marca})",
+                            (JEFE_NOMBRE, JEFE_EMAIL, generate_password_hash(JEFE_PASSWORD), *valor))
+                print(f"Usuario jefe creado ({JEFE_EMAIL}).", flush=True)
             except pymysql.err.IntegrityError:
                 pass  # otro proceso lo creo al mismo tiempo
+    _crear_administrador()
+
+
+def _preparar_empresa_por_defecto():
+    """Empresa que recibe lo anterior a la separacion por empresa: los usuarios y
+    expedientes sin empresa pasan a ella. Devuelve su id (None sin la columna)."""
+    if not _esquema["org"]:
+        return None
+    with cursor() as cur:
+        cur.execute("SELECT id FROM organizaciones ORDER BY id LIMIT 1")
+        fila = cur.fetchone()
+        if fila:
+            org_id = fila["id"]
+        else:
+            cur.execute("INSERT INTO organizaciones (nombre) VALUES (%s)", (ORG_POR_DEFECTO,))
+            org_id = cur.lastrowid
+            print(f"Empresa por defecto creada: {ORG_POR_DEFECTO}.", flush=True)
+        cur.execute("UPDATE usuarios SET organizacion_id=%s WHERE organizacion_id IS NULL AND rol <> 'admin'", (org_id,))
+        cur.execute("UPDATE expedientes SET organizacion_id=%s WHERE organizacion_id IS NULL", (org_id,))
+    return org_id
+
+
+def _crear_administrador():
+    problema = problema_de_password(ADMIN_PASSWORD)
+    if problema:
+        raise ValueError(f"ADMIN_PASSWORD no cumple la politica: {problema}")
+    with cursor() as cur:
+        cur.execute("SELECT id, rol FROM usuarios WHERE email=%s", (ADMIN_EMAIL,))
+        existente = cur.fetchone()
+        if existente:
+            if existente["rol"] != "admin":
+                print(f"AVISO: ADMIN_EMAIL ({ADMIN_EMAIL}) ya pertenece a una cuenta que no es de administrador.",
+                      flush=True)
+            return
+        try:
+            cur.execute("INSERT INTO usuarios (nombre, email, password_hash, rol) VALUES (%s, %s, %s, 'admin')",
+                        (ADMIN_NOMBRE, ADMIN_EMAIL, generate_password_hash(ADMIN_PASSWORD)))
+            print(f"Administrador de la plataforma creado ({ADMIN_EMAIL}).", flush=True)
+        except pymysql.err.IntegrityError:
+            pass
 
 
 _estado_bd = {"lista": False, "ultimo_intento": 0.0}
@@ -269,7 +422,6 @@ def asegurar_bd():
     try:
         inicializar_bd()
         _estado_bd["lista"] = True
-        print("Sprints 8 a 10: historial, versiones, resoluciones, observaciones, usuario jefe y columnas "
-              "nuevas verificados.", flush=True)
+        print("Base de datos verificada: tablas, columnas, empresa por defecto y cuentas base.", flush=True)
     except Exception as e:  # noqa: BLE001 - la app sigue; se reintenta luego
-        print(f"AVISO: no se pudo preparar la base para el Sprint 8: {e!r}", flush=True)
+        print(f"AVISO: no se pudo preparar la base: {e!r}", flush=True)

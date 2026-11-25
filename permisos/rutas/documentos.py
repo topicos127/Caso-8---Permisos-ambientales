@@ -7,22 +7,23 @@ anteriores se conservan (en la base y en disco) y se pueden consultar y descarga
 """
 import hashlib
 import io
+import mimetypes
 import os
 import uuid
 import zipfile
 from datetime import datetime
 
-from flask import Blueprint, g, jsonify, request, send_file, send_from_directory
+from flask import Blueprint, g, jsonify, request, send_file
 from werkzeug.utils import secure_filename
 
+from ..almacenamiento import AlmacenamientoError, almacen
 from ..bd import SQL_ULTIMA_VERSION, _esquema, cargar_expediente, cursor, registrar_historial
-from ..config import (ACCION_SUBIR, ACCION_VERSION, CARPETA_CARTOGRAFIA, EXTENSIONES_PERMITIDAS, MAX_FILE_SIZE,
-                      UPLOADS_DIR, ZONA)
+from ..config import ACCION_SUBIR, ACCION_VERSION, CARPETA_CARTOGRAFIA, EXTENSIONES_PERMITIDAS, MAX_FILE_SIZE, ZONA
 from ..errores import ApiError
 from ..inspeccion import problema_archivo, problema_cartografia
 from ..reglas import ahora, hoy
-from ..seguridad import exigir_gestion, exigir_lectura, requiere_login
-from ..utiles import formatear_fechas, ruta_segura
+from ..seguridad import exigir_gestion, exigir_lectura, puede_ver, requiere_login
+from ..utiles import formatear_fechas
 
 bp = Blueprint("documentos", __name__)
 
@@ -68,14 +69,12 @@ def codigo_trazabilidad(codigo_expediente, documento_id, version, sha256):
 
 
 def _huella_en_disco(ruta):
-    fisica = ruta_segura(ruta) if ruta else None
-    if not fisica or not os.path.exists(fisica):
+    """SHA-256 del archivo guardado (None si ya no esta)."""
+    try:
+        datos = almacen().leer(ruta) if ruta else None
+    except AlmacenamientoError:
         return None
-    h = hashlib.sha256()
-    with open(fisica, "rb") as f:
-        for bloque in iter(lambda: f.read(1024 * 1024), b""):
-            h.update(bloque)
-    return h.hexdigest()
+    return hashlib.sha256(datos).hexdigest() if datos is not None else None
 
 
 def _insertar_version(cur, exp, documento_id, version, nombre, ruta, tamano, sha256, usuario_id, fecha):
@@ -125,14 +124,10 @@ def subir_documento(codigo, carpeta):
             version = ultima + 1
             sha256 = hashlib.sha256(contenido).hexdigest()
 
-            carpeta_path = os.path.join(UPLOADS_DIR, exp["codigo"])
-            os.makedirs(carpeta_path, exist_ok=True)
             nombre_unico = f"{uuid.uuid4().hex[:8]}_v{version}_{nombre_original}"
-            guardado = os.path.join(carpeta_path, nombre_unico)
-            with open(guardado, "wb") as f:
-                f.write(contenido)
-
-            ruta = os.path.join(exp["codigo"], nombre_unico)
+            ruta = f"{exp['codigo']}/{nombre_unico}"
+            almacen().guardar(ruta, contenido)
+            guardado = ruta
             momento = ahora()
             codigo_doc = _insertar_version(cur, exp, doc["id"], version, nombre_original, ruta, len(contenido),
                                            sha256, g.usuario["id"], momento)
@@ -145,12 +140,9 @@ def subir_documento(codigo, carpeta):
                             (vence.isoformat() if vence else None, doc["id"]))
             registrar_historial(cur, exp["id"], g.usuario["id"], ACCION_SUBIR if version == 1 else ACCION_VERSION)
     except Exception:
-        # Si la transaccion no se confirma, el archivo nuevo no debe quedar huerfano en disco.
-        if guardado and os.path.exists(guardado):
-            try:
-                os.remove(guardado)
-            except OSError:
-                pass
+        # Si la transaccion no se confirma, el archivo nuevo no debe quedar huerfano.
+        if guardado:
+            almacen().borrar(guardado)
         raise
 
     # Las versiones anteriores se conservan: no se borra ningun archivo.
@@ -160,15 +152,16 @@ def subir_documento(codigo, carpeta):
 
 
 def _enviar(ruta, nombre):
-    fisica = ruta_segura(ruta) if ruta else None
     if not ruta:
         raise ApiError(404, "No disponible")
-    if not fisica:
-        raise ApiError(400, "Ruta invalida")
-    if not os.path.exists(fisica):
-        raise ApiError(404, "No en disco")
-    return send_from_directory(os.path.dirname(fisica), os.path.basename(fisica),
-                               as_attachment=True, download_name=nombre)
+    try:
+        datos = almacen().leer(ruta)
+    except AlmacenamientoError:
+        raise ApiError(503, "El almacenamiento de archivos no responde. Intente de nuevo en un momento.")
+    if datos is None:
+        raise ApiError(404, "El archivo no está disponible.")
+    return send_file(io.BytesIO(datos), as_attachment=True, download_name=nombre,
+                     mimetype=mimetypes.guess_type(nombre)[0] or "application/octet-stream")
 
 
 @bp.route("/expedientes/<codigo>/documentos/<carpeta>/descargar", methods=["GET"])
@@ -230,7 +223,8 @@ def buscar_por_trazabilidad(codigo):
         v = cur.fetchone()
         if not v:
             raise ApiError(404, "Código de trazabilidad no encontrado.")
-        exigir_lectura(g.usuario, cargar_expediente(cur, v["expediente"]))
+        if not puede_ver(g.usuario, cargar_expediente(cur, v["expediente"])):
+            raise ApiError(404, "Código de trazabilidad no encontrado.")  # no se revela que existe
     formatear_fechas([v], "fecha_subida", "%d/%m/%Y %H:%M")
     return jsonify({"version": v}), 200
 
@@ -261,9 +255,14 @@ def descargar_zip_expediente(codigo):
         for d in docs:
             traza = f" · v{d['version']} · {d['codigo_trazabilidad']}" if d.get("codigo_trazabilidad") else ""
             indice_txt += f"- [{d['carpeta']}] {d['archivo_nombre']}{traza}\n"
-            fisica = ruta_segura(d["archivo_ruta"]) if d["archivo_ruta"] else None
-            if fisica and os.path.exists(fisica):
-                zf.write(fisica, arcname=f"{d['carpeta'].replace(' ', '_')}/{d['archivo_nombre']}")
+            datos = None
+            if d["archivo_ruta"]:
+                try:
+                    datos = almacen().leer(d["archivo_ruta"])
+                except AlmacenamientoError:
+                    datos = None
+            if datos is not None:
+                zf.writestr(f"{d['carpeta'].replace(' ', '_')}/{d['archivo_nombre']}", datos)
         zf.writestr('Indice_Expediente.txt', indice_txt)
 
     memory_file.seek(0)

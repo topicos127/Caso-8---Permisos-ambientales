@@ -14,10 +14,11 @@ HU-07); Sprint 8 (HU-13 rol jefe, HU-14 historial de solo lectura).
 """
 import os
 import secrets
+from datetime import timedelta
 
 from flask import Flask, request
 
-from . import config, errores
+from . import config, errores, respaldos
 from .bd import asegurar_bd
 from .rutas import BLUEPRINTS
 from .seguridad import exigir_cabecera_en_escrituras
@@ -39,6 +40,8 @@ def create_app():
         SESSION_COOKIE_SAMESITE="Lax",
         SESSION_COOKIE_SECURE=config.SESSION_COOKIE_SECURE,
         MAX_CONTENT_LENGTH=config.MAX_FILE_SIZE + 1024 * 1024,
+        # La sesion vence tras SESION_MINUTOS sin actividad (cada peticion la renueva).
+        PERMANENT_SESSION_LIFETIME=timedelta(minutes=config.SESION_MINUTOS),
     )
     os.makedirs(config.UPLOADS_DIR, exist_ok=True)
 
@@ -56,4 +59,5 @@ def create_app():
         app.register_blueprint(bp)
 
     asegurar_bd()
+    respaldos.iniciar_planificador()
     return app

@@ -1,5 +1,5 @@
 """
-Sistema de Permisos Ambientales - Seed completo (Sprint 5)
+Sistema de Permisos Ambientales - Seed completo
 
 Uso:
     python seed_usuarios.py          usuarios y 3 expedientes (CI y pruebas de Robot)
@@ -64,6 +64,59 @@ DEMO_EXPEDIENTES = [
     ("SP-A8-2026-107", "Eco-Lodge Boquete", "Turismo Sostenible Panamá", None, "II", "pendiente", 52, "consultor2@ejemplo.com", 1, 20, False),
 ]
 JEFE_EMAIL = os.environ.get("JEFE_EMAIL", "jefe1@ejemplo.com").strip().lower()
+
+# Empresas de prueba. La primera recibe a todos los usuarios y expedientes de arriba; la segunda
+# existe para comprobar que una consultora no ve lo de otra.
+EMPRESA_A = os.environ.get("ORG_POR_DEFECTO", "Consultora Demo")
+EMPRESA_B = "Ambiental del Pacífico"
+USUARIOS_B = [
+    ("Rosa Ibarra", "jefe2@ejemplo.com", "Jefe2026*", "jefe"),
+    ("Mateo Quiroz", "consultor3@ejemplo.com", "Clave2026", "consultor"),
+]
+# codigo, proyecto, promotor, categoria, estado, dias desde el ingreso, correo del consultor
+EXPEDIENTES_B = [
+    ("SP-A8-2026-201", "Parque Solar Chiriquí", "Energía del Pacífico", "II", "pendiente", 10, "consultor3@ejemplo.com"),
+]
+
+
+def sembrar_empresas(cur):
+    """Crea las dos empresas de prueba y devuelve {nombre: id}; {} si la base es anterior a las empresas."""
+    try:
+        for nombre, color in ((EMPRESA_A, "#17805a"), (EMPRESA_B, "#2563a8")):
+            cur.execute("INSERT IGNORE INTO organizaciones (nombre, color) VALUES (%s, %s)", (nombre, color))
+        cur.execute("SELECT nombre, id FROM organizaciones")
+    except pymysql.MySQLError:
+        return {}
+    return {nombre: id_ for nombre, id_ in cur.fetchall()}
+
+
+def sembrar_segunda_empresa(cur, empresas, ahora):
+    org = empresas[EMPRESA_B]
+    for nombre, email, password, rol in USUARIOS_B:
+        cur.execute(
+            """INSERT INTO usuarios (nombre, email, password_hash, rol, organizacion_id)
+               VALUES (%s, %s, %s, %s, %s)
+               ON DUPLICATE KEY UPDATE password_hash=VALUES(password_hash), nombre=VALUES(nombre),
+                                       organizacion_id=VALUES(organizacion_id)""",
+            (nombre, email, generate_password_hash(password), rol, org))
+    for codigo, proyecto, promotor, categoria, estado, dias, email_consultor in EXPEDIENTES_B:
+        cur.execute("SELECT id FROM usuarios WHERE email=%s", (email_consultor,))
+        consultor = cur.fetchone()[0]
+        ingreso = (ahora - timedelta(days=dias)).date()
+        cur.execute(
+            """INSERT INTO expedientes (codigo, proyecto, promotor, categoria, estado, fecha_ingreso, usuario_id,
+                                        organizacion_id)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+               ON DUPLICATE KEY UPDATE proyecto=VALUES(proyecto), promotor=VALUES(promotor),
+                 categoria=VALUES(categoria), estado=VALUES(estado), fecha_ingreso=VALUES(fecha_ingreso),
+                 usuario_id=VALUES(usuario_id), organizacion_id=VALUES(organizacion_id)""",
+            (codigo, proyecto, promotor, categoria, estado, ingreso, consultor, org))
+        cur.execute("SELECT id FROM expedientes WHERE codigo=%s", (codigo,))
+        exp_id = cur.fetchone()[0]
+        borrar_documentos_de_prueba(cur, exp_id)
+        for carpeta in DOCS_POR_CAT[categoria]:
+            cur.execute("INSERT INTO documentos (expediente_id, carpeta, estado) VALUES (%s, %s, 'pendiente')",
+                        (exp_id, carpeta))
 
 
 def borrar_documentos_de_prueba(cur, exp_id):
@@ -234,8 +287,18 @@ def main(demo=False):
             if demo:
                 sembrar_demo(cur)
 
+            # Empresas: lo sembrado arriba (sin empresa) pasa a la primera; la segunda trae lo suyo.
+            empresas = sembrar_empresas(cur)
+            if empresas:
+                ahora = datetime.now(timezone(timedelta(hours=-5))).replace(tzinfo=None, microsecond=0)
+                cur.execute("UPDATE usuarios SET organizacion_id=%s WHERE organizacion_id IS NULL AND rol <> 'admin'",
+                            (empresas[EMPRESA_A],))
+                cur.execute("UPDATE expedientes SET organizacion_id=%s WHERE organizacion_id IS NULL",
+                            (empresas[EMPRESA_A],))
+                sembrar_segunda_empresa(cur, empresas, ahora)
+
         conn.commit()
-        print("Seed completo: usuarios, expedientes, documentos y alertas"
+        print("Seed completo: empresas, usuarios, expedientes, documentos y alertas"
               + (" y expedientes de demostracion." if demo else "."))
     finally:
         conn.close()

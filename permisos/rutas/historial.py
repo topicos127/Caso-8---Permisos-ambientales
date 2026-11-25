@@ -4,7 +4,7 @@ from flask import Blueprint, g, jsonify, request
 from ..bd import cargar_expediente, cursor
 from ..config import ROLES_INTERNOS
 from ..errores import ApiError, respuesta_error
-from ..seguridad import exigir_lectura, requiere_login
+from ..seguridad import condicion_empresa, exigir_lectura, requiere_login
 from ..utiles import entero, formatear_fechas, paginacion
 
 bp = Blueprint("historial", __name__)
@@ -23,7 +23,8 @@ def ver_historial(codigo=None):
     page = entero("page", 1, 1, 100000)
     per_page = entero("per_page", 50, 1, 200)
 
-    condiciones, params = [], []
+    empresa, params_empresa = condicion_empresa(u)  # solo el historial de su empresa
+    condiciones, params = [empresa], list(params_empresa)
     with cursor() as cur:
         if codigo:
             exp = cargar_expediente(cur, codigo)

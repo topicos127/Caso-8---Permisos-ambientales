@@ -7,11 +7,12 @@ from datetime import datetime
 from flask import Blueprint, g, jsonify, request, send_file
 from fpdf import FPDF
 
+from ..almacenamiento import almacen
 from ..bd import _esquema, cargar_expediente, cursor, registrar_historial
 from ..config import ACCION_APROBAR, ACCION_DEVOLVER, ACCION_RECHAZO, ACCION_RESOLUCION, ACCION_SOMETER
 from ..errores import ApiError
 from ..reglas import ahora, calcular_verificacion, como_fecha, hoy
-from ..seguridad import exigir_gestion, exigir_jefe, exigir_lectura, requiere_login
+from ..seguridad import exigir_gestion, exigir_jefe_de, exigir_lectura, requiere_login
 from ..utiles import texto
 
 bp = Blueprint("flujo", __name__)
@@ -27,7 +28,7 @@ def aprobar_expediente(codigo):
 
     with cursor() as cur:
         exp = cargar_expediente(cur, codigo)
-        exigir_jefe(g.usuario)  # HU-13: solo el jefe aprueba internamente
+        exigir_jefe_de(g.usuario, exp)  # solo el jefe de la empresa aprueba internamente
         if exp["estado"] != "pendiente":
             raise ApiError(400, "Estado invalido.")
         cur.execute("SELECT carpeta, estado FROM documentos WHERE expediente_id=%s", (exp["id"],))
@@ -127,7 +128,7 @@ def devolver_con_observaciones(codigo):
     observaciones = texto(data, "observaciones", 2000)
     with cursor() as cur:
         exp = cargar_expediente(cur, codigo)
-        exigir_jefe(g.usuario, "Solo el jefe de la consultora devuelve expedientes.")
+        exigir_jefe_de(g.usuario, exp, "Solo el jefe de la consultora devuelve expedientes.")
         if exp["estado"] not in ("pendiente", "aprobado_interno"):
             raise ApiError(400, "Solo se devuelve un expediente que aún no se ha sometido.")
         cambiadas = cur.execute("UPDATE expedientes SET estado='pendiente' WHERE id=%s AND estado=%s",
@@ -148,6 +149,30 @@ def latin1(valor):
     return str(valor).encode("latin-1", "replace").decode("latin-1")
 
 
+def _encabezado_de_marca(pdf, marca):
+    """Nombre y logo de la consultora arriba del resumen (si la empresa los configuro)."""
+    if not marca:
+        return
+    color = marca["color"].lstrip("#")
+    rojo, verde, azul = (int(color[i:i + 2], 16) for i in (0, 2, 4))
+    if marca["logo_ruta"]:
+        try:
+            datos = almacen().leer(marca["logo_ruta"])
+            if datos:
+                pdf.image(io.BytesIO(datos), x=10, y=8, h=14)
+        except Exception:  # un logo ilegible no debe impedir el PDF
+            pass
+    pdf.set_font("Helvetica", 'B', 11)
+    pdf.set_text_color(rojo, verde, azul)
+    pdf.set_xy(10, 10)
+    pdf.cell(0, 10, latin1(marca["nombre"]), align='R')
+    pdf.set_draw_color(rojo, verde, azul)
+    pdf.set_line_width(0.6)
+    pdf.line(10, 25, 200, 25)
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_xy(10, 32)
+
+
 @bp.route("/expedientes/<codigo>/pdf", methods=["GET"])
 @requiere_login
 def generar_pdf_expediente(codigo):
@@ -156,9 +181,14 @@ def generar_pdf_expediente(codigo):
         exigir_lectura(g.usuario, exp)
         cur.execute("SELECT carpeta, estado FROM documentos WHERE expediente_id=%s ORDER BY id", (exp["id"],))
         docs = cur.fetchall()
+        marca = None
+        if _esquema["org"] and exp.get("organizacion_id") is not None:
+            cur.execute("SELECT nombre, color, logo_ruta FROM organizaciones WHERE id=%s", (exp["organizacion_id"],))
+            marca = cur.fetchone()
 
     pdf = FPDF()
     pdf.add_page()
+    _encabezado_de_marca(pdf, marca)
     pdf.set_font("Helvetica", 'B', 16)
     pdf.cell(0, 10, "Resumen Ejecutivo del Expediente", new_x="LMARGIN", new_y="NEXT", align='C')
     pdf.ln(10)

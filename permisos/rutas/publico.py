@@ -2,8 +2,9 @@
 y archivos del frontend."""
 from flask import Blueprint, jsonify, send_from_directory
 
-from ..bd import cursor
+from ..bd import col_org, cursor
 from ..config import ESTADO_PUBLICO
+from ..empresas import datos_empresa
 from ..errores import ApiError
 
 bp = Blueprint("publico", __name__)
@@ -30,18 +31,21 @@ def consulta_publica(codigo):
     publico: si no, el backend no entrega nada del expediente (Ley 81 de 2019).
     Como el resumen PDF se arma con estos datos, sin acceso tampoco hay PDF."""
     with cursor() as cur:
-        cur.execute("""SELECT e.codigo, e.proyecto, e.promotor, e.categoria, e.estado, e.acceso_publico,
-                              u.nombre AS consultor
+        cur.execute(f"""SELECT e.codigo, e.proyecto, e.promotor, e.categoria, e.estado, e.acceso_publico,
+                              u.nombre AS consultor, {col_org('e')}
                        FROM expedientes e LEFT JOIN usuarios u ON u.id = e.usuario_id
                        WHERE e.codigo=%s""", (codigo,))
         exp = cur.fetchone()
-    if not exp:
-        raise ApiError(404, "No encontrado")
-    if not exp["acceso_publico"]:
-        raise ApiError(403, "Este proyecto no está disponible para consulta pública.")
+        if not exp:
+            raise ApiError(404, "No encontrado")
+        if not exp["acceso_publico"]:
+            raise ApiError(403, "Este proyecto no está disponible para consulta pública.")
+        empresa = datos_empresa(cur, exp.pop("organizacion_id", None))
     exp["acceso_publico"] = True
     exp["estado_publico"] = ESTADO_PUBLICO.get(exp["estado"], exp["estado"])
-    return jsonify({"expediente": exp}), 200
+    # Solo la marca (nombre, color, logo): nada interno de la empresa.
+    marca = {k: empresa[k] for k in ("nombre", "color", "logo")} if empresa else None
+    return jsonify({"expediente": exp, "empresa": marca}), 200
 
 
 @bp.route("/<path:filename>")

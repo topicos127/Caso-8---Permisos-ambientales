@@ -1,4 +1,4 @@
-"""HU-16 (Sprint 9): el jefe gestiona su equipo de consultores (alta, baja y reasignacion).
+"""El jefe gestiona el equipo de consultores de su empresa (alta, baja, reasignacion y clave).
 
 - Alta: el jefe da nombre y correo. La app genera una contrasena temporal que
   se muestra una sola vez (igual que la cuenta del promotor); si el jefe manda
@@ -10,7 +10,9 @@
 - Reasignacion: los expedientes de un consultor desactivado pasan a otro
   activo. Cada expediente queda en el historial como "reasigno", a nombre del jefe.
 
-Solo el jefe: cualquier otro rol recibe 403.
+- Restablecer clave: si un consultor olvido la suya, el jefe le genera una temporal.
+
+Solo el jefe, y solo sobre los consultores de su propia empresa; cualquier otro rol recibe 403.
 """
 from functools import wraps
 
@@ -22,7 +24,7 @@ from ..bd import _esquema, col_activo, cursor, registrar_historial
 from ..config import ACCION_REASIGNAR, EMAIL_RE
 from ..errores import ApiError
 from ..reglas import problema_de_password
-from ..seguridad import requiere_login
+from ..seguridad import condicion_empresa, requiere_login
 from ..utiles import texto
 from .expedientes import contrasena_temporal
 
@@ -39,8 +41,9 @@ def requiere_jefe(f):
 
 
 def cargar_consultor(cur, consultor_id):
-    cur.execute(f"SELECT id, nombre, email, {col_activo()} FROM usuarios WHERE id=%s AND rol='consultor'",
-                (consultor_id,))
+    empresa, params = condicion_empresa(g.usuario, "u")
+    cur.execute(f"SELECT id, nombre, email, {col_activo()} FROM usuarios u "
+                f"WHERE u.id=%s AND u.rol='consultor' AND {empresa}", [consultor_id, *params])
     c = cur.fetchone()
     if not c:
         raise ApiError(404, "Consultor no encontrado.")
@@ -52,10 +55,11 @@ def cargar_consultor(cur, consultor_id):
 @requiere_jefe
 def listar_consultores():
     activo = "u.activo" if _esquema["activo"] else "1 AS activo"
+    empresa, params = condicion_empresa(g.usuario, "u")
     with cursor() as cur:
         cur.execute(f"""SELECT u.id, u.nombre, u.email, u.fecha_creacion, {activo},
                                (SELECT COUNT(*) FROM expedientes e WHERE e.usuario_id = u.id) AS expedientes
-                        FROM usuarios u WHERE u.rol = 'consultor'""")
+                        FROM usuarios u WHERE u.rol = 'consultor' AND {empresa}""", params)
         filas = cur.fetchall()
     consultores = [{
         "id": c["id"],
@@ -94,9 +98,12 @@ def crear_consultor():
             if cur.fetchone():
                 raise ApiError(409, "Ese correo ya está registrado.")
             columna, marca = (", debe_cambiar_clave", ", TRUE") if _esquema["cambio_clave"] else ("", "")
+            if _esquema["org"]:
+                columna, marca = columna + ", organizacion_id", marca + ", %s"
             cur.execute(f"INSERT INTO usuarios (nombre, email, password_hash, rol{columna}) "
                         f"VALUES (%s, %s, %s, 'consultor'{marca})",
-                        (nombre, email, generate_password_hash(temporal)))
+                        (nombre, email, generate_password_hash(temporal),
+                         *((g.usuario["organizacion_id"],) if _esquema["org"] else ())))
             nuevo_id = cur.lastrowid
     except pymysql.err.IntegrityError:
         raise ApiError(409, "Ese correo ya está registrado.")
@@ -155,8 +162,9 @@ def reasignar_expedientes(consultor_id):
                                 "consultores dados de baja.")
         if destino_id == consultor_id:
             raise ApiError(400, "El consultor de destino debe ser otro.")
-        cur.execute(f"SELECT id, nombre, {col_activo()} FROM usuarios WHERE id=%s AND rol='consultor'",
-                    (destino_id,))
+        empresa, params = condicion_empresa(g.usuario, "u")
+        cur.execute(f"SELECT id, nombre, {col_activo()} FROM usuarios u WHERE u.id=%s AND u.rol='consultor' "
+                    f"AND {empresa}", [destino_id, *params])
         destino = cur.fetchone()
         if not destino:
             raise ApiError(400, "El consultor de destino no existe.")
@@ -172,3 +180,21 @@ def reasignar_expedientes(consultor_id):
 
     return jsonify({"ok": True, "reasignados": len(ids),
                     "mensaje": f"{len(ids)} expediente(s) de {origen['nombre']} pasaron a {destino['nombre']}."}), 200
+
+
+@bp.route("/consultores/<int:consultor_id>/restablecer-clave", methods=["POST"])
+@requiere_login
+@requiere_jefe
+def restablecer_clave_consultor(consultor_id):
+    """El consultor olvido su contrasena: el jefe le genera una temporal (se muestra una
+    sola vez). La clave anterior deja de valer y sus sesiones abiertas se cierran."""
+    temporal = contrasena_temporal()
+    with cursor() as cur:
+        c = cargar_consultor(cur, consultor_id)
+        sets = "password_hash=%s" + (", debe_cambiar_clave=TRUE" if _esquema["cambio_clave"] else "") \
+            + (", sesion_version = sesion_version + 1" if _esquema["sesion"] else "") \
+            + (", totp_activo=FALSE, totp_secreto=NULL, totp_ultimo_paso=0" if _esquema["totp"] else "")
+        cur.execute(f"UPDATE usuarios SET {sets} WHERE id=%s", (generate_password_hash(temporal), consultor_id))
+    return jsonify({"ok": True, "email": c["email"], "password_temporal": temporal,
+                    "mensaje": f"Entregue esta contraseña a {c['nombre']} por un canal seguro. Se muestra una sola "
+                               "vez y deberá cambiarla en su próximo ingreso."}), 200

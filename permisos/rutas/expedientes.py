@@ -7,15 +7,15 @@ import pymysql
 from flask import Blueprint, Response, g, jsonify, request
 from werkzeug.security import generate_password_hash
 
-from ..bd import (SQL_ULTIMA_VERSION, _esquema, cargar_expediente, col_sometimiento, col_vencimiento, cursor,
-                  documentos_de, registrar_historial)
+from ..bd import (SQL_ULTIMA_VERSION, _esquema, cargar_expediente, col_org, col_sometimiento, col_vencimiento,
+                  cursor, documentos_de, registrar_historial)
 from ..config import (ACCION_ACCESO, ACCION_CREAR, ACCION_CUENTA_PROMOTOR, CATEGORIAS_DOCS, EMAIL_RE,
                       ROLES_INTERNOS)
 from ..calendario import generar_ics
 from ..errores import ApiError
 from ..reglas import (calcular_ipe, calcular_semaforo, calcular_verificacion, hoy, problema_de_password,
                       vencimiento_documento)
-from ..seguridad import exigir_gestion, exigir_jefe, exigir_lectura, filtro_de, requiere_login
+from ..seguridad import exigir_gestion, exigir_jefe_de, exigir_lectura, filtro_de, requiere_login
 from ..utiles import entero, formatear_fechas, paginacion, texto
 
 bp = Blueprint("expedientes", __name__)
@@ -111,6 +111,10 @@ def crear_expediente():
     if promotor_email and not EMAIL_RE.match(promotor_email):
         return jsonify({"ok": False, "mensaje": "El correo del promotor no es valido."}), 400
 
+    if _esquema["org"] and u.get("organizacion_id") is None:
+        raise ApiError(403, "Su cuenta no pertenece a ninguna empresa.")
+    col_empresa, marca_empresa, valor_empresa = ((", organizacion_id", ", %s", (u["organizacion_id"],))
+                                                 if _esquema["org"] else ("", "", ()))
     dia = hoy()
     prefijo = f"SP-A8-{dia.year}-"
     with cursor() as cur:
@@ -120,11 +124,11 @@ def crear_expediente():
             codigo = siguiente_codigo(cur, prefijo)
             try:
                 cur.execute(
-                    """INSERT INTO expedientes (codigo, proyecto, promotor, promotor_email, categoria,
-                                                estado, fecha_ingreso, usuario_id, acceso_publico)
-                       VALUES (%s, %s, %s, %s, %s, 'pendiente', %s, %s, %s)""",
+                    f"""INSERT INTO expedientes (codigo, proyecto, promotor, promotor_email, categoria,
+                                                estado, fecha_ingreso, usuario_id, acceso_publico{col_empresa})
+                       VALUES (%s, %s, %s, %s, %s, 'pendiente', %s, %s, %s{marca_empresa})""",
                     (codigo, proyecto, promotor, promotor_email, categoria, dia.isoformat(), u["id"],
-                     acceso_publico),
+                     acceso_publico, *valor_empresa),
                 )
                 break
             except pymysql.err.IntegrityError:
@@ -166,6 +170,10 @@ def detalle_expediente(codigo):
                         "LEFT JOIN usuarios u ON u.id = o.autor_id WHERE o.expediente_id=%s "
                         "ORDER BY o.fecha DESC, o.id DESC", (exp["id"],))
             observaciones = cur.fetchall()
+        responsable = None
+        if g.usuario["rol"] in ROLES_INTERNOS:
+            cur.execute("SELECT id, nombre FROM usuarios WHERE id=%s", (exp["usuario_id"],))
+            responsable = cur.fetchone()
 
     verificacion = calcular_verificacion(exp["categoria"], docs)
     ipe = calcular_ipe(exp, docs) if g.usuario["rol"] in ROLES_INTERNOS else None  # HU-15
@@ -187,7 +195,8 @@ def detalle_expediente(codigo):
     formatear_fechas(observaciones, "fecha", "%d/%m/%Y %H:%M")
 
     return jsonify({"expediente": exp, "documentos": docs, "aprobacion": aprob, "verificacion": verificacion,
-                    "ipe": ipe, "resolucion": resolucion, "observaciones": observaciones})
+                    "ipe": ipe, "resolucion": resolucion, "observaciones": observaciones,
+                    "responsable": responsable})
 
 
 @bp.route("/expedientes/<codigo>/aprobaciones", methods=["GET"])
@@ -215,7 +224,7 @@ def cambiar_acceso_publico(codigo):
         raise ApiError(400, "acceso_publico debe ser true o false.")
     with cursor() as cur:
         exp = cargar_expediente(cur, codigo)
-        exigir_jefe(g.usuario, "Solo el jefe de la consultora cambia el acceso público.")
+        exigir_jefe_de(g.usuario, exp, "Solo el jefe de la consultora cambia el acceso público.")
         cur.execute("UPDATE expedientes SET acceso_publico=%s WHERE id=%s", (valor, exp["id"]))
         if bool(exp["acceso_publico"]) != valor:
             registrar_historial(cur, exp["id"], g.usuario["id"], ACCION_ACCESO)
@@ -242,19 +251,25 @@ def crear_cuenta_promotor(codigo):
         email = exp["promotor_email"]
         if not email:
             raise ApiError(400, "El expediente no tiene correo de promotor.")
-        cur.execute("SELECT rol FROM usuarios WHERE email=%s", (email,))
+        cur.execute(f"SELECT rol, {col_org('')} FROM usuarios WHERE email=%s", (email,))
         existente = cur.fetchone()
         if existente:
-            if existente["rol"] == "promotor":
+            if existente["rol"] == "promotor" and existente["organizacion_id"] == exp.get("organizacion_id"):
                 raise ApiError(409, "El promotor ya tiene cuenta.")
+            if existente["rol"] == "promotor":
+                raise ApiError(409, "Ese correo ya tiene una cuenta de promotor en otra empresa: cada cuenta "
+                                    "pertenece a una sola empresa.")
             raise ApiError(409, "Ese correo ya pertenece a otra cuenta.")
         temporal = contrasena_temporal()
         try:
-            # Sprint 9: contrasena temporal; el promotor debe cambiarla al entrar.
+            # Contrasena temporal: el promotor debe cambiarla al entrar. La cuenta es de la empresa del expediente.
             columna, marca = (", debe_cambiar_clave", ", TRUE") if _esquema["cambio_clave"] else ("", "")
+            if _esquema["org"]:
+                columna, marca = columna + ", organizacion_id", marca + ", %s"
             cur.execute(f"INSERT INTO usuarios (nombre, email, password_hash, rol{columna}) "
                         f"VALUES (%s, %s, %s, 'promotor'{marca})",
-                        (exp["promotor"], email, generate_password_hash(temporal)))
+                        (exp["promotor"], email, generate_password_hash(temporal),
+                         *((exp["organizacion_id"],) if _esquema["org"] else ())))
         except pymysql.err.IntegrityError:
             raise ApiError(409, "El promotor ya tiene cuenta.")
         registrar_historial(cur, exp["id"], g.usuario["id"], ACCION_CUENTA_PROMOTOR)
@@ -264,6 +279,31 @@ def crear_cuenta_promotor(codigo):
         "password_temporal": temporal,
         "mensaje": "Entregue esta contraseña al promotor por un canal seguro. Se muestra una sola vez y el sistema le exigirá cambiarla en su primer ingreso.",
     }), 201
+
+
+@bp.route("/expedientes/<codigo>/promotor/clave", methods=["POST"])
+@requiere_login
+def restablecer_clave_promotor(codigo):
+    """El consultor duenio o el jefe genera una contrasena temporal nueva para el promotor
+    del expediente (olvido su clave). Se muestra una sola vez y cierra sus sesiones."""
+    with cursor() as cur:
+        exp = cargar_expediente(cur, codigo)
+        exigir_gestion(g.usuario, exp)
+        email = exp["promotor_email"]
+        if not email:
+            raise ApiError(400, "El expediente no tiene correo de promotor.")
+        cur.execute(f"SELECT id, {col_org('')} FROM usuarios WHERE email=%s AND rol='promotor'", (email,))
+        cuenta = cur.fetchone()
+        if not cuenta or cuenta["organizacion_id"] != exp.get("organizacion_id"):
+            raise ApiError(404, "El promotor todavía no tiene cuenta: créela primero.")
+        temporal = contrasena_temporal()
+        sets = "password_hash=%s" + (", debe_cambiar_clave=TRUE" if _esquema["cambio_clave"] else "") \
+            + (", sesion_version = sesion_version + 1" if _esquema["sesion"] else "") \
+            + (", totp_activo=FALSE, totp_secreto=NULL, totp_ultimo_paso=0" if _esquema["totp"] else "")
+        cur.execute(f"UPDATE usuarios SET {sets} WHERE id=%s", (generate_password_hash(temporal), cuenta["id"]))
+    return jsonify({"ok": True, "email": email, "password_temporal": temporal,
+                    "mensaje": "Entregue esta contraseña al promotor por un canal seguro. Se muestra una sola vez y "
+                               "deberá cambiarla en su próximo ingreso."}), 200
 
 
 @bp.route("/expedientes/<codigo>/alertas", methods=["GET"])
