@@ -47,3 +47,10 @@ def es_zip(contenido):
 def nombres_en_zip(contenido):
     with zipfile.ZipFile(io.BytesIO(contenido)) as z:
         return z.namelist()
+
+
+def texto_del_zip(contenido, nombre):
+    """Texto de un archivo dentro de un ZIP (si es un .xlsx, todo su texto; si no, el archivo decodificado)."""
+    with zipfile.ZipFile(io.BytesIO(contenido)) as z:
+        datos = z.read(nombre)
+    return textos_de_xlsx(datos) if nombre.endswith(".xlsx") else datos.decode("utf-8", "replace")

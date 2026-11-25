@@ -192,6 +192,19 @@ DDL_EMPRESAS = [
         FOREIGN KEY (expediente_id) REFERENCES expedientes (id),
         FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
     )""",
+    """CREATE TABLE IF NOT EXISTS eventos_cuenta (
+        id BIGINT NOT NULL AUTO_INCREMENT,
+        organizacion_id INT NULL,
+        usuario_id INT NULL,
+        email VARCHAR(255) NULL,
+        tipo VARCHAR(40) NOT NULL,
+        detalle VARCHAR(300) NULL,
+        ip VARCHAR(64) NULL,
+        fecha DATETIME NOT NULL,
+        PRIMARY KEY (id),
+        KEY ix_eventos_org_fecha (organizacion_id, fecha),
+        KEY ix_eventos_usuario (usuario_id, tipo, fecha)
+    )""",
     """CREATE TABLE IF NOT EXISTS vistas_guardadas (
         id INT NOT NULL AUTO_INCREMENT,
         usuario_id INT NOT NULL,
@@ -209,7 +222,8 @@ DDL_EMPRESAS = [
 # Sprint 10: lo mismo con la fecha de sometimiento (HU-08), la fecha de
 # vencimiento de cada documento y el aviso que elige cada usuario (HU-05).
 _esquema = {"cambio_clave": False, "activo": False, "sometimiento": False, "vencimiento": False,
-            "aviso": False, "org": False, "totp": False, "sesion": False, "terminos": False}
+            "aviso": False, "org": False, "totp": False, "sesion": False, "terminos": False,
+            "org_perfil": False, "org_politica": False, "titular": False}
 _columnas_ok = set()
 
 # (tabla, columna, definicion, clave en _esquema)
@@ -226,6 +240,17 @@ COLUMNAS_SPRINT10 = (
     ("usuarios", "totp_ultimo_paso", "BIGINT NOT NULL DEFAULT 0", "totp_paso"),
     ("usuarios", "sesion_version", "INT NOT NULL DEFAULT 0", "sesion"),
     ("usuarios", "terminos_aceptados_en", "DATETIME NULL", "terminos"),
+    # Mi consultora: datos de la empresa, politica de seguridad y titular
+    ("organizaciones", "razon_social", "VARCHAR(200) NULL", "org_razon"),
+    ("organizaciones", "ruc", "VARCHAR(40) NULL", "org_ruc"),
+    ("organizaciones", "direccion", "VARCHAR(300) NULL", "org_direccion"),
+    ("organizaciones", "telefono", "VARCHAR(40) NULL", "org_telefono"),
+    ("organizaciones", "email_contacto", "VARCHAR(255) NULL", "org_email"),
+    ("organizaciones", "pie_documento", "VARCHAR(300) NULL", "org_pie"),
+    ("organizaciones", "exigir_2fa", "BOOLEAN NOT NULL DEFAULT FALSE", "org_2fa"),
+    ("organizaciones", "sesion_minutos", "INT NULL", "org_sesion"),
+    ("organizaciones", "aviso_defecto", "INT NULL", "org_aviso"),
+    ("organizaciones", "titular_id", "INT NULL", "org_titular"),
 )
 
 
@@ -283,6 +308,9 @@ def _derivar_banderas():
     """Las funciones que usan varias columnas solo se activan si estan todas."""
     _esquema["org"] = {"org_usuarios", "org_expedientes"} <= _columnas_ok
     _esquema["totp"] = {"totp_secreto", "totp_activo", "totp_paso"} <= _columnas_ok
+    _esquema["org_perfil"] = {"org_razon", "org_ruc", "org_direccion", "org_telefono", "org_email", "org_pie"} <= _columnas_ok
+    _esquema["org_politica"] = {"org_2fa", "org_sesion", "org_aviso"} <= _columnas_ok
+    _esquema["titular"] = "org_titular" in _columnas_ok
 
 
 def col_cambio_clave():
@@ -357,6 +385,11 @@ def inicializar_bd():
         print(f"AVISO: no se pudo agregar usuarios.activo ({e!r}); "
               "no se podra desactivar consultores hasta que exista la columna.", flush=True)
     org_defecto = _preparar_empresa_por_defecto()
+    if _esquema["titular"]:
+        with cursor() as cur:
+            # El titular de cada empresa es su primer director de proyectos (si aun no se definio).
+            cur.execute("UPDATE organizaciones o SET o.titular_id = (SELECT MIN(u.id) FROM usuarios u "
+                        "WHERE u.organizacion_id = o.id AND u.rol = 'jefe') WHERE o.titular_id IS NULL")
     with cursor() as cur:
         cur.execute("SELECT id FROM usuarios WHERE email=%s", (JEFE_EMAIL,))
         if not cur.fetchone():

@@ -2,7 +2,7 @@
 y archivos del frontend."""
 from flask import Blueprint, jsonify, send_from_directory
 
-from ..bd import col_org, cursor
+from ..bd import _esquema, col_org, cursor
 from ..config import ESTADO_PUBLICO
 from ..empresas import datos_empresa
 from ..errores import ApiError
@@ -40,11 +40,17 @@ def consulta_publica(codigo):
             raise ApiError(404, "No encontrado")
         if not exp["acceso_publico"]:
             raise ApiError(403, "Este proyecto no está disponible para consulta pública.")
-        empresa = datos_empresa(cur, exp.pop("organizacion_id", None))
+        org_id = exp.pop("organizacion_id", None)
+        empresa = datos_empresa(cur, org_id)
+        if empresa and _esquema["org_perfil"]:
+            # Contacto que la propia consultora eligio mostrar al publico.
+            cur.execute("SELECT telefono, email_contacto FROM organizaciones WHERE id=%s", (org_id,))
+            contacto = cur.fetchone() or {}
+            empresa["telefono"], empresa["email"] = contacto.get("telefono"), contacto.get("email_contacto")
     exp["acceso_publico"] = True
     exp["estado_publico"] = ESTADO_PUBLICO.get(exp["estado"], exp["estado"])
     # Solo la marca (nombre, color, logo): nada interno de la empresa.
-    marca = {k: empresa[k] for k in ("nombre", "color", "logo")} if empresa else None
+    marca = {k: empresa.get(k) for k in ("nombre", "color", "logo", "telefono", "email")} if empresa else None
     return jsonify({"expediente": exp, "empresa": marca}), 200
 
 

@@ -166,11 +166,21 @@ def _encabezado_de_marca(pdf, marca):
     pdf.set_text_color(rojo, verde, azul)
     pdf.set_xy(10, 10)
     pdf.cell(0, 10, latin1(marca["nombre"]), align='R')
+    # Datos de la empresa (si el director los cargo en "Mi consultora")
+    pdf.set_text_color(90, 96, 104)
+    pdf.set_font("Helvetica", '', 8.5)
+    lineas = [marca.get("razon_social"), f"RUC {marca['ruc']}" if marca.get("ruc") else None,
+              marca.get("direccion"), " · ".join(x for x in (marca.get("telefono"), marca.get("email_contacto")) if x)]
+    y = 20
+    for linea in (x for x in lineas if x):
+        pdf.set_xy(80, y)
+        pdf.cell(120, 4, latin1(linea), align='R')
+        y += 4
     pdf.set_draw_color(rojo, verde, azul)
     pdf.set_line_width(0.6)
-    pdf.line(10, 25, 200, 25)
+    pdf.line(10, max(25, y + 3), 200, max(25, y + 3))
     pdf.set_text_color(0, 0, 0)
-    pdf.set_xy(10, 32)
+    pdf.set_xy(10, max(25, y + 3) + 7)
 
 
 @bp.route("/expedientes/<codigo>/pdf", methods=["GET"])
@@ -183,7 +193,8 @@ def generar_pdf_expediente(codigo):
         docs = cur.fetchall()
         marca = None
         if _esquema["org"] and exp.get("organizacion_id") is not None:
-            cur.execute("SELECT nombre, color, logo_ruta FROM organizaciones WHERE id=%s", (exp["organizacion_id"],))
+            extra = ", razon_social, ruc, direccion, telefono, email_contacto, pie_documento" if _esquema["org_perfil"] else ""
+            cur.execute(f"SELECT nombre, color, logo_ruta{extra} FROM organizaciones WHERE id=%s", (exp["organizacion_id"],))
             marca = cur.fetchone()
 
     pdf = FPDF()
@@ -207,5 +218,10 @@ def generar_pdf_expediente(codigo):
         estado_doc = "Recibido" if d['estado'] == 'recibido' else "Pendiente"
         pdf.cell(0, 10, latin1(f"- {d['carpeta']}: {estado_doc}"), new_x="LMARGIN", new_y="NEXT")
 
+    if marca and marca.get("pie_documento"):
+        pdf.set_y(-24)
+        pdf.set_font("Helvetica", 'I', 8)
+        pdf.set_text_color(110, 116, 124)
+        pdf.multi_cell(0, 4, latin1(marca["pie_documento"]), align='C')
     return send_file(io.BytesIO(bytes(pdf.output())), mimetype='application/pdf', as_attachment=True,
                      download_name=f"{exp['codigo']}-resumen.pdf")

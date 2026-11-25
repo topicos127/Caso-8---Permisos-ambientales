@@ -11,6 +11,7 @@ from datetime import timedelta
 from flask import Blueprint, g, jsonify, request
 
 from .. import limitador
+from .. import auditoria
 from ..bd import cursor
 from ..config import EMAIL_RE, INVITACION_HORAS, ROL_ADMIN
 from ..errores import ApiError
@@ -56,6 +57,13 @@ def crear():
 
     if u["rol"] == "jefe":
         organizacion_id, rol = u["organizacion_id"], "consultor"
+        if data.get("rol") == "jefe":
+            # Invitar a otro director de proyectos es del titular de la cuenta.
+            from .empresa import es_titular
+            with cursor() as cur:
+                if not es_titular(cur, u):
+                    raise ApiError(403, "Solo el titular de la cuenta puede invitar a otro director de proyectos.")
+            rol = "jefe"
     elif u["rol"] == ROL_ADMIN:
         # El administrador invita al jefe de una empresa que ya existe.
         organizacion_id, rol = data.get("organizacion_id"), "jefe"
@@ -74,6 +82,8 @@ def crear():
             if cur.fetchone():
                 raise ApiError(409, "Ese correo ya tiene una cuenta.")
         token, expira = nueva_invitacion(cur, organizacion_id, rol, u["id"], email)
+        auditoria.registrar(cur, organizacion_id, u["id"], "invitacion_creada",
+                            f"{'director' if rol == 'jefe' else 'consultor'}" + (f" · {email}" if email else ""))
     return jsonify({"ok": True, "enlace": _enlace(token), "token": token, "rol": rol,
                     "expira": expira.strftime("%d/%m/%Y %H:%M"),
                     "mensaje": f"Comparta este enlace con la persona invitada. Es de un solo uso, vence en "
@@ -121,6 +131,7 @@ def revocar(invitacion_id):
         if i["usada_en"]:
             raise ApiError(409, "Esa invitación ya se usó.")
         cur.execute("UPDATE invitaciones SET revocada=TRUE WHERE id=%s", (invitacion_id,))
+        auditoria.registrar(cur, i["organizacion_id"], u["id"], "invitacion_revocada", "")
     return jsonify({"ok": True, "mensaje": "Invitación revocada."}), 200
 
 

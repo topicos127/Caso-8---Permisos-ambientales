@@ -10,6 +10,19 @@ CREATE TABLE IF NOT EXISTS organizaciones (
     logo_ruta VARCHAR(500) NULL,
     activa BOOLEAN NOT NULL DEFAULT TRUE,
     fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Mi consultora: datos de la empresa (salen en el PDF y en la consulta publica)
+    razon_social VARCHAR(200) NULL,
+    ruc VARCHAR(40) NULL,
+    direccion VARCHAR(300) NULL,
+    telefono VARCHAR(40) NULL,
+    email_contacto VARCHAR(255) NULL,
+    pie_documento VARCHAR(300) NULL,
+    -- Politica de seguridad de la empresa
+    exigir_2fa BOOLEAN NOT NULL DEFAULT FALSE,
+    sesion_minutos INT NULL,
+    aviso_defecto INT NULL,
+    -- Titular de la cuenta (unico que invita a otros directores y cambia roles)
+    titular_id INT NULL,
     PRIMARY KEY (id),
     UNIQUE KEY uq_organizacion_nombre (nombre)
 );
@@ -203,4 +216,19 @@ CREATE TABLE IF NOT EXISTS vistas_guardadas (
     fecha DATETIME NOT NULL,
     PRIMARY KEY (id),
     FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
+);
+
+-- Registro de accesos y cambios de cada empresa (sin llaves foraneas: sobrevive a las bajas de cuentas).
+CREATE TABLE IF NOT EXISTS eventos_cuenta (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    organizacion_id INT NULL,
+    usuario_id INT NULL,
+    email VARCHAR(255) NULL,
+    tipo VARCHAR(40) NOT NULL,
+    detalle VARCHAR(300) NULL,
+    ip VARCHAR(64) NULL,
+    fecha DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    KEY ix_eventos_org_fecha (organizacion_id, fecha),
+    KEY ix_eventos_usuario (usuario_id, tipo, fecha)
 );

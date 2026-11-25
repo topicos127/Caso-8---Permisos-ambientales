@@ -125,6 +125,10 @@ jobs:
         run: |
           robot --outputdir tests/plataforma tests/plataforma/Test_Plataforma.robot
 
+      - name: Run Robot Framework tests (Mi consultora)
+        run: |
+          robot --outputdir tests/consultora tests/consultora/Test_MiConsultora.robot
+
       - name: Upload Login test report
         if: always()
         uses: actions/upload-artifact@v5
@@ -180,6 +184,13 @@ jobs:
         with:
           name: robot-report-sprint10
           path: tests/sprint10/
+
+      - name: Upload Mi consultora test report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: robot-report-consultora
+          path: tests/consultora/
 
       - name: Upload Plataforma test report
         if: always()

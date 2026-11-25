@@ -39,3 +39,9 @@ def anotar_fallo(clave):
 def limpiar(clave):
     with _candado:
         _fallos.pop(clave, None)
+
+
+def fallos(clave):
+    """Cuantos fallos recientes tiene la clave (para decidir que se anota en el registro)."""
+    with _candado:
+        return _recientes(clave, time.monotonic())

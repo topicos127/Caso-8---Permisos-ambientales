@@ -12,6 +12,7 @@ import pymysql
 from flask import Blueprint, g, jsonify, request, send_file
 from werkzeug.security import generate_password_hash
 
+from .. import auditoria
 from ..almacenamiento import AlmacenamientoError, almacen
 from ..bd import _esquema, cursor
 from ..config import COLORES_EMPRESA, EMAIL_RE, ROL_ADMIN
@@ -88,6 +89,7 @@ def editar_empresa():
     try:
         with cursor() as cur:
             cur.execute(f"UPDATE organizaciones SET {', '.join(sets)} WHERE id=%s", (*params, u["organizacion_id"]))
+            auditoria.registrar(cur, u["organizacion_id"], u["id"], "marca", "nombre o color")
             empresa = datos_empresa(cur, u["organizacion_id"])
     except pymysql.err.IntegrityError:
         raise ApiError(409, "Ya existe una empresa con ese nombre.")
@@ -119,6 +121,7 @@ def subir_logo():
         cur.execute("SELECT logo_ruta FROM organizaciones WHERE id=%s", (u["organizacion_id"],))
         anterior = cur.fetchone()["logo_ruta"]
         cur.execute("UPDATE organizaciones SET logo_ruta=%s WHERE id=%s", (ruta, u["organizacion_id"]))
+        auditoria.registrar(cur, u["organizacion_id"], u["id"], "logo", "nuevo logo")
         empresa = datos_empresa(cur, u["organizacion_id"])
     if anterior and anterior != ruta:
         almacen().borrar(anterior)

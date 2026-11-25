@@ -5,6 +5,7 @@ y todo expediente pertenece a una empresa. Las reglas de abajo son el UNICO
 lugar donde se decide que empresa ve que: puede_ver, exigir_gestion, filtro_de
 y condicion_empresa. Las rutas no comparan empresas por su cuenta.
 """
+import time
 from functools import wraps
 
 from flask import g, request, session
@@ -31,19 +32,34 @@ def usuario_sesion():
         return None
     with cursor() as cur:
         cur.execute(f"SELECT id, email, rol, nombre, {col_cambio_clave()}, {col_activo()}, {col_org('')}, "
-                    f"{col_sesion()} FROM usuarios WHERE id=%s", (uid,))
+                    f"{col_sesion()}, {'totp_activo' if _esquema['totp'] else '0 AS totp_activo'} "
+                    "FROM usuarios WHERE id=%s", (uid,))
         u = cur.fetchone()
         empresa_activa = True
+        politica = {}
         if u and _esquema["org"] and u.get("organizacion_id") is not None:
-            cur.execute("SELECT activa FROM organizaciones WHERE id=%s", (u["organizacion_id"],))
+            columnas = "activa" + (", exigir_2fa, sesion_minutos" if _esquema["org_politica"] else "")
+            cur.execute(f"SELECT {columnas} FROM organizaciones WHERE id=%s", (u["organizacion_id"],))
             fila = cur.fetchone()
             empresa_activa = bool(fila and fila["activa"])
+            politica = fila or {}
     # Si el jefe desactiva a un consultor, su sesion abierta deja de valer. Lo mismo si
     # la empresa se desactiva o si el usuario cerro todas sus sesiones (sesion_version).
     if not u or not u["activo"] or not empresa_activa or session.get("sv", 0) != u.get("sesion_version", 0):
         session.clear()
         return None
+    # Politica de la empresa: la sesion puede vencer antes por inactividad.
+    limite = politica.get("sesion_minutos")
+    ahora_s = time.time()
+    if limite and session.get("ult") and ahora_s - session["ult"] > int(limite) * 60:
+        session.clear()
+        return None
+    session["ult"] = ahora_s
     u["debe_cambiar_clave"] = bool(u["debe_cambiar_clave"])
+    # Politica de la empresa: dos pasos obligatorios para consultores y directores.
+    u["debe_activar_2fa"] = bool(politica.get("exigir_2fa")) and u["rol"] in ("consultor", "jefe") \
+        and not u.get("totp_activo")
+    u.pop("totp_activo", None)
     del u["activo"]
     u.pop("sesion_version", None)
     return u
@@ -52,6 +68,9 @@ def usuario_sesion():
 # Con una contrasena temporal, lo unico permitido es ver la sesion y cambiarla.
 # (/logout no pide login.)
 ENDPOINTS_CON_CLAVE_TEMPORAL = {"auth.sesion_actual", "auth.cambiar_contrasena"}
+# Si la empresa exige dos pasos y la persona aun no los activo, solo puede activarlos.
+ENDPOINTS_CON_2FA_PENDIENTE = {"auth.sesion_actual", "auth.perfil", "cuenta.seguridad", "cuenta.preparar_2fa",
+                               "cuenta.activar_2fa", "cuenta.aceptar_terminos"}
 
 
 def requiere_login(f):
@@ -63,6 +82,9 @@ def requiere_login(f):
         if u["debe_cambiar_clave"] and request.endpoint not in ENDPOINTS_CON_CLAVE_TEMPORAL:
             return respuesta_error(403, "Debe cambiar su contraseña temporal antes de continuar.",
                                    cambio_clave_obligatorio=True)
+        if u.get("debe_activar_2fa") and request.endpoint not in ENDPOINTS_CON_2FA_PENDIENTE:
+            return respuesta_error(403, "Su consultora exige la verificación en dos pasos. Actívela para continuar.",
+                                   activar_2fa_obligatorio=True)
         g.usuario = u
         return f(*args, **kwargs)
     return envoltura

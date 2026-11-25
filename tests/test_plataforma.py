@@ -8,6 +8,7 @@ Correr con:  python -m unittest tests/test_plataforma.py
 import os
 import sys
 import tempfile
+import time
 import unittest
 from unittest import mock
 
@@ -351,6 +352,86 @@ class AislamientoEntreEmpresas(unittest.TestCase):
         bd._esquema["org"] = False
         self.assertEqual(seguridad.condicion_empresa(usuario("jefe", None)), ("1=1", []))
         self.assertTrue(seguridad.puede_ver(usuario("jefe", None), expediente(None)))
+
+
+class PoliticaDeLaEmpresa(unittest.TestCase):
+    """La sesion vence antes si la empresa lo pide, y los dos pasos pueden ser obligatorios."""
+
+    def setUp(self):
+        from contextlib import contextmanager
+
+        from flask import Flask
+        self.app = Flask("prueba")
+        self.app.secret_key = "pruebas"
+        self.antes = {k: bd._esquema[k] for k in ("org", "org_politica", "totp", "sesion")}
+        for k in self.antes:
+            bd._esquema[k] = True
+        self.cursor = seguridad.cursor
+        self.filas = []
+
+        class Falso:
+            def __init__(self, filas):
+                self.filas = filas
+
+            def execute(self, sql, params=None):
+                return 1
+
+            def fetchone(self):
+                return self.filas.pop(0) if self.filas else None
+
+        @contextmanager
+        def _cursor():
+            yield Falso(self.filas)
+        seguridad.cursor = _cursor
+
+    def tearDown(self):
+        seguridad.cursor = self.cursor
+        bd._esquema.update(self.antes)
+
+    def _preparar(self, rol="consultor", totp_activo=0, **politica):
+        usuario = {"id": 5, "email": "c@x.com", "rol": rol, "nombre": "C", "debe_cambiar_clave": 0, "activo": 1,
+                   "organizacion_id": 1, "sesion_version": 0, "totp_activo": totp_activo}
+        self.filas[:] = [usuario, dict({"activa": 1, "exigir_2fa": 0, "sesion_minutos": None}, **politica)]
+
+    def test_la_sesion_vence_por_inactividad_segun_la_empresa(self):
+        with self.app.test_request_context():
+            from flask import session
+            session.update({"uid": 5, "sv": 0, "ult": time.time() - 16 * 60})
+            self._preparar(sesion_minutos=15)
+            self.assertIsNone(seguridad.usuario_sesion())
+            self.assertNotIn("uid", session)
+
+    def test_con_actividad_reciente_sigue_abierta_y_se_renueva(self):
+        with self.app.test_request_context():
+            from flask import session
+            hace = time.time() - 5 * 60
+            session.update({"uid": 5, "sv": 0, "ult": hace})
+            self._preparar(sesion_minutos=15)
+            self.assertIsNotNone(seguridad.usuario_sesion())
+            self.assertGreater(session["ult"], hace)
+
+    def test_sin_politica_de_inactividad_no_se_cierra(self):
+        with self.app.test_request_context():
+            from flask import session
+            session.update({"uid": 5, "sv": 0, "ult": time.time() - 99 * 60})
+            self._preparar(sesion_minutos=None)
+            self.assertIsNotNone(seguridad.usuario_sesion())
+
+    def test_dos_pasos_obligatorios_para_consultores_y_directores_sin_ellos(self):
+        for rol, activo, debe in (("consultor", 0, True), ("jefe", 0, True), ("consultor", 1, False),
+                                  ("promotor", 0, False)):
+            with self.subTest(rol=rol, activo=activo), self.app.test_request_context():
+                from flask import session
+                session.update({"uid": 5, "sv": 0})
+                self._preparar(rol=rol, totp_activo=activo, exigir_2fa=1)
+                self.assertEqual(seguridad.usuario_sesion()["debe_activar_2fa"], debe)
+
+    def test_sin_la_politica_nadie_debe_activarlos(self):
+        with self.app.test_request_context():
+            from flask import session
+            session.update({"uid": 5, "sv": 0})
+            self._preparar(exigir_2fa=0)
+            self.assertFalse(seguridad.usuario_sesion()["debe_activar_2fa"])
 
 
 if __name__ == "__main__":

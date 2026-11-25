@@ -7,8 +7,9 @@ from flask import Blueprint, current_app, g, jsonify, request, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from .. import limitador, totp
+from .. import auditoria
 from ..bd import _esquema, col_activo, col_aviso, col_cambio_clave, col_org, col_sesion, col_sometimiento, col_totp, cursor
-from ..config import EMAIL_RE, ROL_ADMIN, ROLES_REGISTRO
+from ..config import EMAIL_RE, LOGIN_MAX_FALLOS, ROL_ADMIN, ROLES_REGISTRO
 from ..empresas import datos_empresa
 from ..errores import ApiError
 from ..limitador import _fallos  # noqa: F401  (las pruebas limpian auth._fallos)
@@ -62,6 +63,10 @@ def _acceso(solo_admin):
                     f"{col_org('')}, {col_sesion()}, {col_totp()} FROM usuarios WHERE email=%s", (email,))
         u = cur.fetchone()
         empresa = datos_empresa(cur, u["organizacion_id"]) if u and _esquema["org"] else None
+        exige_2fa = False
+        if u and _esquema["org"] and _esquema["org_politica"] and u["organizacion_id"] is not None:
+            cur.execute("SELECT exigir_2fa FROM organizaciones WHERE id=%s", (u["organizacion_id"],))
+            exige_2fa = bool((cur.fetchone() or {}).get("exigir_2fa"))
 
     # Una cuenta solo entra por su puerta: la de administracion por /admin, las demas por /login.
     # Si no corresponde, la respuesta es la de unas credenciales incorrectas (no revela nada).
@@ -82,12 +87,15 @@ def _acceso(solo_admin):
                                 "mensaje": "Ingrese el código de su aplicación autenticadora."}), 401
             if not _codigo_valido(u, codigo):
                 limitador.anotar_fallo(clave)
+                _evento(u, "acceso_fallido", "código de verificación incorrecto")
                 return jsonify({"acceso": False, "requiere_2fa": True,
                                 "mensaje": "El código no es correcto o ya se usó."}), 401
 
         limitador.limpiar(clave)
         abrir_sesion(u["id"], u.get("sesion_version"))
+        _evento(u, "acceso", "")
         return jsonify({
+            "debe_activar_2fa": bool(exige_2fa and u["rol"] in ("consultor", "jefe") and not u.get("totp_activo")),
             "acceso": True,
             "mensaje": f"Bienvenido, {u['nombre']}.",
             "rol": u["rol"],
@@ -98,7 +106,18 @@ def _acceso(solo_admin):
         }), 200
 
     limitador.anotar_fallo(clave)
+    # Se anota el primer fallo y el que activa el bloqueo (no cada intento: alguien externo llenaria el registro).
+    if u and u["rol"] != ROL_ADMIN and (u["rol"] == ROL_ADMIN) == solo_admin             and limitador.fallos(clave) in (1, LOGIN_MAX_FALLOS):
+        _evento(u, "acceso_fallido", "contraseña incorrecta")
     return jsonify({"acceso": False, "mensaje": "Credenciales incorrectas."}), 401
+
+
+def _evento(u, tipo, detalle):
+    """Anota el acceso en el registro de la empresa (las cuentas de administracion no tienen empresa)."""
+    if not _esquema["org"] or u.get("organizacion_id") is None:
+        return
+    with cursor() as cur:
+        auditoria.registrar(cur, u["organizacion_id"], u["id"], tipo, detalle, email=u["email"])
 
 
 def _codigo_valido(u, codigo):
@@ -138,6 +157,7 @@ def sesion_actual():
             pendientes = cur.fetchone()["terminos_aceptados_en"] is None
     return jsonify({"email": u["email"], "rol": u["rol"], "nombre": u["nombre"],
                     "debe_cambiar_clave": u["debe_cambiar_clave"], "empresa": empresa,
+                    "debe_activar_2fa": u.get("debe_activar_2fa", False),
                     "terminos_pendientes": pendientes}), 200
 
 
@@ -204,6 +224,16 @@ def registro():
                         f"VALUES (%s, %s, %s, %s{marca})",
                         (nombre, email, generate_password_hash(password), inv["rol"], *valores))
             nuevo = cur.lastrowid
+            if inv["rol"] == "jefe" and _esquema["titular"]:
+                # El primer director de una empresa nueva es su titular.
+                cur.execute("UPDATE organizaciones SET titular_id=%s WHERE id=%s AND titular_id IS NULL",
+                            (nuevo, inv["organizacion_id"]))
+            if _esquema["org_politica"] and _esquema["aviso"]:
+                cur.execute("UPDATE usuarios SET aviso_vencimiento_dias = "
+                            "(SELECT aviso_defecto FROM organizaciones WHERE id=%s) WHERE id=%s AND "
+                            "(SELECT aviso_defecto FROM organizaciones WHERE id=%s) IS NOT NULL",
+                            (inv["organizacion_id"], nuevo, inv["organizacion_id"]))
+            auditoria.registrar(cur, inv["organizacion_id"], nuevo, "alta_por_invitacion", f"rol {inv['rol']}", email=email)
             usadas = cur.execute("UPDATE invitaciones SET usada_en=%s, usada_por=%s WHERE id=%s AND usada_en IS NULL",
                                  (ahora(), nuevo, inv["id"]))
             if usadas != 1:
@@ -239,6 +269,9 @@ def cambiar_contrasena():
             + (", sesion_version = sesion_version + 1" if _esquema["sesion"] else "")
         cur.execute(f"UPDATE usuarios SET {sets} WHERE id=%s", (generate_password_hash(nueva), g.usuario["id"]))
     session["sv"] = int(fila.get("sesion_version") or 0) + (1 if _esquema["sesion"] else 0)
+    if _esquema["org"] and g.usuario.get("organizacion_id") is not None:
+        with cursor() as cur:
+            auditoria.registrar(cur, g.usuario["organizacion_id"], g.usuario["id"], "clave_cambiada", "")
     return jsonify({"ok": True, "mensaje": "Contrasena actualizada."}), 200
 
 

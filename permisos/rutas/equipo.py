@@ -20,6 +20,7 @@ import pymysql
 from flask import Blueprint, g, jsonify, request
 from werkzeug.security import generate_password_hash
 
+from .. import auditoria
 from ..bd import _esquema, col_activo, cursor, registrar_historial
 from ..config import ACCION_REASIGNAR, EMAIL_RE
 from ..errores import ApiError
@@ -105,6 +106,7 @@ def crear_consultor():
                         (nombre, email, generate_password_hash(temporal),
                          *((g.usuario["organizacion_id"],) if _esquema["org"] else ())))
             nuevo_id = cur.lastrowid
+            auditoria.registrar(cur, g.usuario.get("organizacion_id"), g.usuario["id"], "equipo_alta", nombre, email=email)
     except pymysql.err.IntegrityError:
         raise ApiError(409, "Ese correo ya está registrado.")
 
@@ -125,6 +127,8 @@ def cambiar_activo(consultor_id, activo):
         if bool(c["activo"]) == activo:
             raise ApiError(409, "El consultor ya está activo." if activo else "El consultor ya está desactivado.")
         cur.execute("UPDATE usuarios SET activo=%s WHERE id=%s", (activo, consultor_id))
+        auditoria.registrar(cur, g.usuario.get("organizacion_id"), g.usuario["id"],
+                            "equipo_activado" if activo else "equipo_desactivado", c["nombre"])
     return c
 
 
@@ -177,6 +181,8 @@ def reasignar_expedientes(consultor_id):
             cur.execute("UPDATE expedientes SET usuario_id=%s WHERE usuario_id=%s", (destino_id, consultor_id))
             for exp_id in ids:
                 registrar_historial(cur, exp_id, g.usuario["id"], ACCION_REASIGNAR)
+        auditoria.registrar(cur, g.usuario.get("organizacion_id"), g.usuario["id"], "equipo_reasignado",
+                            f"{len(ids)} de {origen['nombre']} a {destino['nombre']}")
 
     return jsonify({"ok": True, "reasignados": len(ids),
                     "mensaje": f"{len(ids)} expediente(s) de {origen['nombre']} pasaron a {destino['nombre']}."}), 200
@@ -195,6 +201,7 @@ def restablecer_clave_consultor(consultor_id):
             + (", sesion_version = sesion_version + 1" if _esquema["sesion"] else "") \
             + (", totp_activo=FALSE, totp_secreto=NULL, totp_ultimo_paso=0" if _esquema["totp"] else "")
         cur.execute(f"UPDATE usuarios SET {sets} WHERE id=%s", (generate_password_hash(temporal), consultor_id))
+        auditoria.registrar(cur, g.usuario.get("organizacion_id"), g.usuario["id"], "clave_restablecida", c["nombre"])
     return jsonify({"ok": True, "email": c["email"], "password_temporal": temporal,
                     "mensaje": f"Entregue esta contraseña a {c['nombre']} por un canal seguro. Se muestra una sola "
                                "vez y deberá cambiarla en su próximo ingreso."}), 200

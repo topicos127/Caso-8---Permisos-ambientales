@@ -11,7 +11,7 @@ Las acciones sensibles piden la contrasena actual aunque la sesion este abierta.
 from flask import Blueprint, current_app, g, jsonify, request, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from .. import limitador, totp
+from .. import auditoria, limitador, totp
 from ..bd import _esquema, col_sesion, col_totp, cursor
 from ..config import CODIGOS_RECUPERACION, SESION_MINUTOS
 from ..errores import ApiError
@@ -45,6 +45,11 @@ def _generar_codigos(cur, usuario_id):
                     (usuario_id, totp.hash_codigo(codigo), ahora()))
         codigos.append(codigo)
     return codigos
+
+
+def _evento(tipo, cur):
+    if _esquema["org"] and g.usuario.get("organizacion_id") is not None:
+        auditoria.registrar(cur, g.usuario["organizacion_id"], g.usuario["id"], tipo)
 
 
 def _exigir_totp():
@@ -109,6 +114,7 @@ def activar_2fa():
             raise ApiError(400, "El código no es correcto. Revise la hora de su teléfono e intente de nuevo.")
         cur.execute("UPDATE usuarios SET totp_activo=TRUE, totp_ultimo_paso=%s WHERE id=%s", (paso, g.usuario["id"]))
         codigos = _generar_codigos(cur, g.usuario["id"])
+        _evento("dos_pasos_activado", cur)
     return jsonify({"ok": True, "codigos": codigos,
                     "mensaje": "Verificación en dos pasos activada. Guarde estos códigos de recuperación: "
                                "no se vuelven a mostrar."}), 200
@@ -137,6 +143,7 @@ def desactivar_2fa():
             raise ApiError(400, "El código no es correcto.")
         cur.execute("UPDATE usuarios SET totp_activo=FALSE, totp_secreto=NULL, totp_ultimo_paso=0 WHERE id=%s",
                     (g.usuario["id"],))
+        _evento("dos_pasos_desactivado", cur)
     return jsonify({"ok": True, "mensaje": "Verificación en dos pasos desactivada."}), 200
 
 
@@ -147,6 +154,7 @@ def regenerar_codigos():
     with cursor() as cur:
         _confirmar_clave(cur, data.get("password"))
         codigos = _generar_codigos(cur, g.usuario["id"])
+        _evento("codigos_regenerados", cur)
     return jsonify({"ok": True, "codigos": codigos,
                     "mensaje": "Códigos nuevos. Los anteriores dejaron de valer y estos no se vuelven a mostrar."}), 200
 

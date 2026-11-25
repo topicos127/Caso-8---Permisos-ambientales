@@ -217,12 +217,20 @@ def _filas_cartera(u):
 @requiere_login
 def exportar_cartera():
     """Excel con todos los expedientes que el usuario puede ver: lo que se presenta a gerencia o a un cliente."""
+    salida = libro_cartera(g.usuario)
+    nombre = f"cartera-{datetime.now(ZONA):%Y%m%d}.xlsx"
+    return send_file(salida, as_attachment=True, download_name=nombre,
+                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
+def libro_cartera(usuario):
+    """El Excel de la cartera (BytesIO) con lo que `usuario` puede ver. Lo usa tambien la exportacion completa."""
     from openpyxl import Workbook
     from openpyxl.styles import Alignment, Font, PatternFill
     from openpyxl.utils import get_column_letter
 
-    filas = _filas_cartera(g.usuario)
-    interno = g.usuario["rol"] in ROLES_INTERNOS
+    filas = _filas_cartera(usuario)
+    interno = usuario["rol"] in ROLES_INTERNOS
     wb = Workbook()
     ws = wb.active
     ws.title = "Cartera"
@@ -259,9 +267,7 @@ def exportar_cartera():
     salida = io.BytesIO()
     wb.save(salida)
     salida.seek(0)
-    nombre = f"cartera-{datetime.now(ZONA):%Y%m%d}.xlsx"
-    return send_file(salida, as_attachment=True, download_name=nombre,
-                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    return salida
 
 
 @bp.route("/exportar/historial.csv", methods=["GET"])
