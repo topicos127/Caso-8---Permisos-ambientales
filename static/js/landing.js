@@ -12,7 +12,8 @@
     if (!ruta) return;
     const img = new Image();
     img.onload = () => {
-      el.style.setProperty('--foto', `url("${ruta}")`);
+      // Ruta absoluta: dentro del CSS una ruta relativa se resolveria desde /css/.
+      el.style.setProperty('--foto', `url("${new URL(ruta, document.baseURI).href}")`);
       el.classList.add('con-foto');
     };
     img.src = ruta;

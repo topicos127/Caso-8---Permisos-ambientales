@@ -12,6 +12,7 @@ Estructura (refactor del Sprint 9; antes todo vivia en app.py):
 Historia: Sprint 7 (sesion con cookie firmada, permisos por expediente,
 HU-07); Sprint 8 (HU-13 rol jefe, HU-14 historial de solo lectura).
 """
+import mimetypes
 import os
 import secrets
 from datetime import timedelta
@@ -22,6 +23,9 @@ from . import config, errores, respaldos
 from .bd import asegurar_bd
 from .rutas import BLUEPRINTS
 from .seguridad import exigir_cabecera_en_escrituras
+
+
+mimetypes.add_type("image/webp", ".webp")  # algunos sistemas no lo conocen y lo servirian como binario
 
 
 def create_app():
