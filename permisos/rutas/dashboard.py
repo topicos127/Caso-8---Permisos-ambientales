@@ -1,11 +1,13 @@
 """Panel con metricas, expedientes recientes, documentos por vencer (HU-05),
 avisos de plazo legal (HU-08) y prioridades segun el Indice de Preparacion
 (HU-15)."""
+from datetime import timedelta
+
 from flask import Blueprint, g, jsonify
 
 from ..bd import col_aviso, col_sometimiento, col_vencimiento, cursor, documentos_de
 from ..config import ROLES_INTERNOS
-from ..reglas import AVISO_VENCIMIENTO_DIAS, calcular_ipe, calcular_semaforo, hoy, vencimiento_documento
+from ..reglas import AVISO_VENCIMIENTO_DIAS, ahora, calcular_ipe, calcular_semaforo, hoy, vencimiento_documento
 from ..seguridad import filtro_de, requiere_login
 
 bp = Blueprint("dashboard", __name__)
@@ -46,11 +48,41 @@ def dashboard():
         abiertos = cur.fetchall()
         docs = documentos_de(cur, [a["id"] for a in abiertos]) if interno else {}
 
+        # Datos de los graficos del panel (solo conteos de lo que la persona puede ver).
+        cur.execute(f"SELECT e.estado, COUNT(*) AS n FROM expedientes e WHERE {filtro} GROUP BY e.estado", params)
+        por_estado = {}
+        for r in cur.fetchall():
+            # El cliente ve "aprobado internamente" como pendiente de subsanacion (HU-07).
+            clave = "pendiente" if (not interno and r["estado"] == "aprobado_interno") else r["estado"]
+            por_estado[clave] = por_estado.get(clave, 0) + int(r["n"])
+        cur.execute(f"SELECT e.categoria, COUNT(*) AS n FROM expedientes e WHERE {filtro} GROUP BY e.categoria", params)
+        por_categoria = {r["categoria"]: int(r["n"]) for r in cur.fetchall()}
+        por_consultor, actividad = [], []
+        if g.usuario["rol"] == "jefe":
+            cur.execute(f"""SELECT u.nombre, COUNT(*) AS n,
+                                   COALESCE(SUM(e.estado NOT IN ('aprobado', 'rechazado')), 0) AS en_tramite
+                            FROM expedientes e JOIN usuarios u ON u.id = e.usuario_id
+                            WHERE {filtro} GROUP BY u.id, u.nombre ORDER BY n DESC, u.nombre LIMIT 8""", params)
+            por_consultor = [{"nombre": r["nombre"], "total": int(r["n"]), "en_tramite": int(r["en_tramite"])}
+                             for r in cur.fetchall()]
+        if interno:
+            desde = (ahora() - timedelta(days=13)).replace(hour=0, minute=0, second=0)
+            cur.execute(f"""SELECT DATE(h.fecha) AS dia, COUNT(*) AS n FROM historial_expediente h
+                            JOIN expedientes e ON e.id = h.expediente_id
+                            WHERE {filtro} AND h.fecha >= %s GROUP BY DATE(h.fecha)""", [*params, desde])
+            por_dia = {str(r["dia"]): int(r["n"]) for r in cur.fetchall()}
+            actividad = [{"dia": (desde + timedelta(days=k)).strftime("%d/%m"),
+                          "n": por_dia.get(str((desde + timedelta(days=k)).date()), 0)} for k in range(14)]
+
     avisos_plazo = []
     prioritarios = []
+    por_semaforo = {"en_plazo": 0, "por_vencer": 0, "vencido": 0}
+    bandas = {"listo": 0, "en_preparacion": 0, "en_riesgo": 0}
+    suma_ipe = 0
     for a in abiertos:
         # HU-08 (Sprint 10): aviso en pantalla cuando el plazo entra en "por vencer" o ya vencio.
         sem = calcular_semaforo(a)
+        por_semaforo[sem["estado_semaforo"]] = por_semaforo.get(sem["estado_semaforo"], 0) + 1
         if sem["estado_semaforo"] in ("por_vencer", "vencido"):
             avisos_plazo.append({"codigo": a["codigo"], "proyecto": a["proyecto"],
                                  "estado_semaforo": sem["estado_semaforo"],
@@ -59,6 +91,8 @@ def dashboard():
         if interno:
             # HU-15: donde poner al equipo. Los que menos preparados estan, primero.
             r = calcular_ipe(a, docs[a["id"]])
+            bandas[r["banda"]] = bandas.get(r["banda"], 0) + 1
+            suma_ipe += r["ipe"]
             prioritarios.append({"codigo": a["codigo"], "proyecto": a["proyecto"], "ipe": r["ipe"],
                                  "banda": r["banda"], "banda_texto": r["banda_texto"],
                                  "proxima_accion": r["acciones"][0]["texto"] if r["acciones"] else None})
@@ -88,4 +122,10 @@ def dashboard():
                      "alertas": len(proximas), "aprobados": int(conteos["aprobados"])},
         "recientes": recientes, "alertas": proximas, "prioridades": prioritarios if interno else [],
         "avisos_plazo": avisos_plazo, "aviso_vencimiento_dias": aviso,
+        "graficos": {
+            "por_estado": por_estado, "por_categoria": por_categoria, "por_semaforo": por_semaforo,
+            "por_consultor": por_consultor, "actividad": actividad,
+            "ipe_bandas": bandas if interno else None,
+            "ipe_promedio": (round(suma_ipe / len(abiertos)) if interno and abiertos else None),
+        },
     })

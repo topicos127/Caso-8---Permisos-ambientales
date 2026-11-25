@@ -639,3 +639,37 @@ function abrirPaleta() {
   pintar();
   campo.focus();
 }
+
+// ============== GRAFICOS SENCILLOS (SVG, sin librerias) ==============
+// graficoDona([{ etiqueta, valor, color }], textoCentro, subtexto) -> HTML con la dona y su leyenda.
+function graficoDona(partes, centro, sub) {
+  const total = partes.reduce((a, p) => a + p.valor, 0);
+  let acumulado = 0;
+  const arcos = total ? partes.filter(p => p.valor > 0).map(p => {
+    const largo = p.valor / total * 100;
+    const arco = `<circle cx="21" cy="21" r="15.915" fill="none" stroke="${p.color}" stroke-width="6" stroke-dasharray="${largo.toFixed(2)} ${(100 - largo).toFixed(2)}" stroke-dashoffset="${(25 - acumulado).toFixed(2)}"><title>${esc(p.etiqueta)}: ${esc(p.valor)}</title></circle>`;
+    acumulado += largo;
+    return arco;
+  }).join('') : '';
+  const resumen = partes.map(p => `${p.etiqueta}: ${p.valor}`).join(', ');
+  return `<div class="dona-caja"><svg class="dona" viewBox="0 0 42 42" role="img" aria-label="${esc(resumen)}">
+      <circle cx="21" cy="21" r="15.915" fill="none" stroke="#eceef2" stroke-width="6"/>${arcos}
+      <text x="21" y="21.5" text-anchor="middle" class="dona-num">${esc(centro)}</text>
+      ${sub ? `<text x="21" y="27" text-anchor="middle" class="dona-sub">${esc(sub)}</text>` : ''}</svg>
+    <ul class="dona-leyenda">${partes.map(p => `<li><i style="background:${p.color};"></i><span>${esc(p.etiqueta)}</span><b>${esc(p.valor)}</b></li>`).join('')}</ul></div>`;
+}
+
+// graficoBarrasDia([{ dia, n }]) -> barras verticales con el valor encima.
+function graficoBarrasDia(serie, ariaTexto) {
+  const max = Math.max(1, ...serie.map(p => p.n));
+  const ancho = 520, alto = 150, base = 120, paso = ancho / serie.length, barra = paso * 0.6;
+  const barras = serie.map((p, i) => {
+    const h = Math.round((p.n / max) * (base - 20));
+    const x = i * paso + (paso - barra) / 2;
+    return `<g><title>${esc(p.dia)}: ${esc(p.n)}</title>
+      <rect x="${x.toFixed(1)}" y="${base - h}" width="${barra.toFixed(1)}" height="${Math.max(h, 2)}" rx="3.5" fill="var(--brand)" opacity="${p.n ? 1 : 0.22}"/>
+      ${p.n ? `<text x="${(x + barra / 2).toFixed(1)}" y="${base - h - 5}" text-anchor="middle" font-size="10.5" fill="var(--text-soft)">${esc(p.n)}</text>` : ''}
+      <text x="${(x + barra / 2).toFixed(1)}" y="${base + 16}" text-anchor="middle" font-size="10" fill="var(--text-faint)">${i % 2 === 0 ? esc(p.dia) : ''}</text></g>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${ancho} ${alto}" width="100%" role="img" aria-label="${esc(ariaTexto || '')}"><line x1="0" y1="${base}" x2="${ancho}" y2="${base}" stroke="var(--line-strong)"/>${barras}</svg>`;
+}

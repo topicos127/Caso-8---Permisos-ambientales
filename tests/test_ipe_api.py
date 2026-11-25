@@ -178,6 +178,10 @@ class PanelConPrioridades(unittest.TestCase):
         self.sesion = seguridad.usuario_sesion
         abiertos = [dict(f) for f in FILAS if f["estado"] != "aprobado"]
         usar(dashboard, [
+            # Los graficos del panel (por consultor, por estado...) van primero: su SQL tambien lleva NOT IN ('aprobado'.
+            ("JOIN usuarios u ON u.id = e.usuario_id", "todos", [{"nombre": "C1", "n": 2, "en_tramite": 2}]),
+            ("GROUP BY e.estado", "todos", [{"estado": "pendiente", "n": 2}, {"estado": "aprobado", "n": 1}]),
+            ("GROUP BY e.categoria", "todos", [{"categoria": "I", "n": 3}]),
             ("COUNT(*) AS activos", "uno", {"activos": 3, "pendientes": 2, "aprobados": 1}),
             ("ORDER BY e.fecha_ingreso DESC", "todos", [{"codigo": "A-1", "proyecto": "Completo", "estado": "pendiente"}]),
             ("NOT IN ('aprobado'", "todos", abiertos),
@@ -198,6 +202,14 @@ class PanelConPrioridades(unittest.TestCase):
         self.assertEqual(p[0]["proxima_accion"], "Subir Línea Base")
         self.assertEqual(p[1]["proxima_accion"], "Pedir la aprobación interna al director de proyectos")
         self.assertEqual(r.get_json()["metricas"]["activos"], 3)
+        g = r.get_json()["graficos"]
+        self.assertEqual(g["por_estado"], {"pendiente": 2, "aprobado": 1})
+        self.assertEqual(g["por_categoria"], {"I": 3})
+        self.assertEqual(g["por_consultor"], [{"nombre": "C1", "total": 2, "en_tramite": 2}])
+        self.assertEqual(g["por_semaforo"]["en_plazo"], 2)
+        self.assertEqual(g["ipe_promedio"], 75)  # (100 + 50) / 2 abiertos
+        self.assertEqual(g["ipe_bandas"]["listo"], 1)
+        self.assertEqual(len(g["actividad"]), 14)
 
     def test_el_promotor_recibe_la_lista_vacia(self):
         sesion("promotor")

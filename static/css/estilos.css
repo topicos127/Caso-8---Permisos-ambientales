@@ -2184,3 +2184,26 @@ html, body {
 .herramientas .busqueda { flex: 1 1 200px; max-width: 250px; }
 .herramientas select { font-size: 13px; padding-left: 8px; }
 .ledger.compacta td, .ledger.compacta th { padding-left: 10px; padding-right: 10px; }
+
+/* ---------- Widgets del panel ---------- */
+.widgets { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 16px; margin: 0 0 20px; }
+.widget { background: #fff; border: 1px solid var(--borde-suave); border-radius: 14px; box-shadow: var(--sombra-tarjeta); padding: 18px 20px 16px; min-width: 0; }
+.widget.ancho { grid-column: 1 / -1; }
+.widget header h3 { margin: 0; font-size: 15.5px; }
+.widget header p { margin: 3px 0 14px; font-size: 13px; color: var(--text-muted); }
+.dona-caja { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.dona { width: 138px; height: 138px; flex: none; }
+.dona-num { font: 700 8.5px var(--serif); fill: var(--text); }
+.dona-sub { font: 500 2.9px var(--sans, inherit); fill: var(--text-muted); }
+.dona-leyenda { list-style: none; margin: 0; padding: 0; flex: 1 1 150px; display: grid; gap: 8px; }
+.dona-leyenda li { display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: var(--text-soft); }
+.dona-leyenda i { flex: none; width: 10px; height: 10px; border-radius: 3px; }
+.dona-leyenda b { margin-left: auto; color: var(--text); font-variant-numeric: tabular-nums; }
+.ipe-resumen { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.ipe-promedio { display: flex; align-items: baseline; gap: 3px; }
+.ipe-promedio b { font: 700 44px/1 var(--serif); letter-spacing: -0.03em; }
+.ipe-promedio span { font-size: 15px; color: var(--text-muted); }
+.widget .barra-relleno .barra-relleno { height: 100%; }
+.widget .barra-pista { height: 10px; }
+.widget.doble { grid-column: span 2; }
+@media (max-width: 760px) { .widget.doble { grid-column: 1 / -1; } }

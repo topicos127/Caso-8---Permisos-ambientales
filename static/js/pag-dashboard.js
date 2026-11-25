@@ -14,6 +14,54 @@ if (usuario) {
 
   const vacio = (texto) => `<li style="color:var(--ink-faint);">${texto}</li>`;
 
+  // ---------- Graficos del panel ----------
+  const COLOR_ESTADO = { pendiente: '#e09a1a', aprobado_interno: '#7c5ac8', evaluacion: '#3b6bea', aprobado: '#1f9d67', rechazado: '#e04b3f' };
+  const NOMBRE_ESTADO = { pendiente: 'Pendiente de subsanación', aprobado_interno: 'Aprobado internamente', evaluacion: 'En evaluación', aprobado: 'Aprobado', rechazado: 'Rechazado' };
+  function widget(titulo, nota, cuerpo, ancho) {
+    return `<section class="widget${ancho ? ' doble' : ''}"><header><h3>${esc(titulo)}</h3>${nota ? `<p>${esc(nota)}</p>` : ''}</header>${cuerpo}</section>`;
+  }
+
+  function pintarGraficos(gr, metricas) {
+    if (!gr) return;
+    const cont = document.getElementById('widgets');
+    const total = Object.values(gr.por_estado || {}).reduce((a, n) => a + n, 0);
+    if (!total) return;
+    const piezas = [];
+
+    const estados = Object.keys(COLOR_ESTADO).filter(k => gr.por_estado[k]).map(k => ({ etiqueta: NOMBRE_ESTADO[k], valor: gr.por_estado[k], color: COLOR_ESTADO[k] }));
+    piezas.push(widget('Expedientes por estado', `${total} en total`, graficoDona(estados, String(total), 'expedientes')));
+
+    const s = gr.por_semaforo || {};
+    const abiertos = (s.en_plazo || 0) + (s.por_vencer || 0) + (s.vencido || 0);
+    piezas.push(widget('Plazos en trámite', abiertos ? `${abiertos} expediente(s) con plazo en curso` : 'Ninguno en curso',
+      graficoDona([{ etiqueta: 'En plazo', valor: s.en_plazo || 0, color: '#2fa66b' },
+                   { etiqueta: 'Por vencer', valor: s.por_vencer || 0, color: '#f08a1c' },
+                   { etiqueta: 'Vencidos', valor: s.vencido || 0, color: '#ef4444' }], String(abiertos), 'en curso')));
+
+    if (gr.ipe_bandas) {
+      const b = gr.ipe_bandas;
+      piezas.push(widget('Preparación (IPE)', 'Promedio de los expedientes en trámite',
+        `<div class="ipe-resumen"><div class="ipe-promedio"><b>${esc(gr.ipe_promedio ?? '—')}</b><span>/100</span></div>
+          ${graficoDona([{ etiqueta: 'Listos (80+)', valor: b.listo, color: '#1f9d67' },
+                         { etiqueta: 'En preparación', valor: b.en_preparacion, color: '#e09a1a' },
+                         { etiqueta: 'En riesgo (<50)', valor: b.en_riesgo, color: '#e04b3f' }], '', '')}</div>`));
+    }
+
+    if (gr.por_consultor && gr.por_consultor.length) {
+      const max = Math.max(...gr.por_consultor.map(c => c.total), 1);
+      piezas.push(widget('Carga por consultor', 'Expedientes de cada persona (el tono fuerte es lo que sigue en trámite)',
+        gr.por_consultor.map(c => `<div class="barra-fila"><div class="barra-cab"><span><span class="avatar-mini" style="background:${colorDe(c.nombre)};">${esc(iniciales(c.nombre))}</span> ${esc(c.nombre)}</span><b>${esc(c.total)}</b></div>
+          <div class="barra-pista"><div class="barra-relleno" style="width:${Math.round(c.total / max * 100)}%; background:${colorDe(c.nombre)}55;"><div class="barra-relleno" style="width:${c.total ? Math.round(c.en_tramite / c.total * 100) : 0}%; background:${colorDe(c.nombre)};"></div></div></div></div>`).join('')));
+    }
+
+    if (gr.actividad && gr.actividad.some(a => a.n)) {
+      const suma = gr.actividad.reduce((a, p) => a + p.n, 0);
+      piezas.push(widget('Actividad de la consultora', `${suma} acciones en 14 días`, graficoBarrasDia(gr.actividad, `${suma} acciones en los últimos 14 días`), true));
+    }
+    cont.innerHTML = piezas.join('');
+    cont.hidden = false;
+  }
+
   // ---------- Primeros pasos (jefe y consultor) ----------
   async function pintarPrimerosPasos(metricas) {
     if (!(esJefe() || esConsultor())) return;
@@ -55,6 +103,7 @@ if (usuario) {
 
   apiFetch('/dashboard').then(d => {
     pintarPrimerosPasos(d.metricas);
+    pintarGraficos(d.graficos, d.metricas);
     const nums = document.querySelectorAll('.stat .num');
     if (d.metricas && nums.length >= 4) {
       nums[0].textContent = d.metricas.activos;
@@ -106,7 +155,8 @@ if (usuario) {
       document.getElementById('panel-avisos-plazo').style.display = 'block';
       document.getElementById('lista-avisos-plazo').innerHTML = avisos.map(a => {
         const n = a.dias_restantes_legales;
-        const unidad = a.base_plazo === 'sometimiento' ? 'días hábiles' : 'días';
+        const uno = Math.abs(n) === 1;
+        const unidad = a.base_plazo === 'sometimiento' ? (uno ? 'día hábil' : 'días hábiles') : (uno ? 'día' : 'días');
         const texto = n < 0 ? `venció hace ${-n} ${unidad}` : n === 0 ? 'vence hoy' : `vence en ${n} ${unidad}`;
         const clase = a.estado_semaforo === 'vencido' ? 'status status-bad' : 'status status-warn';
         const quien = a.base_plazo === 'sometimiento' ? 'Plazo de MiAmbiente' : 'Plazo de preparación';
