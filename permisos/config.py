@@ -21,6 +21,9 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 # La sesion se cierra tras estos minutos sin actividad (cada peticion la renueva).
 SESION_MINUTOS = int(os.environ.get("SESION_MINUTOS", 120))
 SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() == "true"
+# Cuantos proxies hay delante de la app (Railway: 1). Con 0 se ignoran las cabeceras X-Forwarded-*,
+# que en local cualquiera podria falsificar. Con 1 o mas, la IP real del cliente sale de ellas.
+PROXY_SALTOS = int(os.environ.get("PROXY_SALTOS", 0))
 
 # ---------- Base de datos ----------
 

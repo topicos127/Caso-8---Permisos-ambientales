@@ -28,6 +28,15 @@ from .seguridad import exigir_cabecera_en_escrituras
 mimetypes.add_type("image/webp", ".webp")  # algunos sistemas no lo conocen y lo servirian como binario
 
 
+def aplicar_proxy(app, saltos):
+    """Detras de un proxy (Railway), request.remote_addr seria la IP del proxy: el limite de intentos
+    se compartiria entre todos y el registro de accesos mostraria siempre la misma IP."""
+    if saltos > 0:
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=saltos, x_proto=saltos, x_host=saltos)
+    return app
+
+
 def create_app():
     # En produccion (HTTPS) no se arranca con claves de prueba ni sin SECRET_KEY.
     problemas = config.problemas_de_produccion()
@@ -35,6 +44,7 @@ def create_app():
         raise RuntimeError("Configuración insegura para producción:\n - " + "\n - ".join(problemas))
     # root_path en la raiz del proyecto: "static" se resuelve como antes.
     app = Flask(__name__, root_path=config.BASE_DIR)
+    aplicar_proxy(app, config.PROXY_SALTOS)
 
     secret = config.SECRET_KEY
     if not secret:

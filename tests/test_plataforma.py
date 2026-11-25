@@ -473,5 +473,30 @@ class ArranqueEnProduccion(unittest.TestCase):
         self.assertIn("SECRET_KEY", str(ctx.exception))
 
 
+class DetrasDeUnProxy(unittest.TestCase):
+    """En Railway la IP del cliente llega en X-Forwarded-For; en local esa cabecera no se cree."""
+
+    def _ip(self, saltos, cabecera):
+        from flask import Flask, request
+        from permisos import aplicar_proxy
+        app = aplicar_proxy(Flask(__name__), saltos)
+
+        @app.route("/ip")
+        def ip():
+            return request.remote_addr or ""
+        return app.test_client().get("/ip", headers={"X-Forwarded-For": cabecera},
+                                     environ_base={"REMOTE_ADDR": "10.0.0.1"}).get_data(as_text=True)
+
+    def test_sin_proxy_se_ignora_la_cabecera(self):
+        self.assertEqual(self._ip(0, "203.0.113.9"), "10.0.0.1")
+
+    def test_con_un_proxy_se_usa_la_ip_del_cliente(self):
+        self.assertEqual(self._ip(1, "203.0.113.9"), "203.0.113.9")
+
+    def test_un_cliente_no_puede_falsificar_su_ip(self):
+        # el proxy anade la IP real al final: lo que el cliente puso antes no cuenta
+        self.assertEqual(self._ip(1, "1.2.3.4, 203.0.113.9"), "203.0.113.9")
+
+
 if __name__ == "__main__":
     unittest.main()

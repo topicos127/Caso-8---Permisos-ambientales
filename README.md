@@ -59,37 +59,54 @@ Los documentos del proyecto (plan de los Sprints 9 y 10, guía del PO) están en
 | `BACKUP_DIR` | Carpeta de los respaldos (`/app/respaldos`, un volumen aparte) |
 | `RESPALDO_AUTOMATICO` / `RESPALDO_HORA` / `RESPALDOS_CONSERVAR` | Respaldo diario (hora de Panamá, 2 a. m. por defecto) y cuántos se conservan (14) |
 
-En el despliegue también se usan `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`,
-`DB_NAME` y, para Aiven, `DB_SSL_CA` (ruta al `ca.pem` que da Aiven, para verificar el
-certificado de la base).
+En el despliegue también se usan `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` y
+`PROXY_SALTOS` (ver la sección de Railway). Para una base externa con SSL (Aiven), `DB_SSL_CA`
+apunta al `ca.pem` que entrega el proveedor.
 
-## Despliegue en Railway (Sprint 9; reemplaza a Render)
+## Despliegue en Railway
 
-La app corre en Railway (plan Hobby) con el `Dockerfile` del repositorio. La base sigue
-en Aiven, así que la migración solo mueve la aplicación. Railway ya no permite
-`railway.json` en servicios nuevos (se deja de leer el 01/12/2026), por eso todo se
-configura desde el panel del servicio:
+La aplicación y la base de datos corren en el mismo proyecto de Railway, con el `Dockerfile`
+del repositorio. Railway ya no permite `railway.json` en servicios nuevos, así que todo se
+configura desde el panel.
 
-1. **New Project → Deploy from GitHub repo**, rama `main`. Railway detecta el `Dockerfile`.
-2. **Variables:** `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` (los de Aiven),
-   `SECRET_KEY` (texto largo y aleatorio), `SESSION_COOKIE_SECURE=true`, `JEFE_PASSWORD`
-   (propia) y `UPLOADS_DIR=/app/uploads`. Si se usa `DB_SSL_CA`, ver la nota de abajo.
-   Railway inyecta `PORT`; el `Dockerfile` lo usa solo.
-3. **Settings → Deploy → Pre-Deploy Command:** `python scripts/init_db.py` (aplica
-   `schema.sql`; es idempotente). La primera vez, agregar `SEED_DEMO=true` y quitarla
-   después del primer despliegue.
-4. **Settings → Deploy → Healthcheck Path:** `/health`.
-5. **Volume** montado en `/app/uploads`, para que los documentos subidos sobrevivan a cada
-   despliegue (en Render se perdían).
-6. **Settings → Networking → Generate Domain** para obtener la URL pública.
+1. **Proyecto:** crear el proyecto con **Database → MySQL** (queda vacío: `init_db.py` crea las
+   tablas) y, si se quiere guardar archivos y respaldos fuera del servidor, un **Bucket**.
+   Después **GitHub Repository**, rama `main`; Railway detecta el `Dockerfile`.
+2. **Variables de la app** (en el servicio de la app, pestaña *Variables*). La base se enlaza
+   con variables de referencia al servicio `MySQL`, sin copiar contraseñas:
 
-Sobre `DB_SSL_CA`: sin esa variable, la conexión a Aiven va cifrada pero sin verificar
-el certificado (la app lo avisa en el log). Para verificarlo, el `ca.pem` de Aiven tiene
-que existir dentro del contenedor y `DB_SSL_CA` debe apuntar a su ruta.
+   | Variable | Valor |
+   |---|---|
+   | `DB_HOST` | `${{MySQL.MYSQLHOST}}` |
+   | `DB_PORT` | `${{MySQL.MYSQLPORT}}` |
+   | `DB_USER` | `${{MySQL.MYSQLUSER}}` |
+   | `DB_PASSWORD` | `${{MySQL.MYSQLPASSWORD}}` |
+   | `DB_NAME` | `${{MySQL.MYSQLDATABASE}}` |
+   | `SECRET_KEY` | texto aleatorio de 32 caracteres o más |
+   | `SESSION_COOKIE_SECURE` | `true` |
+   | `PROXY_SALTOS` | `1` (la IP real del cliente llega en `X-Forwarded-For`; sin esto el límite de intentos y el registro de accesos usarían la IP del proxy) |
+   | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | el administrador de la plataforma, con contraseña propia |
+   | `JEFE_EMAIL`, `JEFE_NOMBRE`, `JEFE_PASSWORD`, `ORG_POR_DEFECTO` | el primer director de proyectos y el nombre de su consultora |
 
-Costo: el plan Hobby cuesta $5 al mes e incluye $5 de consumo. Una sola instancia de
-gunicorn con la base fuera (Aiven) queda, en principio, dentro de ese consumo; conviene
-revisar **Usage** la primera semana.
+   Con `SESSION_COOKIE_SECURE=true` la app **se niega a arrancar** si `SECRET_KEY` es corta o
+   si `ADMIN_PASSWORD` / `JEFE_PASSWORD` siguen con las contraseñas de prueba.
+   **No use `SEED_DEMO=true` en producción:** crearía las cuentas de prueba.
+3. **Archivos y respaldos.** Un servicio de Railway admite un solo volumen, así que no se montan
+   dos. Elegir una opción:
+   - **Volumen:** montarlo en `/data` y definir `UPLOADS_DIR=/data/uploads` y
+     `BACKUP_DIR=/data/respaldos`. Sencillo, pero archivos y respaldos viven en el mismo disco.
+   - **Bucket (recomendado):** `ALMACENAMIENTO=s3` con `S3_ENDPOINT`, `S3_BUCKET`, `S3_REGION`,
+     `S3_ACCESS_KEY` y `S3_SECRET_KEY`. Los documentos van al bucket y cada respaldo se copia
+     allí también. Se puede combinar con el volumen en `/data` para los respaldos locales.
+4. **Settings → Deploy → Pre-Deploy Command:** `python scripts/init_db.py` (aplica `schema.sql`;
+   es idempotente). La app crea sola al administrador y al primer director al arrancar.
+5. **Settings → Deploy → Healthcheck Path:** `/health`.
+6. **Una sola réplica:** el límite de intentos y el respaldo diario viven en memoria del proceso.
+7. **Settings → Networking → Generate Domain** para la URL pública. El administrador entra por
+   `/admin`.
+
+Después del primer despliegue: abrir `/estado`, entrar a `/admin`, crear la primera empresa o
+entrar con el director, subir un documento, y en «Respaldos» hacer uno y pulsar «Verificar».
 
 ## Cómo bajar los cambios más recientes
 
