@@ -91,6 +91,10 @@ LOGIN_VENTANA_SEGUNDOS = int(os.environ.get("LOGIN_VENTANA_SEGUNDOS", 60))
 JEFE_EMAIL = os.environ.get("JEFE_EMAIL", "jefe1@ejemplo.com").strip().lower()
 JEFE_NOMBRE = os.environ.get("JEFE_NOMBRE", "Mariela Quintero")
 JEFE_PASSWORD = os.environ.get("JEFE_PASSWORD", "Jefe2026*")
+# Si al arrancar se crea ese director de proyectos y la empresa por defecto. En local y en las pruebas si;
+# en produccion (HTTPS) no: ahi las empresas y sus directores los crea el administrador desde /admin.
+# JEFE_INICIAL=true|false lo fuerza en cualquiera de los dos casos.
+JEFE_INICIAL = os.environ.get("JEFE_INICIAL", "false" if SESSION_COOKIE_SECURE else "true").lower() == "true"
 # Administrador de la plataforma. En el despliegue definir ADMIN_PASSWORD.
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@ejemplo.com").strip().lower()
 ADMIN_NOMBRE = os.environ.get("ADMIN_NOMBRE", "Administración de la plataforma")
@@ -148,7 +152,7 @@ _DEL_ENTORNO = object()
 
 
 def problemas_de_produccion(secure=_DEL_ENTORNO, secret=_DEL_ENTORNO, admin_password=_DEL_ENTORNO,
-                            jefe_password=_DEL_ENTORNO):
+                            jefe_password=_DEL_ENTORNO, jefe_inicial=_DEL_ENTORNO):
     """Lo que impide arrancar con SESSION_COOKIE_SECURE=true (es decir, en produccion, con HTTPS):
     claves de prueba o una SECRET_KEY ausente. Devuelve la lista de problemas (vacia si todo esta bien).
     Sin esto, un despliegue olvidado dejaria al administrador con una contrasena que esta en el README."""
@@ -157,13 +161,14 @@ def problemas_de_produccion(secure=_DEL_ENTORNO, secret=_DEL_ENTORNO, admin_pass
     secret = SECRET_KEY if secret is _DEL_ENTORNO else secret
     admin_password = ADMIN_PASSWORD if admin_password is _DEL_ENTORNO else admin_password
     jefe_password = JEFE_PASSWORD if jefe_password is _DEL_ENTORNO else jefe_password
+    jefe_inicial = JEFE_INICIAL if jefe_inicial is _DEL_ENTORNO else jefe_inicial
     problemas = []
     if not secret or len(secret) < 32:
         problemas.append("SECRET_KEY: defina un texto aleatorio de al menos 32 caracteres "
                          "(si falta, las sesiones se pierden al reiniciar).")
     if admin_password == ADMIN_PASSWORD_DEFECTO:
         problemas.append("ADMIN_PASSWORD: sigue la contrasena de prueba; defina una propia.")
-    if jefe_password == JEFE_PASSWORD_DEFECTO:
+    if jefe_inicial and jefe_password == JEFE_PASSWORD_DEFECTO:
         problemas.append("JEFE_PASSWORD: sigue la contrasena de prueba; defina una propia "
-                         "(es la del primer director de proyectos; use JEFE_EMAIL y ORG_POR_DEFECTO para que sea la real).")
+                         "(con JEFE_INICIAL=true se crea ese director al arrancar).")
     return problemas
