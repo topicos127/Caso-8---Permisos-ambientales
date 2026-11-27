@@ -1,0 +1,39 @@
+{
+ "login": {
+  "n": 20,
+  "media_ms": 512,
+  "p50_ms": 539,
+  "p95_ms": 695,
+  "max_ms": 705
+ },
+ "listado": {
+  "n": 200,
+  "media_ms": 232,
+  "p50_ms": 229,
+  "p95_ms": 291,
+  "max_ms": 356
+ },
+ "detalle": {
+  "n": 200,
+  "media_ms": 186,
+  "p50_ms": 182,
+  "p95_ms": 230,
+  "max_ms": 294
+ },
+ "panel": {
+  "n": 200,
+  "media_ms": 231,
+  "p50_ms": 231,
+  "p95_ms": 296,
+  "max_ms": 334
+ },
+ "todas": {
+  "n": 620,
+  "media_ms": 226,
+  "p95_ms": 313,
+  "max_ms": 705
+ },
+ "errores": 0,
+ "duracion_s": 7.1,
+ "peticiones_por_s": 87.3
+}

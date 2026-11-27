@@ -6,8 +6,9 @@
 <title>Nuevo expediente — Permisos Ambientales</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/estilos.css">
+<script src="js/interaccion.js"></script>
 </head>
 <body>
 <div class="shell">
@@ -21,7 +22,7 @@
           <circle cx="20" cy="20" r="2.2" fill="currentColor" stroke="none"/>
         </svg>
       </div>
-      <div><b>Permisos<br>Ambientales</b><span>Caso 8 · MiAmbiente</span></div>
+      <div><b>Permisos Ambientales</b><span>Expedientes ambientales</span></div>
     </div>
     <nav>
       <a href="dashboard.html">
@@ -40,12 +41,16 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
         Historial
       </a>
+      <a href="equipo.html" id="nav-equipo" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9.5" r="2.4"/><path d="M15.8 14.2c2.3.2 4 1.8 4.6 4.8"/></svg>
+        Equipo
+      </a>
       <a href="consulta-publica.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M19.5 19.5 15 15"/></svg>
         Consulta pública
       </a>
     </nav>
-    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 8</div>
+    <div class="rail-foot">© 2026 Permisos Ambientales</div>
   </aside>
 
   <div class="main">
@@ -66,13 +71,20 @@
             <input type="text" id="proyecto" placeholder="Ej. Planta Solar Azuero">
           </div>
           <div class="doc-field">
-            <label>Promotor / Empresa</label>
+            <label>Cliente / Empresa</label>
             <input type="text" id="promotor" placeholder="Ej. Energía Verde S.A.">
           </div>
         </div>
         <div class="doc-field" style="margin-top:16px;">
-          <label>Correo del promotor <span style="font-family:var(--sans); text-transform:none; color:var(--ink-faint); font-weight:400;">(opcional — para que el promotor vea el estado del trámite)</span></label>
-          <input type="email" id="promotor_email" placeholder="promotor@empresa.com">
+          <label>Correo del cliente <span style="font-family:var(--sans); text-transform:none; color:var(--ink-faint); font-weight:400;">(opcional — para que el cliente vea el estado del trámite)</span></label>
+          <input type="email" id="promotor_email" placeholder="cliente@empresa.com">
+        </div>
+        <div class="doc-field" style="margin-top:16px;">
+          <label style="display:flex; align-items:flex-start; gap:10px; text-transform:none; letter-spacing:0; font-family:var(--sans); font-size:14px; font-weight:400; cursor:pointer;">
+            <input type="checkbox" id="acceso_publico" checked style="margin-top:3px;">
+            <span><b style="font-weight:600;">Permitir la consulta pública de este proyecto.</b>
+              El público verá solo el proyecto, el cliente, la categoría, el estado y el consultor responsable; nunca los documentos. El director de proyectos puede cambiarlo después.</span>
+          </label>
         </div>
         <div class="doc-field" style="max-width:340px; margin-top:16px;">
           <label>Categoría de impacto ambiental</label>
@@ -106,124 +118,6 @@
 </div>
 
 <script src="js/api.js"></script>
-<script>
-const usuario = requireAuth();
-if (!usuario) throw new Error('Sin sesión');
-if (usuario.rol === 'promotor') { window.location.href = 'expedientes.html'; }
-pintarTopbar();
-
-const CARPETAS_POR_CAT = {
-  "I": [
-    { nombre: "Línea Base",            hint: "PDF" },
-    { nombre: "Plan de Manejo",        hint: "PDF" },
-    { nombre: "Anexos Legales",        hint: "PDF" }
-  ],
-  "II": [
-    { nombre: "Línea Base",            hint: "PDF" },
-    { nombre: "Plan de Manejo",        hint: "PDF" },
-    { nombre: "Anexos Legales",        hint: "PDF" },
-    { nombre: "Cartografía",           hint: "ZIP · shapefile" }
-  ],
-  "III": [
-    { nombre: "Línea Base",            hint: "PDF" },
-    { nombre: "Plan de Manejo",        hint: "PDF" },
-    { nombre: "Anexos Legales",        hint: "PDF" },
-    { nombre: "Cartografía",           hint: "ZIP · shapefile" },
-    { nombre: "Evidencia Foro Público", hint: "PDF · ZIP" }
-  ]
-};
-
-const DESCRIPCION_CAT = {
-  "I":   "bajo impacto",
-  "II":  "impacto moderado",
-  "III": "alto impacto"
-};
-
-let categoriaActual = "II";
-
-function categoriaDesdeSelect(valor) {
-  if (valor.includes("III")) return "III";
-  if (valor.includes("I —")) return "I";
-  return "II";
-}
-
-function renderCarpetas(cat) {
-  const grid = document.getElementById('folder-grid');
-  grid.innerHTML = '';
-  CARPETAS_POR_CAT[cat].forEach(c => {
-    grid.innerHTML += `
-      <div class="folder">
-        <div class="name">${c.nombre}</div>
-        <div class="hint">${c.hint}</div>
-      </div>
-    `;
-  });
-}
-
-function renderChecklist(cat) {
-  const ul = document.getElementById('checklist');
-  ul.innerHTML = '';
-  CARPETAS_POR_CAT[cat].forEach(c => {
-    ul.innerHTML += `
-      <li>
-        <span class="name">${c.nombre}</span>
-        <span class="tag-missing">Pendiente</span>
-      </li>
-    `;
-  });
-}
-
-const sel = document.getElementById('selectCategoria');
-sel.addEventListener('change', () => {
-  categoriaActual = categoriaDesdeSelect(sel.value);
-  document.getElementById('cat-note').innerHTML =
-    `<span class="tier"><b>${categoriaActual}</b> Categoría ${categoriaActual} — ${DESCRIPCION_CAT[categoriaActual]}</span>`;
-  renderCarpetas(categoriaActual);
-  renderChecklist(categoriaActual);
-});
-
-renderCarpetas(categoriaActual);
-renderChecklist(categoriaActual);
-
-document.getElementById('btnGuardar').addEventListener('click', async () => {
-  const proyecto = document.getElementById('proyecto').value.trim();
-  const promotor = document.getElementById('promotor').value.trim();
-  const promotor_email = (document.getElementById('promotor_email').value || '').trim();
-
-  if (!proyecto || !promotor) {
-    mostrarToast('Completa el nombre del proyecto y el promotor.', 'error');
-    return;
-  }
-
-  const btn = document.getElementById('btnGuardar');
-  btn.disabled = true;
-  btn.textContent = 'Guardando...';
-
-  try {
-    const r = await apiFetch('/expedientes', {
-      method: 'POST',
-      body: JSON.stringify({
-        proyecto,
-        promotor,
-        promotor_email,
-        categoria: categoriaActual
-      })
-    });
-
-    if (r.ok) {
-      mostrarToast(`Expediente ${r.codigo} creado correctamente.`, 'exito');
-      setTimeout(() => window.location.href = 'expediente-detalle.html?codigo=' + r.codigo, 1500);
-    } else {
-      mostrarToast(r.mensaje || 'Error al crear.', 'error');
-      btn.disabled = false;
-      btn.textContent = 'Guardar expediente';
-    }
-  } catch (err) {
-    mostrarToast('Error de red al guardar.', 'error');
-    btn.disabled = false;
-    btn.textContent = 'Guardar expediente';
-  }
-});
-</script>
+<script src="js/pag-expediente-nuevo.js"></script>
 </body>
 </html>

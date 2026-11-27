@@ -1,3 +1,7 @@
+# .\start.ps1        usuarios y 3 expedientes de prueba
+# .\start.ps1 -Demo  ademas 7 expedientes de demostracion (todos los estados y plazos)
+param([switch]$Demo)
+
 Write-Host "=== Iniciando Sistema de Permisos Ambientales ===" -ForegroundColor Cyan
 
 # 0. El .env tiene la contrasena de MySQL y la SECRET_KEY (no esta en GitHub).
@@ -40,8 +44,9 @@ Write-Host "3. Aplicando esquema de base de datos..." -ForegroundColor Yellow
 Get-Content schema.sql | docker exec -i mysql-permisos mysql -uroot "-p$dbPassword" $dbName
 
 # 4. Correr el seed
+$semilla = if ($Demo) { "python seed_usuarios.py --demo" } else { "python seed_usuarios.py" }
 Write-Host "4. Poblando la base de datos con datos de prueba..." -ForegroundColor Yellow
-docker run --rm --network container:mysql-permisos -v ${PWD}:/app -w /app -e DB_HOST=127.0.0.1 -e "DB_PASSWORD=$dbPassword" -e "DB_NAME=$dbName" python:3.11-slim sh -c "pip install -q pymysql werkzeug && python seed_usuarios.py"
+docker run --rm --network container:mysql-permisos -v ${PWD}:/app -w /app -e DB_HOST=127.0.0.1 -e "DB_PASSWORD=$dbPassword" -e "DB_NAME=$dbName" python:3.11-slim sh -c "pip install -q pymysql werkzeug && $semilla"
 
 Write-Host ""
 Write-Host "=========================================" -ForegroundColor Green

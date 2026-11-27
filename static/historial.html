@@ -6,8 +6,9 @@
 <title>Historial — Permisos Ambientales</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/estilos.css">
+<script src="js/interaccion.js"></script>
 </head>
 <body>
 <div class="shell">
@@ -21,7 +22,7 @@
           <circle cx="20" cy="20" r="2.2" fill="currentColor" stroke="none"/>
         </svg>
       </div>
-      <div><b>Permisos<br>Ambientales</b><span>Caso 8 · MiAmbiente</span></div>
+      <div><b>Permisos Ambientales</b><span>Expedientes ambientales</span></div>
     </div>
     <nav>
       <a href="dashboard.html">
@@ -40,12 +41,16 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
         Historial
       </a>
+      <a href="equipo.html" id="nav-equipo" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9.5" r="2.4"/><path d="M15.8 14.2c2.3.2 4 1.8 4.6 4.8"/></svg>
+        Equipo
+      </a>
       <a href="consulta-publica.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M19.5 19.5 15 15"/></svg>
         Consulta pública
       </a>
     </nav>
-    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 8</div>
+    <div class="rail-foot">© 2026 Permisos Ambientales</div>
   </aside>
 
   <div class="main">
@@ -57,16 +62,17 @@
     <div class="content">
       <div class="content-head">
         <h2 id="titulo-historial">Historial de expedientes</h2>
+        <a href="/exportar/historial.csv" class="btn btn-ghost" style="border:1.5px solid var(--line);" download>Exportar CSV</a>
       </div>
       <div class="panel" style="padding: 15px; margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
         <input type="text" id="filtro-codigo" placeholder="Código del expediente (ej. SP-A8-2026-001)" style="flex: 1; min-width: 200px; padding: 10px; border: 1px solid var(--line); border-radius: 4px; font-family: inherit;">
         <button type="button" class="btn btn-brass" id="btnFiltrar">Filtrar</button>
         <button type="button" class="btn btn-ghost" id="btnTodos" style="border:1.5px solid var(--line);">Ver todo</button>
       </div>
-      <p class="content-lede" id="lede-historial">Quién hizo cada acción en tus expedientes y cuándo. El historial es de solo lectura y empieza en el Sprint 8.</p>
+      <p class="content-lede" id="lede-historial">Quién hizo cada acción en tus expedientes y cuándo. El historial es de solo lectura.</p>
 
       <div class="panel" style="padding:0; overflow-x:auto;">
-        <table class="ledger" style="margin:0; width:100%; table-layout:auto;">
+        <table class="ledger tarjetas" style="margin:0; width:100%; table-layout:auto;">
           <thead>
             <tr>
               <th style="padding-left:24px; white-space:nowrap; width:170px;">Fecha y hora</th>
@@ -90,91 +96,6 @@
 </div>
 
 <script src="js/api.js"></script>
-<script>
-// HU-14: solo lectura. No hay botones de editar ni borrar, y el servidor
-// responde 405 a cualquier intento de cambiar el historial.
-const ACCION_CLASE = {
-  'creó': 'status status-info',
-  'subió documento': 'status status-warn',
-  'aprobó': 'status status-ok',
-};
-
-let pagina = 1;
-let codigoFiltro = '';
-
-function renderHistorial(d) {
-  const tbody = document.getElementById('tabla-historial');
-  const filas = d.historial || [];
-  if (!filas.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="padding:24px; color:var(--ink-faint); text-align:center;">Todavía no hay acciones registradas.</td></tr>';
-  } else {
-    tbody.innerHTML = filas.map(h => `
-      <tr>
-        <td style="padding-left:24px; white-space:nowrap; font-family:var(--mono); font-size:12.5px;">${esc(h.fecha)}</td>
-        <td style="white-space:nowrap;"><a href="expediente-detalle.html?codigo=${encodeURIComponent(h.codigo)}"><span class="case-tag">${esc(h.codigo)}</span></a></td>
-        <td>${esc(h.proyecto)}</td>
-        <td style="white-space:nowrap;"><span class="${ACCION_CLASE[h.accion] || 'status status-info'}">${esc(h.accion)}</span></td>
-        <td>${esc(h.usuario)}</td>
-        <td style="white-space:nowrap;">${esc(ROL_TEXTO[h.usuario_rol] || h.usuario_rol)}</td>
-      </tr>`).join('');
-  }
-  const p = d.paginacion || { page: 1, pages: 0, total: 0 };
-  document.getElementById('info-pagina').textContent =
-    `${p.total} acciones · página ${p.pages ? p.page : 0} de ${p.pages}`;
-  document.getElementById('btnAnterior').disabled = p.page <= 1;
-  document.getElementById('btnSiguiente').disabled = p.page >= p.pages;
-}
-
-async function cargar() {
-  const tbody = document.getElementById('tabla-historial');
-  const params = new URLSearchParams({ page: pagina, per_page: 25 });
-  if (codigoFiltro) params.set('codigo', codigoFiltro);
-  const d = await apiFetch('/historial?' + params.toString());
-  if (d.error) {
-    tbody.innerHTML = `<tr><td colspan="6" style="padding:24px; color:var(--status-bad); text-align:center;">${esc(d.error)}</td></tr>`;
-    document.getElementById('info-pagina').textContent = '';
-    return;
-  }
-  renderHistorial(d);
-}
-
-const usuario = requireAuth();
-if (usuario) {
-  pintarTopbar();
-  if (esPromotor()) {
-    // El promotor no ve el historial (el servidor también responde 403).
-    window.location.href = 'expedientes.html';
-  }
-  if (esJefe()) {
-    document.getElementById('lede-historial').textContent =
-      'Quién hizo cada acción en todos los expedientes de la consultora y cuándo. El historial es de solo lectura y empieza en el Sprint 8.';
-  }
-
-  const inicial = new URLSearchParams(window.location.search).get('codigo');
-  if (inicial) {
-    codigoFiltro = inicial;
-    document.getElementById('filtro-codigo').value = inicial;
-  }
-
-  document.getElementById('btnFiltrar').addEventListener('click', () => {
-    codigoFiltro = document.getElementById('filtro-codigo').value.trim();
-    pagina = 1;
-    cargar();
-  });
-  document.getElementById('filtro-codigo').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') document.getElementById('btnFiltrar').click();
-  });
-  document.getElementById('btnTodos').addEventListener('click', () => {
-    codigoFiltro = '';
-    document.getElementById('filtro-codigo').value = '';
-    pagina = 1;
-    cargar();
-  });
-  document.getElementById('btnAnterior').addEventListener('click', () => { pagina--; cargar(); });
-  document.getElementById('btnSiguiente').addEventListener('click', () => { pagina++; cargar(); });
-
-  cargar().catch(console.error);
-}
-</script>
+<script src="js/pag-historial.js"></script>
 </body>
 </html>

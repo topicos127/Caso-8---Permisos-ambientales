@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi consultora — Permisos Ambientales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilos.css">
+<script src="js/interaccion.js"></script>
+</head>
+<body>
+<div class="shell">
+  <aside class="rail">
+    <div class="rail-brand">
+      <div class="seal">
+        <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.1">
+          <circle cx="20" cy="20" r="17"/>
+          <path d="M6 24c4-4 8 4 12 0s8-6 12 0" opacity="0.6"/>
+          <path d="M7 16c4-3 8 3 12 0s8-5 12 0" opacity="0.45"/>
+          <circle cx="20" cy="20" r="2.2" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+      <div><b>Permisos Ambientales</b><span>Expedientes ambientales</span></div>
+    </div>
+    <nav></nav>
+    <div class="rail-foot">© 2026 Permisos Ambientales</div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="crumb">MI CONSULTORA</span>
+      <div class="who"></div>
+    </div>
+
+    <div class="content">
+      <div class="content-head">
+        <div>
+          <h2>Mi consultora</h2>
+          <p class="sub">Los datos, la seguridad y el equipo de su consultora, en un solo lugar.</p>
+        </div>
+      </div>
+
+      <div class="vista-tabs" role="tablist" aria-label="Secciones de Mi consultora">
+        <button type="button" role="tab" id="tab-marca" aria-selected="true" aria-controls="sec-marca">Marca</button>
+        <button type="button" role="tab" id="tab-datos" aria-selected="false" aria-controls="sec-datos">Datos de la empresa</button>
+        <button type="button" role="tab" id="tab-politicas" aria-selected="false" aria-controls="sec-politicas">Políticas</button>
+        <button type="button" role="tab" id="tab-uso" aria-selected="false" aria-controls="sec-uso">Uso</button>
+        <button type="button" role="tab" id="tab-datos-exportar" aria-selected="false" aria-controls="sec-datos-exportar">Mis datos</button>
+        <button type="button" role="tab" id="tab-accesos" aria-selected="false" aria-controls="sec-accesos">Accesos</button>
+        <button type="button" role="tab" id="tab-titularidad" aria-selected="false" aria-controls="sec-titularidad">Titularidad</button>
+      </div>
+
+      <!-- ===== Marca ===== -->
+      <section id="sec-marca" role="tabpanel" aria-labelledby="tab-marca">
+        <p class="content-lede">El nombre, el color y el logo aparecen en el menú de todo su equipo, en el resumen PDF de cada expediente y en la consulta pública de sus proyectos.</p>
+        <div class="bento">
+          <div class="col-main">
+            <div class="panel">
+              <h3>Nombre y color</h3>
+              <form id="form-marca">
+                <div class="doc-field">
+                  <label for="nombre-empresa">Nombre de la consultora</label>
+                  <input type="text" id="nombre-empresa" maxlength="150" required>
+                </div>
+                <div class="doc-field">
+                  <label id="etiqueta-color">Color de la marca</label>
+                  <div class="colores" id="colores" role="radiogroup" aria-labelledby="etiqueta-color"></div>
+                </div>
+                <button type="submit" class="btn btn-brass">Guardar</button>
+              </form>
+            </div>
+            <div class="panel">
+              <h3>Logo</h3>
+              <p class="panel-note">Imagen PNG, JPG o WebP de hasta 1 MB. Se ve mejor con fondo transparente y formato cuadrado.</p>
+              <div class="logo-vista">
+                <div class="marco" id="logo-marco" aria-hidden="true">·</div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                  <label class="btn btn-brass" for="archivo-logo" style="cursor:pointer;">Subir logo</label>
+                  <input type="file" id="archivo-logo" accept="image/png,image/jpeg,image/webp" hidden>
+                  <button type="button" class="btn btn-ghost" id="btn-quitar-logo" hidden>Quitar logo</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-side">
+            <div class="panel">
+              <h3>Así se verá</h3>
+              <div class="rail" id="vista-previa" style="position:static; height:auto; width:auto; min-height:0; padding:18px; border-radius:16px; transform:none;">
+                <div class="rail-brand con-empresa" id="vista-marca"></div>
+              </div>
+              <p class="panel-note" style="margin-top:12px;">El color de cada rol (verde, azul, violeta) no cambia: así cada persona reconoce desde dónde trabaja.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Datos de la empresa ===== -->
+      <section id="sec-datos" role="tabpanel" aria-labelledby="tab-datos" hidden>
+        <p class="content-lede">Los datos fiscales y de contacto de la consultora. Salen en el resumen PDF de cada expediente; el teléfono y el correo de contacto también en la consulta pública. El RUC, la dirección y el pie de documentos no se muestran al público.</p>
+        <div class="panel" style="max-width:820px;">
+          <form id="form-datos" class="form-alta" novalidate>
+            <div class="campo"><label for="d-razon_social">Razón social</label><input type="text" id="d-razon_social" maxlength="200" autocomplete="off"></div>
+            <div class="campo"><label for="d-ruc">RUC</label><input type="text" id="d-ruc" maxlength="40" autocomplete="off"></div>
+            <div class="campo" style="grid-column:1 / -1;"><label for="d-direccion">Dirección</label><input type="text" id="d-direccion" maxlength="300" autocomplete="off"></div>
+            <div class="campo"><label for="d-telefono">Teléfono de contacto <span class="status status-info">Público</span></label><input type="text" id="d-telefono" maxlength="40" autocomplete="off"></div>
+            <div class="campo"><label for="d-email_contacto">Correo de contacto <span class="status status-info">Público</span></label><input type="email" id="d-email_contacto" maxlength="255" autocomplete="off"></div>
+            <div class="campo" style="grid-column:1 / -1;"><label for="d-pie_documento">Pie de los documentos</label><input type="text" id="d-pie_documento" maxlength="300" placeholder="Ej. Este resumen no sustituye la resolución oficial." autocomplete="off"></div>
+            <div style="grid-column:1 / -1;"><button type="submit" class="btn btn-brass">Guardar datos</button></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ===== Políticas ===== -->
+      <section id="sec-politicas" role="tabpanel" aria-labelledby="tab-politicas" hidden>
+        <p class="content-lede">Reglas que valen para toda su consultora.</p>
+        <div class="panel" style="max-width:820px;">
+          <form id="form-politica" novalidate>
+            <h3>Seguridad</h3>
+            <label class="casilla-terminos" for="p-2fa" style="margin-top:8px;">
+              <input type="checkbox" id="p-2fa">
+              <span><b>Exigir la verificación en dos pasos</b> a todo el equipo. Quien no la tenga activa solo podrá activarla al entrar.
+                <span id="p-2fa-aviso" class="aviso-unico" style="display:block; margin-top:8px;" hidden>Active primero sus propios dos pasos en <a href="cuenta.html">Mi perfil</a>: si no, usted quedaría bloqueado.</span></span>
+            </label>
+            <div class="doc-field" style="max-width:340px;">
+              <label for="p-sesion">Cerrar la sesión por inactividad</label>
+              <select id="p-sesion"></select>
+            </div>
+            <h3 style="margin-top:22px;">Plazos</h3>
+            <div class="doc-field" style="max-width:340px;">
+              <label for="p-aviso">Aviso de vencimiento por defecto</label>
+              <select id="p-aviso"></select>
+            </div>
+            <label class="casilla-terminos" for="p-aplicar"><input type="checkbox" id="p-aplicar"><span>Aplicar este aviso ahora a todo el equipo (quien eligió otro lo verá cambiar).</span></label>
+            <button type="submit" class="btn btn-brass">Guardar políticas</button>
+          </form>
+        </div>
+        <div class="panel" style="padding:0; overflow-x:auto; margin-top:20px;">
+          <div class="panel-head" style="padding:20px 22px 6px;"><div><h3>Seguridad del equipo</h3>
+            <p class="panel-note" style="margin:0;">Quién tiene los dos pasos activos y cuándo entró por última vez.</p></div>
+            <button type="button" class="btn btn-ghost" id="btn-cerrar-equipo">Cerrar las sesiones del equipo</button></div>
+          <table class="ledger tarjetas" style="margin:0; width:100%; table-layout:auto;">
+            <thead><tr><th style="padding-left:22px;">Persona</th><th>Rol</th><th>Dos pasos</th><th>Último acceso</th><th></th></tr></thead>
+            <tbody id="tabla-seguridad"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===== Uso ===== -->
+      <section id="sec-uso" role="tabpanel" aria-labelledby="tab-uso" hidden>
+        <p class="content-lede">Lo que su consultora tiene hoy en la plataforma.</p>
+        <div class="stat-row" id="uso-tarjetas"></div>
+        <p class="panel-note">Sus datos se respaldan a diario de forma automática. Los planes y límites se definirán más adelante.</p>
+      </section>
+
+      <!-- ===== Mis datos ===== -->
+      <section id="sec-datos-exportar" role="tabpanel" aria-labelledby="tab-datos-exportar" hidden>
+        <p class="content-lede">Sus datos son suyos. Descargue todo cuando quiera: para una auditoría, un respaldo propio o si algún día cambia de herramienta.</p>
+        <div class="panel" style="max-width:820px;">
+          <h3>Descargar todos mis datos</h3>
+          <p class="panel-note">Un archivo ZIP con:</p>
+          <ul class="ayuda-lista" style="margin-top:0;">
+            <li><b>cartera.xlsx</b>: todos los expedientes con su estado, plazo, responsable y preparación.</li>
+            <li><b>historial.csv</b> y <b>comentarios.csv</b>: quién hizo qué y las conversaciones internas.</li>
+            <li><b>equipo.csv</b>: las personas de la consultora.</li>
+            <li><b>documentos/</b>: todos los archivos por expediente, con su <b>índice</b> (huella SHA-256 y código de trazabilidad de cada versión).</li>
+          </ul>
+          <p class="panel-note">Puede tardar unos segundos si hay muchos documentos. Solo se puede pedir una cada dos minutos.</p>
+          <button type="button" class="btn btn-brass" id="btn-exportar">Descargar todo (.zip)</button>
+        </div>
+        <div class="panel" style="max-width:820px; margin-top:16px;">
+          <h3>Registro de accesos y cambios</h3>
+          <p class="panel-note">Quién entró y qué cambió en la cuenta, en una hoja que abre Excel.</p>
+          <button type="button" class="btn btn-ghost" id="btn-exportar-csv">Descargar el registro (.csv)</button>
+        </div>
+      </section>
+
+      <!-- ===== Accesos ===== -->
+      <section id="sec-accesos" role="tabpanel" aria-labelledby="tab-accesos" hidden>
+        <p class="content-lede">Los inicios de sesión y los cambios de configuración de su consultora. No incluye el contenido de los expedientes.</p>
+        <div class="herramientas">
+          <select id="a-tipo" aria-label="Tipo de evento"><option value="">Todos los eventos</option></select>
+          <span class="separador"></span>
+          <span class="panel-note" id="a-pie" style="margin:0;"></span>
+          <button type="button" class="btn btn-ghost" id="a-ant">‹ Anterior</button>
+          <button type="button" class="btn btn-ghost" id="a-sig">Siguiente ›</button>
+        </div>
+        <div class="panel" style="padding:0; overflow-x:auto;">
+          <table class="ledger tarjetas" style="margin:0; width:100%; table-layout:auto;">
+            <thead><tr><th style="padding-left:22px;">Fecha</th><th>Evento</th><th>Persona</th><th>Detalle</th><th>IP</th></tr></thead>
+            <tbody id="tabla-accesos"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===== Titularidad ===== -->
+      <section id="sec-titularidad" role="tabpanel" aria-labelledby="tab-titularidad" hidden>
+        <p class="content-lede" id="t-nota"></p>
+        <div class="panel" style="max-width:820px;">
+          <h3>Directores de proyectos</h3>
+          <ul class="lista-simple" id="t-directores"></ul>
+          <div id="t-invitar" hidden style="margin-top:16px; padding-top:16px; border-top:1px solid var(--line-soft);">
+            <h4>Invitar a otro director</h4>
+            <form id="t-form-invitar" class="form-alta" novalidate>
+              <div class="campo"><label for="t-correo">Correo (opcional)</label><input type="email" id="t-correo" maxlength="255" placeholder="Si lo escribe, el enlace solo sirve para ese correo"></div>
+              <div style="align-self:end;"><button type="submit" class="btn btn-brass">Generar enlace</button></div>
+            </form>
+            <div id="t-enlace" aria-live="polite"></div>
+          </div>
+        </div>
+        <div class="panel" style="max-width:820px; margin-top:16px;">
+          <h3>Consultores que pueden ascender</h3>
+          <p class="panel-note">Un director ve todos los expedientes de la consultora y gestiona el equipo.</p>
+          <ul class="lista-simple" id="t-candidatos"></ul>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/pag-empresa.js"></script>
+</body>
+</html>

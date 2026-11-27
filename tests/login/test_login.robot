@@ -1,5 +1,5 @@
 *** Settings ***
-Documentation    Casos de prueba para el servicio de Login (HU-11) del Sistema de
+Documentation    Sprint 2-3. Casos de prueba para el servicio de Login (HU-11) del Sistema de
 ...              Permisos Ambientales. Valida que el servicio conceda acceso solo
 ...              con credenciales correctas, y que rechace credenciales invalidas,
 ...              inexistentes o incompletas.
@@ -9,16 +9,16 @@ Suite Setup      Create Session    api    http://localhost:5000
 
 *** Variables ***
 ${EMAIL_CONSULTOR}         consultor1@ejemplo.com
-${PASSWORD_CONSULTOR}      clave123
+${PASSWORD_CONSULTOR}      Clave123
 ${EMAIL_PROMOTOR}          promotor1@ejemplo.com
-${PASSWORD_PROMOTOR}       clave456
+${PASSWORD_PROMOTOR}       Clave456
 ${EMAIL_INVALIDO}          usuario_no_existe@ejemplo.com
 ${PASSWORD_INCORRECTA}     claveIncorrecta
 
 *** Test Cases ***
 El Servicio Esta Activo
-    [Documentation]    Verifica que el endpoint raiz confirme que el servicio esta activo.
-    ${response}=    GET On Session    api    /
+    [Documentation]    Verifica que /api (la raiz ahora sirve la pagina de inicio) confirme que el servicio esta activo.
+    ${response}=    GET On Session    api    /api
     Should Be Equal As Strings    ${response.status_code}    200
     Should Be Equal    ${response.json()}[estado]    activo
 

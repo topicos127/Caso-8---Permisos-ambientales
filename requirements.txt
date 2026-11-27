@@ -5,3 +5,5 @@ werkzeug==3.0.4
 fpdf2
 gunicorn==23.0.0
 tzdata
+segno==1.6.1
+openpyxl==3.1.5

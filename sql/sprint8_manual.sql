@@ -1,5 +1,5 @@
 -- Sprint 8 — plan B, solo si la app NO pudo crear la tabla al arrancar.
--- (En los logs de Render saldria "AVISO: no se pudo preparar la base para el Sprint 8".)
+-- (En los logs del despliegue saldria "AVISO: no se pudo preparar la base para el Sprint 8".)
 -- Correr en Aiven sobre la base que usa la app (defaultdb).
 
 CREATE TABLE IF NOT EXISTS historial_expediente (

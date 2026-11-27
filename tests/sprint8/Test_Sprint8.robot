@@ -31,7 +31,7 @@ ${MARGEN_SEGUNDOS}       120
     [Documentation]    Matriz: aprobar / Consultor = No. 001 es de consultor1.
     Iniciar Sesion Como Consultor
     ${r}=    Aprobar    consultor    ${EXP_C1}    expected_status=403
-    Should Contain    ${r.json()['mensaje']}    jefe
+    Should Contain    ${r.json()['mensaje']}    director de proyectos
 
 02 - Un Consultor No Aprueba Un Expediente Ajeno
     [Documentation]    Matriz: aprobar / Consultor = No (consultor2 sobre el 001 de consultor1).

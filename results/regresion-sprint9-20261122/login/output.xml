@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generator="Robot 7.0.1 (Python 3.11.18 on linux)" generated="2026-11-22T21:10:46.708520" rpa="false" schemaversion="5">
+<suite id="s1" name="Test Login" source="/app/tests/login/test_login.robot">
+<kw name="Create Session" owner="RequestsLibrary" type="SETUP">
+<msg time="2026-11-22T21:10:46.822983" level="INFO">Creating Session using : alias=api, url=http://localhost:5000, headers={},                     cookies={}, auth=None, timeout=None, proxies=None, verify=False,                     debug=0 </msg>
+<arg>api</arg>
+<arg>http://localhost:5000</arg>
+<doc>Create Session: create a HTTP session to a server</doc>
+<status status="PASS" start="2026-11-22T21:10:46.822778" elapsed="0.000415"/>
+</kw>
+<test id="s1-t1" name="El Servicio Esta Activo" line="19">
+<kw name="GET On Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:46.832460" level="INFO">GET Request : url=http://localhost:5000/api 
+ path_url=/api 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive'} 
+ body=None 
+ </msg>
+<msg time="2026-11-22T21:10:46.832610" level="INFO">GET Response : url=http://localhost:5000/api 
+ status=200, reason=OK 
+ headers={'Server': 'Werkzeug/3.0.4 Python/3.11.18', 'Date': 'Sun, 22 Nov 2026 21:10:46 GMT', 'Content-Type': 'application/json', 'Content-Length': '76', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'same-origin', 'Cache-Control': 'no-store', 'Connection': 'close'} 
+ body={"estado":"activo","servicio":"Permisos Ambientales - API","version":"0.9"}
+ 
+ </msg>
+<msg time="2026-11-22T21:10:46.832735" level="INFO">${response} = &lt;Response [200]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/api</arg>
+<doc>Sends a GET request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-11-22T21:10:46.823692" elapsed="0.009062"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<msg time="2026-11-22T21:10:46.833476" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${response.status_code}</arg>
+<arg>200</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-11-22T21:10:46.832928" elapsed="0.000617"/>
+</kw>
+<kw name="Should Be Equal" owner="BuiltIn">
+<arg>${response.json()}[estado]</arg>
+<arg>activo</arg>
+<doc>Fails if the given objects are unequal.</doc>
+<status status="PASS" start="2026-11-22T21:10:46.833665" elapsed="0.000435"/>
+</kw>
+<doc>Verifica que /api (la raiz ahora sirve la pagina de inicio) confirme que el servicio esta activo.</doc>
+<status status="PASS" start="2026-11-22T21:10:46.823321" elapsed="0.010873"/>
+</test>
+<test id="s1-t2" name="El Endpoint De Salud Responde Correctamente" line="25">
+<kw name="GET On Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:46.842072" level="INFO">GET Request : url=http://localhost:5000/health 
+ path_url=/health 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive'} 
+ body=None 
+ </msg>
+<msg time="2026-11-22T21:10:46.842191" level="INFO">GET Response : url=http://localhost:5000/health 
+ status=200, reason=OK 
+ headers={'Server': 'Werkzeug/3.0.4 Python/3.11.18', 'Date': 'Sun, 22 Nov 2026 21:10:46 GMT', 'Content-Type': 'application/json', 'Content-Length': '16', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'same-origin', 'Cache-Control': 'no-store', 'Connection': 'close'} 
+ body={"status":"ok"}
+ 
+ </msg>
+<msg time="2026-11-22T21:10:46.842390" level="INFO">${response} = &lt;Response [200]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/health</arg>
+<doc>Sends a GET request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-11-22T21:10:46.834596" elapsed="0.007821"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<msg time="2026-11-22T21:10:46.843287" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${response.status_code}</arg>
+<arg>200</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-11-22T21:10:46.842627" elapsed="0.000738"/>
+</kw>
+<kw name="Should Be Equal" owner="BuiltIn">
+<arg>${response.json()}[status]</arg>
+<arg>ok</arg>
+<doc>Fails if the given objects are unequal.</doc>
+<status status="PASS" start="2026-11-22T21:10:46.843493" elapsed="0.000419"/>
+</kw>
+<doc>Verifica que /health confirme que el servicio esta operativo.</doc>
+<status status="PASS" start="2026-11-22T21:10:46.834331" elapsed="0.009678"/>
+</test>
+<test id="s1-t3" name="Login Exitoso Con Credenciales De Consultor" line="31">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-11-22T21:10:46.844841" level="INFO">${body} = {'email': 'consultor1@ejemplo.com', 'password': 'Clave123'}</msg>
+<var>${body}</var>
+<arg>email=${EMAIL_CONSULTOR}</arg>
+<arg>password=${PASSWORD_CONSULTOR}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-11-22T21:10:46.844501" elapsed="0.000362"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:46.962882" level="INFO">POST Request : url=http://localhost:5000/login 
+ path_url=/login 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'Content-Length': '59', 'Content-Type': 'application/json'} 
+ body=b'{"email": "consultor1@ejemplo.com", "password": "Clave123"}' 
+ </msg>
+<msg time="2026-11-22T21:10:46.962962" level="INFO">POST Response : url=http://localhost:5000/login 
+ status=200, reason=OK 
+ headers={'Server': 'Werkzeug/3.0.4 Python/3.11.18', 'Date': 'Sun, 22 Nov 2026 21:10:46 GMT', 'Content-Type': 'application/json', 'Content-Length': '194', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'same-origin', 'Cache-Control': 'no-store', 'Vary': 'Cookie', 'Set-Cookie': 'session=eyJ1aWQiOjF9.awNaVg.wYW9KyOANauuIBcIDBziyGr7kuQ; HttpOnly; Path=/; SameSite=Lax', 'Connection': 'close'} 
+ body={"acceso":true,"debe_cambiar_clave":false,"email":"consultor1@ejemplo.com","mensaje":"Bienvenido, Consultor Uno. Acceso concedido a sus expedientes.","nombre":"Consultor Uno","rol":"consultor"}
+ 
+ </msg>
+<msg time="2026-11-22T21:10:46.963080" level="INFO">${response} = &lt;Response [200]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/login</arg>
+<arg>json=${body}</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-11-22T21:10:46.844956" elapsed="0.118143"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<msg time="2026-11-22T21:10:46.964008" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${response.status_code}</arg>
+<arg>200</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-11-22T21:10:46.963311" elapsed="0.000748"/>
+</kw>
+<kw name="Should Be True" owner="BuiltIn">
+<arg>${response.json()}[acceso]</arg>
+<doc>Fails if the given condition is not true.</doc>
+<status status="PASS" start="2026-11-22T21:10:46.964152" elapsed="0.000312"/>
+</kw>
+<doc>HU-11: un consultor con credenciales correctas debe obtener acceso.</doc>
+<status status="PASS" start="2026-11-22T21:10:46.844160" elapsed="0.120381"/>
+</test>
+<test id="s1-t4" name="Login Exitoso Con Credenciales De Promotor" line="38">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-11-22T21:10:46.965149" level="INFO">${body} = {'email': 'promotor1@ejemplo.com', 'password': 'Clave456'}</msg>
+<var>${body}</var>
+<arg>email=${EMAIL_PROMOTOR}</arg>
+<arg>password=${PASSWORD_PROMOTOR}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-11-22T21:10:46.964942" elapsed="0.000221"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:47.079867" level="INFO">POST Request : url=http://localhost:5000/login 
+ path_url=/login 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'Cookie': 'session=eyJ1aWQiOjF9.awNaVg.wYW9KyOANauuIBcIDBziyGr7kuQ', 'Content-Length': '58', 'Content-Type': 'application/json'} 
+ body=b'{"email": "promotor1@ejemplo.com", "password": "Clave456"}' 
+ </msg>
+<msg time="2026-11-22T21:10:47.080820" level="INFO">POST Response : url=http://localhost:5000/login 
+ status=200, reason=OK 
+ headers={'Server': 'Werkzeug/3.0.4 Python/3.11.18', 'Date': 'Sun, 22 Nov 2026 21:10:47 GMT', 'Content-Type': 'application/json', 'Content-Length': '190', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'same-origin', 'Cache-Control': 'no-store', 'Vary': 'Cookie', 'Set-Cookie': 'session=eyJ1aWQiOjJ9.awNaVw.LAjz5R_IIte8YtptnvMjM9Lgue8; HttpOnly; Path=/; SameSite=Lax', 'Connection': 'close'} 
+ body={"acceso":true,"debe_cambiar_clave":false,"email":"promotor1@ejemplo.com","mensaje":"Bienvenido, Promotor Uno. Acceso concedido a sus expedientes.","nombre":"Promotor Uno","rol":"promotor"}
+ 
+ </msg>
+<msg time="2026-11-22T21:10:47.081289" level="INFO">${response} = &lt;Response [200]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/login</arg>
+<arg>json=${body}</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-11-22T21:10:46.965226" elapsed="0.116088"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<msg time="2026-11-22T21:10:47.081894" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${response.status_code}</arg>
+<arg>200</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-11-22T21:10:47.081526" elapsed="0.000405"/>
+</kw>
+<kw name="Should Be True" owner="BuiltIn">
+<arg>${response.json()}[acceso]</arg>
+<doc>Fails if the given condition is not true.</doc>
+<status status="PASS" start="2026-11-22T21:10:47.082005" elapsed="0.000300"/>
+</kw>
+<doc>HU-11: un promotor con credenciales correctas debe obtener acceso.</doc>
+<status status="PASS" start="2026-11-22T21:10:46.964689" elapsed="0.117714"/>
+</test>
+<test id="s1-t5" name="Login Fallido Por Contrasena Incorrecta" line="45">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-11-22T21:10:47.083039" level="INFO">${body} = {'email': 'consultor1@ejemplo.com', 'password': 'claveIncorrecta'}</msg>
+<var>${body}</var>
+<arg>email=${EMAIL_CONSULTOR}</arg>
+<arg>password=${PASSWORD_INCORRECTA}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-11-22T21:10:47.082846" elapsed="0.000206"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:47.200866" level="INFO">POST Request : url=http://localhost:5000/login 
+ path_url=/login 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'Cookie': 'session=eyJ1aWQiOjJ9.awNaVw.LAjz5R_IIte8YtptnvMjM9Lgue8', 'Content-Length': '66', 'Content-Type': 'application/json'} 
+ body=b'{"email": "consultor1@ejemplo.com", "password": "claveIncorrecta"}' 
+ </msg>
+<msg time="2026-11-22T21:10:47.200946" level="INFO">POST Response : url=http://localhost:5000/login 
+ status=401, reason=UNAUTHORIZED 
+ headers={'Server': 'Werkzeug/3.0.4 Python/3.11.18', 'Date': 'Sun, 22 Nov 2026 21:10:47 GMT', 'Content-Type': 'application/json', 'Content-Length': '55', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'same-origin', 'Cache-Control': 'no-store', 'Connection': 'close'} 
+ body={"acceso":false,"mensaje":"Credenciales incorrectas."}
+ 
+ </msg>
+<msg time="2026-11-22T21:10:47.201071" level="INFO">${response} = &lt;Response [401]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/login</arg>
+<arg>json=${body}</arg>
+<arg>expected_status=401</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-11-22T21:10:47.083115" elapsed="0.117974"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<msg time="2026-11-22T21:10:47.201749" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${response.status_code}</arg>
+<arg>401</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-11-22T21:10:47.201234" elapsed="0.000574"/>
+</kw>
+<kw name="Should Not Be True" owner="BuiltIn">
+<arg>${response.json()}[acceso]</arg>
+<doc>Fails if the given condition is true.</doc>
+<status status="PASS" start="2026-11-22T21:10:47.201900" elapsed="0.000656"/>
+</kw>
+<doc>HU-11: si la contrasena no coincide, el sistema debe negar el acceso.</doc>
+<status status="PASS" start="2026-11-22T21:10:47.082587" elapsed="0.120055"/>
+</test>
+<test id="s1-t6" name="Login Fallido Por Email No Registrado" line="52">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-11-22T21:10:47.203466" level="INFO">${body} = {'email': 'usuario_no_existe@ejemplo.com', 'password': 'Clave123'}</msg>
+<var>${body}</var>
+<arg>email=${EMAIL_INVALIDO}</arg>
+<arg>password=${PASSWORD_CONSULTOR}</arg>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-11-22T21:10:47.203237" elapsed="0.000246"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:47.212959" level="INFO">POST Request : url=http://localhost:5000/login 
+ path_url=/login 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'Cookie': 'session=eyJ1aWQiOjJ9.awNaVw.LAjz5R_IIte8YtptnvMjM9Lgue8', 'Content-Length': '66', 'Content-Type': 'application/json'} 
+ body=b'{"email": "usuario_no_existe@ejemplo.com", "password": "Clave123"}' 
+ </msg>
+<msg time="2026-11-22T21:10:47.213104" level="INFO">POST Response : url=http://localhost:5000/login 
+ status=401, reason=UNAUTHORIZED 
+ headers={'Server': 'Werkzeug/3.0.4 Python/3.11.18', 'Date': 'Sun, 22 Nov 2026 21:10:47 GMT', 'Content-Type': 'application/json', 'Content-Length': '55', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'same-origin', 'Cache-Control': 'no-store', 'Connection': 'close'} 
+ body={"acceso":false,"mensaje":"Credenciales incorrectas."}
+ 
+ </msg>
+<msg time="2026-11-22T21:10:47.213297" level="INFO">${response} = &lt;Response [401]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/login</arg>
+<arg>json=${body}</arg>
+<arg>expected_status=401</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-11-22T21:10:47.203552" elapsed="0.009767"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<msg time="2026-11-22T21:10:47.214049" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${response.status_code}</arg>
+<arg>401</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-11-22T21:10:47.213520" elapsed="0.000614"/>
+</kw>
+<kw name="Should Not Be True" owner="BuiltIn">
+<arg>${response.json()}[acceso]</arg>
+<doc>Fails if the given condition is true.</doc>
+<status status="PASS" start="2026-11-22T21:10:47.214301" elapsed="0.000590"/>
+</kw>
+<doc>HU-11: un correo que no existe en el sistema no debe obtener acceso.</doc>
+<status status="PASS" start="2026-11-22T21:10:47.202776" elapsed="0.012212"/>
+</test>
+<test id="s1-t7" name="Login Fallido Por Campos Vacios" line="59">
+<kw name="Create Dictionary" owner="BuiltIn">
+<msg time="2026-11-22T21:10:47.215614" level="INFO">${body} = {}</msg>
+<var>${body}</var>
+<doc>Creates and returns a dictionary based on the given ``items``.</doc>
+<status status="PASS" start="2026-11-22T21:10:47.215493" elapsed="0.000135"/>
+</kw>
+<kw name="POST On Session" owner="RequestsLibrary">
+<msg time="2026-11-22T21:10:47.220917" level="INFO">POST Request : url=http://localhost:5000/login 
+ path_url=/login 
+ headers={'User-Agent': 'python-requests/2.34.2', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'Connection': 'keep-alive', 'Cookie': 'session=eyJ1aWQiOjJ9.awNaVw.LAjz5R_IIte8YtptnvMjM9Lgue8', 'Content-Length': '2', 'Content-Type': 'application/json'} 
+ body=b'{}' 
+ </msg>
+<msg time="2026-11-22T21:10:47.220994" level="INFO">POST Response : url=http://localhost:5000/login 
+ status=401, reason=UNAUTHORIZED 
+ headers={'Server': 'Werkzeug/3.0.4 Python/3.11.18', 'Date': 'Sun, 22 Nov 2026 21:10:47 GMT', 'Content-Type': 'application/json', 'Content-Length': '64', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'same-origin', 'Cache-Control': 'no-store', 'Connection': 'close'} 
+ body={"acceso":false,"mensaje":"Debe ingresar correo y contrasena."}
+ 
+ </msg>
+<msg time="2026-11-22T21:10:47.222053" level="INFO">${response} = &lt;Response [401]&gt;</msg>
+<var>${response}</var>
+<arg>api</arg>
+<arg>/login</arg>
+<arg>json=${body}</arg>
+<arg>expected_status=401</arg>
+<doc>Sends a POST request on a previously created HTTP Session.</doc>
+<status status="PASS" start="2026-11-22T21:10:47.215691" elapsed="0.006391"/>
+</kw>
+<kw name="Should Be Equal As Strings" owner="BuiltIn">
+<msg time="2026-11-22T21:10:47.222573" level="INFO">Argument types are:
+&lt;class 'int'&gt;
+&lt;class 'str'&gt;</msg>
+<arg>${response.status_code}</arg>
+<arg>401</arg>
+<doc>Fails if objects are unequal after converting them to strings.</doc>
+<status status="PASS" start="2026-11-22T21:10:47.222226" elapsed="0.000379"/>
+</kw>
+<kw name="Should Not Be True" owner="BuiltIn">
+<arg>${response.json()}[acceso]</arg>
+<doc>Fails if the given condition is true.</doc>
+<status status="PASS" start="2026-11-22T21:10:47.222668" elapsed="0.000284"/>
+</kw>
+<doc>HU-11: una solicitud sin email ni contrasena debe ser rechazada
+de forma controlada (401), no provocar un error interno del servidor.</doc>
+<status status="PASS" start="2026-11-22T21:10:47.215138" elapsed="0.007889"/>
+</test>
+<doc>Sprint 2-3. Casos de prueba para el servicio de Login (HU-11) del Sistema de
+Permisos Ambientales. Valida que el servicio conceda acceso solo
+con credenciales correctas, y que rechace credenciales invalidas,
+inexistentes o incompletas.</doc>
+<status status="PASS" start="2026-11-22T21:10:46.710776" elapsed="0.512573"/>
+</suite>
+<statistics>
+<total>
+<stat pass="7" fail="0" skip="0">All Tests</stat>
+</total>
+<tag>
+</tag>
+<suite>
+<stat pass="7" fail="0" skip="0" id="s1" name="Test Login">Test Login</stat>
+</suite>
+</statistics>
+<errors>
+</errors>
+</robot>

@@ -6,10 +6,11 @@
 <title>Mis expedientes — Permisos Ambientales</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/estilos.css">
+<script src="js/interaccion.js"></script>
 <style>
-  /* Sprint 8: la vista del jefe tiene 9 columnas; menos relleno para que quepan. */
+  /* Sprint 8: la vista del director de proyectos tiene 9 columnas; menos relleno para que quepan. */
   .ledger.compacta th, .ledger.compacta td { padding-right: 10px; }
   .ledger.compacta .status { font-size: 12px; padding: 3px 8px 3px 6px; }
 </style>
@@ -26,7 +27,7 @@
           <circle cx="20" cy="20" r="2.2" fill="currentColor" stroke="none"/>
         </svg>
       </div>
-      <div><b>Permisos<br>Ambientales</b><span>Caso 8 · MiAmbiente</span></div>
+      <div><b>Permisos Ambientales</b><span>Expedientes ambientales</span></div>
     </div>
     <nav>
       <a href="dashboard.html">
@@ -45,12 +46,16 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
         Historial
       </a>
+      <a href="equipo.html" id="nav-equipo" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9.5" r="2.4"/><path d="M15.8 14.2c2.3.2 4 1.8 4.6 4.8"/></svg>
+        Equipo
+      </a>
       <a href="consulta-publica.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M19.5 19.5 15 15"/></svg>
         Consulta pública
       </a>
     </nav>
-    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 8</div>
+    <div class="rail-foot">© 2026 Permisos Ambientales</div>
   </aside>
 
   <div class="main">
@@ -61,112 +66,67 @@
 
     <div class="content">
       <div class="content-head">
-        <h2 id="titulo-lista">Mis expedientes</h2>
-        <a href="expediente-nuevo.html" class="btn btn-brass" id="btnNuevo">+ Nuevo expediente</a>
+        <div>
+          <h2 id="titulo-lista">Mis expedientes</h2>
+          <p class="sub" id="lede-lista"></p>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <a href="/exportar/cartera.xlsx" class="btn btn-ghost" id="btnExportar" download>Exportar Excel</a>
+          <a href="expediente-nuevo.html" class="btn btn-brass" id="btnNuevo">+ Nuevo expediente</a>
+        </div>
       </div>
-      <div class="panel" style="padding: 15px; margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
-        <input type="text" id="buscador" placeholder="Buscar por código o proyecto..." style="flex: 1; padding: 10px; border: 1px solid var(--line); border-radius: 4px; font-family: inherit;">
-        
-        <select id="filtro-estado" style="padding: 10px; border: 1px solid var(--line); border-radius: 4px; font-family: inherit;">
-          <option value="">Todos los estados</option>
-          <option value="pendiente">Pendiente de documentos</option>
-          <option value="aprobado_interno">Aprobado internamente</option>
-          <option value="evaluacion">En evaluación (MiAmbiente)</option>
-          <option value="aprobado">Aprobado por MiAmbiente</option>
-        </select>
-      </div>
-      <p class="content-lede" id="lede-lista">Expedientes que gestionas actualmente, con su categoría de impacto y estado de trámite.</p>
 
-      <div class="panel" style="padding:0; overflow-x:auto;">
-        <table class="ledger compacta" style="margin:0; width:100%; table-layout:auto;">
-          <thead>
-            <tr>
-              <th style="padding-left:24px; white-space:nowrap;">Código</th>
-              <th>Proyecto</th>
-              <th>Promotor</th>
-              <th>Categoría</th>
-              <th class="col-consultor" style="display:none;">Consultor</th>
-              <th style="white-space:nowrap;">Estado</th>
-              <th style="white-space:nowrap;">Plazo</th>
-              <th style="white-space:nowrap;">Fecha</th>
-              <th style="white-space:nowrap;"></th>
-            </tr>
-          </thead>
-          <tbody id="tabla-expedientes"></tbody>
-        </table>
+      <div class="vista-tabs" role="tablist" aria-label="Vistas de los expedientes" id="tabs-vistas"></div>
+
+      <div class="herramientas" id="herramientas">
+        <div class="busqueda">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M19.5 19.5 15 15"/></svg>
+          <input type="search" id="buscador" placeholder="Buscar por código, proyecto o cliente" aria-label="Buscar expedientes">
+        </div>
+        <select id="filtro-estado" aria-label="Estado">
+          <option value="">Estado: todos</option>
+          <option value="pendiente">Pendiente de subsanación</option>
+          <option value="aprobado_interno" id="opt-aprobado-interno">Aprobado internamente</option>
+          <option value="evaluacion">En evaluación</option>
+          <option value="aprobado">Aprobado</option>
+          <option value="rechazado">Rechazado</option>
+        </select>
+        <select id="filtro-categoria" aria-label="Categoría">
+          <option value="">Categoría: todas</option>
+          <option value="I">Categoría I</option>
+          <option value="II">Categoría II</option>
+          <option value="III">Categoría III</option>
+        </select>
+        <select id="filtro-responsable" aria-label="Responsable" hidden></select>
+        <span id="control-agrupar" class="etiqueta-sel">
+          <select id="grupo" aria-label="Agrupar por">
+            <option value="">Agrupar: estado</option>
+            <option value="responsable" class="solo-interno">Agrupar: responsable</option>
+            <option value="categoria">Agrupar: categoría</option>
+            <option value="ninguno">Sin agrupar</option>
+          </select>
+        </span>
+        <select id="orden" aria-label="Ordenar">
+          <option value="">Orden: recientes</option>
+          <option value="plazo">Orden: por plazo</option>
+          <option value="ipe">Orden: por IPE</option>
+        </select>
+        <details id="menu-columnas" class="menu-columnas" hidden>
+          <summary class="btn btn-ghost">Columnas</summary>
+          <div class="menu-columnas-lista" id="lista-columnas"></div>
+        </details>
+        <span class="separador"></span>
+        <button type="button" class="btn btn-ghost" id="btn-guardar-vista" title="Guarda la vista actual para abrirla con un clic desde el menú">Guardar vista</button>
       </div>
+      <div class="vistas" id="vistas" aria-label="Vistas guardadas" hidden></div>
+
+      <div id="area-vista" aria-live="polite"></div>
+      <p class="panel-note" id="pie-lista" style="margin-top:12px;"></p>
     </div>
   </div>
 </div>
 
 <script src="js/api.js"></script>
-<script>
-let todosLosExpedientes = [];
-const jefe = esJefe();
-
-function renderTabla(expedientes) {
-  const tbody = document.getElementById('tabla-expedientes');
-  tbody.innerHTML = '';
-
-  if (expedientes.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" style="padding:24px; color:var(--ink-faint); text-align:center;">No se encontraron expedientes con esos filtros.</td></tr>';
-    return;
-  }
-
-  expedientes.forEach(e => {
-    tbody.innerHTML += `
-      <tr>
-        <td style="padding-left:24px; white-space:nowrap;"><span class="case-tag">${esc(e.codigo)}</span></td>
-        <td>${esc(e.proyecto)}</td>
-        <td>${esc(e.promotor)}</td>
-        <td>${fichaTier(e.categoria)}</td>
-        ${jefe ? `<td>${esc(e.consultor || '—')}</td>` : ''}
-        <td style="white-space:nowrap;"><span class="${claseEstado(e.estado)}">${textoEstado(e.estado)}</span></td>
-        <td style="white-space:nowrap;">${etiquetaPlazo(e.plazo)}</td>
-        <td style="white-space:nowrap; font-family:var(--mono); font-size:12.5px;">${esc(e.fecha_ingreso)}</td>
-        <td style="white-space:nowrap;"><a href="expediente-detalle.html?codigo=${encodeURIComponent(e.codigo)}">Ver →</a></td>
-      </tr>
-    `;
-  });
-}
-
-function aplicarFiltros() {
-  const texto = document.getElementById('buscador').value.toLowerCase();
-  const estado = document.getElementById('filtro-estado').value;
-
-  const filtrados = todosLosExpedientes.filter(e => {
-    const coincideTexto = e.codigo.toLowerCase().includes(texto) || e.proyecto.toLowerCase().includes(texto);
-    const coincideEstado = estado === '' || e.estado === estado;
-    return coincideTexto && coincideEstado;
-  });
-
-  renderTabla(filtrados);
-}
-
-const usuario = requireAuth();
-if (usuario) {
-  pintarTopbar();
-
-  if (esPromotor()) {
-    const btn = document.getElementById('btnNuevo');
-    if (btn) btn.style.display = 'none';
-  }
-
-  // HU-13: el jefe ve todos los expedientes de la consultora y de quién es cada uno.
-  if (jefe) {
-    document.getElementById('titulo-lista').textContent = 'Expedientes de la consultora';
-    document.getElementById('lede-lista').textContent =
-      'Todos los expedientes de la consultora, con su consultor, estado y plazo legal.';
-    document.querySelectorAll('.col-consultor').forEach(th => th.style.display = '');
-  }
-
-  document.getElementById('buscador').addEventListener('input', aplicarFiltros);
-  document.getElementById('filtro-estado').addEventListener('change', aplicarFiltros);
-
-  apiFetch('/expedientes').then(d => {
-    todosLosExpedientes = d.expedientes || [];
-    renderTabla(todosLosExpedientes);
-  }).catch(console.error);
-}</script>
+<script src="js/pag-expedientes.js"></script>
 </body>
 </html>

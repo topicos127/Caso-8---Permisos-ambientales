@@ -6,8 +6,9 @@
 <title>Detalle de expediente — Permisos Ambientales</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/estilos.css">
+<script src="js/interaccion.js"></script>
 </head>
 <body>
 <div class="shell">
@@ -21,7 +22,7 @@
           <circle cx="20" cy="20" r="2.2" fill="currentColor" stroke="none"/>
         </svg>
       </div>
-      <div><b>Permisos<br>Ambientales</b><span>Caso 8 · MiAmbiente</span></div>
+      <div><b>Permisos Ambientales</b><span>Expedientes ambientales</span></div>
     </div>
     <nav>
       <a href="dashboard.html">
@@ -40,12 +41,16 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
         Historial
       </a>
+      <a href="equipo.html" id="nav-equipo" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9.5" r="2.4"/><path d="M15.8 14.2c2.3.2 4 1.8 4.6 4.8"/></svg>
+        Equipo
+      </a>
       <a href="consulta-publica.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M19.5 19.5 15 15"/></svg>
         Consulta pública
       </a>
     </nav>
-    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 8</div>
+    <div class="rail-foot">© 2026 Permisos Ambientales</div>
   </aside>
 
   <div class="main">
@@ -67,115 +72,186 @@
       </div>
 
       <!-- LÍNEA DE TIEMPO (TIMELINE) -->
-      <div class="panel" id="panel-timeline" style="padding: 24px;">
-        <h3 style="margin-bottom: 20px;">Estado del trámite</h3>
-        <div style="display: flex; align-items: center; justify-content: space-between; position: relative;">
-          <div style="position: absolute; top: 15px; left: 0; width: 100%; height: 4px; background: #e8e1cf; z-index: 1;"></div>
-          <div style="position: relative; z-index: 2; text-align: center; width: 100px;">
-            <div id="step-creado" style="width: 34px; height: 34px; border-radius: 50%; background: #e8e1cf; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: bold; border: 2px solid white; box-shadow: 0 0 0 2px #e8e1cf;">1</div>
-            <div style="font-size: 12.5px; font-weight: 600; color: var(--ink-soft);">Creado</div>
-          </div>
-          <div style="position: relative; z-index: 2; text-align: center; width: 100px;">
-            <div id="step-interno" style="width: 34px; height: 34px; border-radius: 50%; background: #e8e1cf; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: bold; border: 2px solid white; box-shadow: 0 0 0 2px #e8e1cf;">2</div>
-            <div style="font-size: 12.5px; font-weight: 600; color: var(--ink-soft);">Aprobado internamente</div>
-          </div>
-          <div style="position: relative; z-index: 2; text-align: center; width: 100px;">
-            <div id="step-evaluacion" style="width: 34px; height: 34px; border-radius: 50%; background: #e8e1cf; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: bold; border: 2px solid white; box-shadow: 0 0 0 2px #e8e1cf;">3</div>
-            <div style="font-size: 12.5px; font-weight: 600; color: var(--ink-soft);">En evaluación</div>
-          </div>
-          <div style="position: relative; z-index: 2; text-align: center; width: 100px;">
-            <div id="step-aprobado" style="width: 34px; height: 34px; border-radius: 50%; background: #e8e1cf; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: bold; border: 2px solid white; box-shadow: 0 0 0 2px #e8e1cf;">4</div>
-            <div style="font-size: 12.5px; font-weight: 600; color: var(--ink-soft);">Aprobado por MiAmbiente</div>
-          </div>
-        </div>
+      <div class="panel" id="panel-timeline">
+        <h3 style="margin-bottom:16px;">Etapas del trámite</h3>
+        <ol class="etapas">
+          <li class="etapa"><div class="linea"><span class="punto" id="step-creado">1</span><span class="tramo"></span></div><span class="nombre">Creado</span></li>
+          <li class="etapa"><div class="linea"><span class="punto" id="step-interno">2</span><span class="tramo"></span></div><span class="nombre">Aprobado internamente</span></li>
+          <li class="etapa"><div class="linea"><span class="punto" id="step-evaluacion">3</span><span class="tramo"></span></div><span class="nombre">En evaluación</span></li>
+          <li class="etapa"><div class="linea"><span class="punto" id="step-aprobado">4</span><span class="tramo"></span></div><span class="nombre">Aprobado por MiAmbiente</span></li>
+        </ol>
       </div>
 
       <div class="panel" id="panel-resumen">
         <div class="fact-row">
           <div class="fact"><span class="k">ESTADO DEL TRÁMITE</span><span id="fact-estado"></span></div>
           <div class="fact"><span class="k">CATEGORÍA</span><span id="fact-categoria"></span></div>
-          <div class="fact"><span class="k">PROMOTOR</span><span class="v" id="fact-promotor"></span></div>
+          <div class="fact"><span class="k">CLIENTE</span><span class="v" id="fact-promotor"></span></div>
           <div class="fact"><span class="k">FECHA DE INGRESO</span><span class="v" id="fact-fecha"></span></div>
+          <div class="fact" id="fact-responsable-caja" style="display:none;"><span class="k">RESPONSABLE</span>
+            <span class="v responsable-fila" id="fact-responsable"></span></div>
         </div>
       </div>
 
-      <div class="panel" id="panel-docs">
-        <h3>Documentos del expediente</h3>
-        <p class="panel-note" id="panel-note-docs">
-          Haz click en una carpeta para subir el archivo correspondiente. Solo se aceptan archivos PDF y ZIP (máx. 20 MB).
-        </p>
+      <div class="bento">
+        <div class="col-main">
+          <div class="panel" id="panel-docs">
+            <h3>Documentos del expediente</h3>
+            <p class="panel-note" id="panel-note-docs">
+              Haz click en una carpeta para subir el archivo correspondiente. Solo se aceptan archivos PDF y ZIP (máx. 20 MB).
+            </p>
+            <div class="doc-field" id="campo-vencimiento" style="display:none; max-width:320px; margin:4px 0 0;">
+          <label for="input-vencimiento">Fecha de vencimiento del próximo archivo (opcional)</label>
+          <input type="date" id="input-vencimiento">
+          <span class="small">Si el documento vence (paz y salvo, certificados), anótela antes de subirlo. Sin fecha, se estima un año.</span>
+        </div>
         <ul class="checklist" id="lista-docs" style="margin-top:14px;"></ul>
-        <div id="upload-status" class="doc-msg" style="margin-top:14px;"></div>
-        <button type="button" id="btnZip" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line);">Descargar expediente completo (.zip)</button>
-        <button type="button" id="btnPdf" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line); margin-left: 8px;">Descargar resumen (PDF)</button>
-        <a id="link-historial" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line); margin-left: 8px; display:none;">Ver historial</a>
-      </div>
-
-      <div class="panel" id="panel-aprobacion">
-        <h3>Aprobación interna</h3>
-        <p class="panel-note" id="aprobacion-note">
-          El jefe de la consultora aprueba internamente el expediente antes de someterlo a MiAmbiente, cuando todos los documentos estén completos.
-        </p>
-
-        <div id="aprobacion-form" style="display:none;">
-          <div class="doc-field">
-            <label>Motivo de aprobación</label>
-            <textarea id="input-motivo" rows="3" placeholder="Ej. Documentación verificada y completa..."></textarea>
+            <div id="upload-status" class="doc-msg" style="margin-top:14px;"></div>
+            <button type="button" id="btnZip" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line);">Descargar expediente completo (.zip)</button>
+            <button type="button" id="btnPdf" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line); margin-left: 8px;">Descargar resumen (PDF)</button>
+            <a id="link-historial" class="btn btn-ghost mt-3" style="border:1.5px solid var(--line); margin-left: 8px; display:none;">Ver historial</a>
           </div>
-          <button class="btn btn-brass" id="btnAprobar">Aprobar internamente</button>
-        </div>
+          <div class="panel" id="panel-verificacion" style="display:none;">
+            <h3>Verificación de requisitos</h3>
+            <p class="panel-note" id="verif-resumen"></p>
+            <ul class="checklist" id="verif-lista" style="margin-top:14px;"></ul>
+            <div class="checklist-warn" id="verif-warn" style="display:none;">
+              El expediente no puede someterse a MiAmbiente mientras falten documentos obligatorios.
+            </div>
+            <div class="doc-msg" id="verif-ok" style="margin-top:14px;"></div>
+          </div>
+          <div class="panel" id="panel-aprobacion">
+            <h3>Aprobación interna</h3>
+            <p class="panel-note" id="aprobacion-note">
+              El director de proyectos aprueba internamente el expediente antes de someterlo a MiAmbiente, cuando todos los documentos estén completos.
+            </p>
 
-        <div id="aprobacion-aviso-faltantes" class="checklist-warn" style="display:none;">
-          No se puede aprobar internamente mientras falten documentos obligatorios.
-        </div>
+            <div id="aprobacion-form" style="display:none;">
+              <div class="doc-field">
+                <label>Motivo de aprobación</label>
+                <textarea id="input-motivo" rows="3" placeholder="Ej. Documentación verificada y completa..."></textarea>
+              </div>
+              <button class="btn btn-brass" id="btnAprobar">Aprobar internamente</button>
+            </div>
 
-        <div id="aprobacion-info"></div>
+            <!-- Sprint 10: el director de proyectos devuelve el expediente con lo que hay que corregir. -->
+            <div id="devolver-form" style="display:none; margin-top:18px; padding-top:16px; border-top:1px solid var(--line-soft);">
+              <div class="doc-field">
+                <label for="input-observaciones">Devolver al consultor con observaciones</label>
+                <textarea id="input-observaciones" rows="3" placeholder="Ej. Falta la firma del cliente en los Anexos Legales."></textarea>
+              </div>
+              <button type="button" class="btn btn-ghost" id="btnDevolver">Devolver con observaciones</button>
+            </div>
+            <div id="observaciones-lista" style="margin-top:14px;"></div>
 
-        <div id="aprobacion-btn-someter" style="display:none; margin-top:16px;">
-          <button class="btn btn-brass" id="btnSometer">Someter a MiAmbiente</button>
-        </div>
+            <div id="aprobacion-aviso-faltantes" class="checklist-warn" style="display:none;">
+              No se puede aprobar internamente mientras falten documentos obligatorios.
+            </div>
 
-        <div id="aprobacion-btn-simular" style="display:none; margin-top:16px;">
-          <button class="btn btn-brass" id="btnSimularMiAmbiente">Simular aprobación de MiAmbiente</button>
-        </div>
+            <div id="aprobacion-info"></div>
 
-        <div id="aprobacion-completa" style="display:none; margin-top:16px; padding:12px; background:var(--status-ok-bg); border-left:3px solid var(--status-ok);">
-          <strong style="color:var(--status-ok);">✅ Expediente aprobado por MiAmbiente.</strong>
-          <p style="font-size:13.5px; margin-top:4px;">El permiso está listo.</p>
-        </div>
-      </div>
+            <div id="aprobacion-btn-someter" style="display:none; margin-top:16px;">
+              <button class="btn btn-brass" id="btnSometer">Someter a MiAmbiente</button>
+            </div>
 
-      <div class="panel" id="panel-plazos" style="display:none;">
-        <h3>Plazo legal de respuesta</h3>
-        <p class="panel-note">Según la Ley 41 de 1998, MiAmbiente tiene un plazo máximo de respuesta según la categoría del proyecto.</p>
-        <div style="margin-top:16px;">
-          <div class="fact-row">
-            <div class="fact"><span class="k">CATEGORÍA</span><span class="v" id="plazo-categoria">—</span></div>
-            <div class="fact"><span class="k">DÍAS TRANSCURRIDOS</span><span class="v" id="plazo-transcurridos">—</span></div>
-            <div class="fact"><span class="k">DÍAS RESTANTES</span><span class="v" id="plazo-restantes">—</span></div>
-            <div class="fact"><span class="k">ESTADO</span><span id="plazo-estado">—</span></div>
+            <!-- Sprint 10: resolucion real de MiAmbiente (antes era un boton simulado). -->
+            <div id="aprobacion-btn-simular" style="display:none; margin-top:16px;">
+              <h4 style="margin-bottom:10px;">Registrar la resolución de MiAmbiente</h4>
+              <div class="doc-field-row">
+                <div class="doc-field">
+                  <label for="res-resultado">Resultado</label>
+                  <select id="res-resultado">
+                    <option value="aprobado">Aprobado</option>
+                    <option value="rechazado">Rechazado</option>
+                  </select>
+                </div>
+                <div class="doc-field">
+                  <label for="res-numero">Número de resolución</label>
+                  <input type="text" id="res-numero" maxlength="60" placeholder="Ej. DEIA-IA-123-2026">
+                </div>
+              </div>
+              <div class="doc-field" style="max-width:260px;">
+                <label for="res-fecha">Fecha de la resolución</label>
+                <input type="date" id="res-fecha">
+              </div>
+              <button class="btn btn-brass" id="btnResolucion">Registrar resolución</button>
+            </div>
+
+            <div id="aprobacion-completa" style="display:none; margin-top:16px; padding:14px; background:var(--status-ok-bg); border-radius:12px;">
+              <strong style="color:var(--status-ok); display:inline-flex; align-items:center; gap:8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>Expediente aprobado por MiAmbiente.</strong>
+              <p style="font-size:13.5px; margin-top:4px;" id="resolucion-aprobado">El permiso está listo.</p>
+            </div>
+
+            <div id="aprobacion-rechazada" style="display:none; margin-top:16px; padding:14px; background:var(--status-bad-bg); border-radius:12px;">
+              <strong style="color:var(--status-bad);">MiAmbiente rechazó el expediente.</strong>
+              <p style="font-size:13.5px; margin-top:4px;" id="resolucion-rechazado"></p>
+            </div>
+          </div>
+          <div class="panel" id="panel-comentarios" style="display:none;">
+            <h3>Comentarios internos</h3>
+            <p class="panel-note">Solo los ve el equipo de la consultora; el cliente no tiene acceso.</p>
+            <form id="form-comentario">
+              <div class="doc-field">
+                <label for="texto-comentario">Nuevo comentario</label>
+                <textarea id="texto-comentario" rows="3" maxlength="1000" placeholder="Ej. Falta el paz y salvo del municipio; lo pide el cliente el viernes."></textarea>
+              </div>
+              <button type="submit" class="btn btn-brass">Publicar comentario</button>
+            </form>
+            <div id="lista-comentarios" style="margin-top:16px;"></div>
           </div>
         </div>
-        <div style="margin-top:20px;">
-          <div style="height:10px; background:#e8e1cf; border-radius:5px; overflow:hidden;">
-            <div id="plazo-barra" style="height:100%; width:0%; background:#2e7d4f; transition:width 0.5s;"></div>
+        <div class="col-side">
+          <div class="panel" id="panel-ipe" style="display:none;">
+            <div class="panel-head"><h3>Índice de Preparación</h3></div>
+            <div id="ipe-valor" style="margin-top:10px;"></div>
+            <div class="factores">
+              <div class="factor" id="ipe-documentos"></div>
+              <div class="factor" id="ipe-plazo"></div>
+              <div class="factor" id="ipe-vigencia"></div>
+            </div>
+            <h4 style="margin-top:18px;">Próximas acciones</h4>
+            <ul class="acciones-ipe" id="ipe-acciones"></ul>
           </div>
-          <div style="display:flex; justify-content:space-between; margin-top:6px; font-family:var(--mono); font-size:11px; color:var(--ink-faint);">
-            <span>Ingreso</span>
-            <span>Plazo máximo</span>
+          <div class="panel" id="panel-plazos" style="display:none;">
+            <h3>Plazo legal de respuesta</h3>
+            <p class="panel-note">Según la Ley 41 de 1998, MiAmbiente tiene un plazo máximo de respuesta según la categoría del proyecto.</p>
+            <div style="margin-top:16px;">
+              <div class="fact-row">
+                <div class="fact"><span class="k">CATEGORÍA</span><span class="v" id="plazo-categoria">—</span></div>
+                <div class="fact"><span class="k">DÍAS TRANSCURRIDOS</span><span class="v" id="plazo-transcurridos">—</span></div>
+                <div class="fact"><span class="k">DÍAS RESTANTES</span><span class="v" id="plazo-restantes">—</span></div>
+                <div class="fact"><span class="k">ESTADO</span><span id="plazo-estado">—</span></div>
+              </div>
+            </div>
+            <div style="margin-top:20px;">
+              <div class="plazo-barra">
+                <div id="plazo-barra" style="width:0%; background:#1f9d67;"></div>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:12px; color:var(--ink-faint);">
+                <span id="plazo-desde">Ingreso</span>
+                <span>Plazo máximo</span>
+              </div>
+              <p class="panel-note" id="plazo-nota" style="margin-top:10px;"></p>
+              <!-- Innovacion del Sprint 10: el limite legal y los vencimientos en su calendario. -->
+              <a id="link-calendario" class="btn btn-ghost" style="width:100%;" download>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                Agregar a mi calendario (.ics)
+              </a>
+              <p class="small" style="margin-top:8px;">Para Google Calendar u Outlook: el límite legal y el vencimiento de cada documento, con recordatorio.</p>
+            </div>
           </div>
-          <p class="panel-note" id="plazo-nota" style="margin-top:10px;"></p>
+          <div class="panel" id="panel-acceso" style="display:none;">
+            <h3>Acceso público y cuenta del cliente</h3>
+            <p class="panel-note" id="acceso-estado"></p>
+            <button type="button" class="btn btn-ghost mt-3" id="btnAcceso" style="border:1.5px solid var(--line); display:none;"></button>
+            <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--line);">
+              <p class="panel-note" id="promotor-nota"></p>
+              <button type="button" class="btn btn-brass mt-3" id="btnCuentaPromotor" style="display:none;">Crear acceso del cliente</button>
+              <button type="button" class="btn btn-ghost mt-3" id="btnResetPromotor" style="display:none; border:1.5px solid var(--line);">Restablecer contraseña del cliente</button>
+              <div id="promotor-resultado" class="doc-msg" style="margin-top:12px;"></div>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div class="panel" id="panel-verificacion" style="display:none;">
-        <h3>Verificación de requisitos</h3>
-        <p class="panel-note" id="verif-resumen"></p>
-        <ul class="checklist" id="verif-lista" style="margin-top:14px;"></ul>
-        <div class="checklist-warn" id="verif-warn" style="display:none;">
-          El expediente no puede someterse a MiAmbiente mientras falten documentos obligatorios.
-        </div>
-        <div class="doc-msg" id="verif-ok" style="margin-top:14px;"></div>
       </div>
 
     </div>
@@ -185,574 +261,6 @@
 <script src="js/lib/jszip.min.js"></script>
 <script src="js/lib/jspdf.umd.min.js"></script>
 <script src="js/api.js"></script>
-<script>
-const usuario = requireAuth();
-if (usuario) {
-  pintarTopbar();
-
-  const params = new URLSearchParams(window.location.search);
-  const codigo = params.get('codigo') || 'SP-A8-2026-001';
-  const esPromotorUsuario = esPromotor();
-
-  // HU-14: el jefe y los consultores ven el historial; el promotor no.
-  if (!esPromotorUsuario) {
-    const linkHistorial = document.getElementById('link-historial');
-    linkHistorial.href = 'historial.html?codigo=' + encodeURIComponent(codigo);
-    linkHistorial.style.display = 'inline-block';
-  }
-
-  let estadoExpedienteActual = 'pendiente';
-
-  const CARPETAS_POR_CAT_LOCAL = {
-    "I":   ["Línea Base", "Plan de Manejo", "Anexos Legales"],
-    "II":  ["Línea Base", "Plan de Manejo", "Anexos Legales", "Cartografía"],
-    "III": ["Línea Base", "Plan de Manejo", "Anexos Legales", "Cartografía", "Evidencia Foro Público"],
-  };
-
-  function mensaje(texto, tipo) {
-    const el = document.getElementById('upload-status');
-    el.textContent = texto;
-    el.className = 'doc-msg show ' + (tipo === 'error' ? 'error' : 'ok');
-    if (!texto) el.className = 'doc-msg';
-  }
-
-  function formatearTamano(bytes) {
-    if (!bytes) return '';
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / 1024 / 1024).toFixed(1) + ' MB';
-  }
-
-  function renderDocumentos(docs) {
-    const ul = document.getElementById('lista-docs');
-    ul.innerHTML = '';
-
-    docs.forEach(doc => {
-      const recibido = doc.estado === 'recibido' && doc.archivo_nombre;
-      const editable = estadoExpedienteActual === 'pendiente' && !esPromotorUsuario;
-
-      const li = document.createElement('li');
-      li.style.display = 'block';
-      li.style.padding = '14px 0';
-
-      const header = document.createElement('div');
-      header.style.display = 'flex';
-      header.style.alignItems = 'center';
-      header.style.justifyContent = 'space-between';
-      header.style.gap = '14px';
-
-      const nombre = document.createElement('span');
-      nombre.className = 'name';
-      nombre.textContent = doc.carpeta;
-
-      const acciones = document.createElement('div');
-      acciones.style.display = 'flex';
-      acciones.style.gap = '8px';
-      acciones.style.alignItems = 'center';
-
-      if (recibido) {
-        const tagOk = document.createElement('span');
-        tagOk.className = 'tag-ok';
-        tagOk.textContent = 'Recibido';
-        acciones.appendChild(tagOk);
-
-        const btnDesc = document.createElement('a');
-        btnDesc.className = 'btn btn-ghost';
-        btnDesc.style.padding = '6px 12px';
-        btnDesc.style.fontSize = '12.5px';
-        btnDesc.style.border = '1px solid var(--line)';
-        btnDesc.textContent = 'Descargar';
-        btnDesc.href = `/expedientes/${codigo}/documentos/${encodeURIComponent(doc.carpeta)}/descargar`;
-        btnDesc.setAttribute('download', doc.archivo_nombre);
-        btnDesc.addEventListener('click', async (ev) => {
-          ev.preventDefault();
-          try {
-            const resp = await fetch(btnDesc.href, {
-              headers: cabecerasApi(),
-              credentials: 'same-origin'
-            });
-            if (!resp.ok) {
-              mensaje('No se pudo descargar el archivo.', 'error');
-              return;
-            }
-            const blob = await resp.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = doc.archivo_nombre;
-            a.click();
-            URL.revokeObjectURL(url);
-          } catch (e) {
-            mensaje('Error de red al descargar.', 'error');
-          }
-        });
-        acciones.appendChild(btnDesc);
-
-        if (editable) {
-          const inputReempl = document.createElement('input');
-          inputReempl.type = 'file';
-          inputReempl.accept = '.pdf,.zip';
-          inputReempl.style.display = 'none';
-          inputReempl.addEventListener('change', () => subirArchivo(doc.carpeta, inputReempl));
-
-          const btnReemp = document.createElement('button');
-          btnReemp.className = 'btn btn-ghost';
-          btnReemp.style.padding = '6px 12px';
-          btnReemp.style.fontSize = '12.5px';
-          btnReemp.style.border = '1px solid var(--line)';
-          btnReemp.textContent = 'Reemplazar';
-          btnReemp.addEventListener('click', () => inputReempl.click());
-
-          acciones.appendChild(btnReemp);
-          acciones.appendChild(inputReempl);
-
-          const btnElim = document.createElement('button');
-          btnElim.className = 'btn btn-ghost';
-          btnElim.style.padding = '6px 12px';
-          btnElim.style.fontSize = '12.5px';
-          btnElim.style.border = '1px solid var(--status-bad)';
-          btnElim.style.color = 'var(--status-bad)';
-          btnElim.textContent = 'Eliminar';
-          btnElim.addEventListener('click', async () => {
-            if (!confirm(`¿Eliminar el archivo de "${doc.carpeta}"?`)) return;
-            try {
-              const resp = await fetch(
-                `/expedientes/${codigo}/documentos/${encodeURIComponent(doc.carpeta)}/eliminar`,
-                {
-                  method: 'POST',
-                  headers: cabecerasApi(),
-                  credentials: 'same-origin'
-                }
-              );
-              const data = await resp.json();
-              if (data.ok) {
-                mensaje(`✔ Archivo eliminado de "${doc.carpeta}".`, 'ok');
-                await cargarExpediente();
-              } else {
-                mensaje(data.mensaje || 'Error al eliminar.', 'error');
-              }
-            } catch (err) {
-              mensaje('Error de red al eliminar.', 'error');
-            }
-          });
-          acciones.appendChild(btnElim);
-        }
-      } else {
-        const tagMissing = document.createElement('span');
-        tagMissing.className = 'tag-missing';
-        tagMissing.textContent = 'Pendiente';
-        acciones.appendChild(tagMissing);
-
-        if (editable) {
-          const inputSubir = document.createElement('input');
-          inputSubir.type = 'file';
-          inputSubir.accept = '.pdf,.zip';
-          inputSubir.style.display = 'none';
-          inputSubir.addEventListener('change', () => subirArchivo(doc.carpeta, inputSubir));
-
-          const btnSubir = document.createElement('button');
-          btnSubir.className = 'btn btn-brass';
-          btnSubir.style.padding = '6px 12px';
-          btnSubir.style.fontSize = '12.5px';
-          btnSubir.textContent = 'Subir archivo';
-          btnSubir.addEventListener('click', () => inputSubir.click());
-
-          acciones.appendChild(btnSubir);
-          acciones.appendChild(inputSubir);
-        }
-      }
-
-      header.appendChild(nombre);
-      header.appendChild(acciones);
-      li.appendChild(header);
-
-      if (recibido && doc.archivo_nombre) {
-        const info = document.createElement('div');
-        info.style.fontFamily = 'var(--mono)';
-        info.style.fontSize = '11.5px';
-        info.style.color = 'var(--ink-faint)';
-        info.style.marginTop = '6px';
-        info.textContent = `↳ ${doc.archivo_nombre}${doc.archivo_tamano ? ' · ' + formatearTamano(doc.archivo_tamano) : ''}${doc.fecha_subida ? ' · ' + doc.fecha_subida : ''}`;
-        li.appendChild(info);
-      }
-
-      ul.appendChild(li);
-    });
-  }
-
-  function renderVerificacion(verif) {
-    const panel = document.getElementById('panel-verificacion');
-    const resumen = document.getElementById('verif-resumen');
-    const lista = document.getElementById('verif-lista');
-    const warn = document.getElementById('verif-warn');
-    const ok = document.getElementById('verif-ok');
-
-    panel.style.display = 'block';
-    lista.innerHTML = '';
-
-    resumen.innerHTML = `<span class="tier"><b>${esc(verif.categoria)}</b> ${esc(verif.completos)} de ${esc(verif.total_requeridos)} documentos obligatorios completos</span>`;
-
-    const requeridos = CARPETAS_POR_CAT_LOCAL[verif.categoria] || [];
-    requeridos.forEach(carpeta => {
-      const completo = !verif.faltantes.includes(carpeta);
-      lista.innerHTML += `
-        <li>
-          <span class="name">${carpeta}</span>
-          <span class="${completo ? 'tag-ok' : 'tag-missing'}">${completo ? 'Completo' : 'Falta'}</span>
-        </li>
-      `;
-    });
-
-    if (verif.puede_someter) {
-      warn.style.display = 'none';
-      ok.className = 'doc-msg show ok';
-      ok.textContent = '✔ Todos los documentos obligatorios están completos.';
-    } else {
-      warn.style.display = 'block';
-      ok.className = 'doc-msg';
-      ok.textContent = '';
-    }
-  }
-
-  async function renderAprobacion(estado, verif) {
-    const panel = document.getElementById('panel-aprobacion');
-    const note = document.getElementById('aprobacion-note');
-    const formDiv = document.getElementById('aprobacion-form');
-    const avisoFaltantes = document.getElementById('aprobacion-aviso-faltantes');
-    const infoDiv = document.getElementById('aprobacion-info');
-    const btnSometerDiv = document.getElementById('aprobacion-btn-someter');
-    const btnSimularDiv = document.getElementById('aprobacion-btn-simular');
-    const completaDiv = document.getElementById('aprobacion-completa');
-
-    formDiv.style.display = 'none';
-    avisoFaltantes.style.display = 'none';
-    infoDiv.innerHTML = '';
-    btnSometerDiv.style.display = 'none';
-    btnSimularDiv.style.display = 'none';
-    completaDiv.style.display = 'none';
-
-    if (esPromotorUsuario) {
-      if (estado === 'pendiente') {
-        note.textContent = 'El consultor aún no ha completado los documentos.';
-      } else if (estado === 'aprobado_interno') {
-        note.textContent = 'El expediente fue aprobado internamente. Pronto será sometido a MiAmbiente.';
-      } else if (estado === 'evaluacion') {
-        note.textContent = 'El expediente está en evaluación por MiAmbiente.';
-      } else if (estado === 'aprobado') {
-        note.textContent = 'El expediente fue aprobado por MiAmbiente.';
-        completaDiv.style.display = 'block';
-      }
-      await cargarRegistroAprobaciones(infoDiv);
-      return;
-    }
-
-    if (estado === 'pendiente') {
-      if (verif && verif.puede_someter && esJefe()) {
-        note.textContent = 'Todos los documentos están completos. Puedes aprobar internamente el expediente.';
-        formDiv.style.display = 'block';
-      } else if (verif && verif.puede_someter) {
-        // HU-13: la aprobación interna es solo del jefe de la consultora.
-        note.textContent = 'Todos los documentos están completos. Falta la aprobación interna del jefe de la consultora.';
-      } else {
-        note.textContent = 'Aprueba internamente el expediente antes de someterlo a MiAmbiente.';
-        avisoFaltantes.style.display = 'block';
-      }
-    } else if (estado === 'aprobado_interno') {
-      note.innerHTML = '<span style="color:var(--status-ok);">✔ Expediente aprobado internamente.</span> Listo para someter a MiAmbiente.';
-      btnSometerDiv.style.display = 'block';
-      await cargarRegistroAprobaciones(infoDiv);
-    } else if (estado === 'evaluacion') {
-      note.textContent = 'El expediente fue sometido a MiAmbiente. Está en evaluación.';
-      btnSimularDiv.style.display = 'block';
-      await cargarRegistroAprobaciones(infoDiv);
-    } else if (estado === 'aprobado') {
-      note.textContent = 'Expediente aprobado por MiAmbiente.';
-      completaDiv.style.display = 'block';
-      await cargarRegistroAprobaciones(infoDiv);
-    }
-  }
-
-  async function cargarRegistroAprobaciones(infoDiv) {
-    try {
-      const ap = await apiFetch('/expedientes/' + codigo + '/aprobaciones');
-      if (ap.aprobaciones && ap.aprobaciones.length) {
-        infoDiv.innerHTML = ap.aprobaciones.map(a =>
-          `<div style="margin-top:10px; padding:12px; background:var(--paper); border-left:3px solid var(--status-ok);">
-            <div style="font-family:var(--mono); font-size:11px; color:var(--ink-faint);">${esc(a.fecha)} · ${esc(a.aprobado_por_nombre || 'Usuario')}</div>
-            <div style="margin-top:4px; font-size:14px;">${esc(a.motivo)}</div>
-          </div>`
-        ).join('');
-      }
-    } catch (err) { /* ignorar */ }
-  }
-
-  // HU-07: el backend decide el estado del semaforo (en_plazo, por_vencer,
-  // vencido o resuelto) y el limite de la categoria. Aqui solo se pinta.
-  const SEMAFORO = {
-    en_plazo:   { clase: 'status status-ok',   texto: 'En plazo',   color: '#2e7d4f' },
-    por_vencer: { clase: 'status status-warn', texto: 'Por vencer', color: '#b3812f' },
-    vencido:    { clase: 'status status-bad',  texto: 'Vencido',    color: '#a23b2e' },
-    resuelto:   { clase: 'status status-info', texto: 'Resuelto',   color: '#8a8478' },
-  };
-
-  function renderPlazos(alertas) {
-    const panel = document.getElementById('panel-plazos');
-    panel.style.display = 'block';
-
-    const sem = SEMAFORO[alertas.estado_semaforo] || SEMAFORO.en_plazo;
-    const resuelto = alertas.estado_semaforo === 'resuelto';
-    const limite = alertas.limite_dias;
-
-    document.getElementById('plazo-categoria').innerHTML = fichaTier(alertas.categoria);
-    document.getElementById('plazo-transcurridos').textContent =
-      resuelto ? '—' : alertas.dias_transcurridos + ' días';
-    document.getElementById('plazo-restantes').textContent =
-      resuelto ? '—' : alertas.dias_restantes_legales + ' días';
-    document.getElementById('plazo-estado').innerHTML = `<span class="${sem.clase}">${sem.texto}</span>`;
-
-    const nota = document.getElementById('plazo-nota');
-    if (nota) {
-      nota.textContent = resuelto
-        ? 'El expediente ya fue resuelto: el plazo dejó de correr.'
-        : `Plazo de ${limite} días. Se marca "Por vencer" cuando quedan ${alertas.umbral_por_vencer} días o menos.`;
-    }
-
-    const barra = document.getElementById('plazo-barra');
-    const porcentaje = resuelto
-      ? 100
-      : Math.min(100, Math.max(0, (alertas.dias_transcurridos / limite) * 100));
-    barra.style.background = sem.color;
-    barra.style.width = porcentaje + '%';
-  }
-
-  async function cargarExpediente() {
-    try {
-      const d = await apiFetch('/expedientes/' + codigo);
-      const e = d.expediente;
-
-      estadoExpedienteActual = e.estado;
-
-      document.getElementById('titulo-exp').innerHTML =
-        `<span class="case-tag" style="font-size:16px; margin-right:10px; vertical-align:2px;">${esc(e.codigo)}</span>${esc(e.proyecto)}`;
-      document.getElementById('fact-estado').innerHTML =
-        `<span class="${claseEstado(e.estado)}">${textoEstado(e.estado)}</span>`;
-      document.getElementById('fact-categoria').innerHTML = fichaTier(e.categoria);
-      document.getElementById('fact-promotor').textContent = e.promotor;
-      document.getElementById('fact-fecha').textContent = e.fecha_ingreso;
-
-      // Pintar la Línea de Tiempo (Timeline)
-      const pasos = {
-        'pendiente': ['step-creado'],
-        'aprobado_interno': ['step-creado', 'step-interno'],
-        'evaluacion': ['step-creado', 'step-interno', 'step-evaluacion'],
-        'aprobado': ['step-creado', 'step-interno', 'step-evaluacion', 'step-aprobado']
-      };
-      
-      const pasosActivos = pasos[e.estado] || ['step-creado'];
-      pasosActivos.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-          el.style.background = '#b3812f'; // Color bronce
-          el.style.boxShadow = '0 0 0 2px #b3812f';
-        }
-      });
-
-      renderDocumentos(d.documentos);
-
-      if (d.verificacion) {
-        renderVerificacion(d.verificacion);
-      }
-
-      await renderAprobacion(e.estado, d.verificacion);
-
-      try {
-        const alertas = await apiFetch('/expedientes/' + codigo + '/alertas');
-        renderPlazos(alertas);
-      } catch (err) {
-        console.error('Error al cargar plazos:', err);
-      }
-
-      if (esPromotorUsuario) {
-        document.getElementById('panel-note-docs').textContent =
-          'Consulta el estado de los documentos y descarga los que ya fueron subidos.';
-      }
-    } catch (e) {
-      const panels = ['panel-resumen', 'panel-docs', 'panel-aprobacion', 'panel-verificacion', 'panel-plazos', 'panel-timeline'];
-      panels.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.style.display = 'none';
-      });
-
-      const panelDenegado = document.getElementById('panel-denegado');
-      if (panelDenegado) panelDenegado.style.display = 'block';
-
-      document.getElementById('titulo-exp').textContent = 'Expediente no disponible';
-    }
-  }
-
-  async function subirArchivo(carpeta, input) {
-    if (!input.files || !input.files[0]) return;
-    const archivo = input.files[0];
-
-    const ext = archivo.name.split('.').pop().toLowerCase();
-    if (!['pdf', 'zip'].includes(ext)) {
-      mensaje('Solo se aceptan archivos PDF y ZIP.', 'error');
-      input.value = '';
-      return;
-    }
-
-    if (archivo.size > 20 * 1024 * 1024) {
-      mensaje('El archivo supera el límite de 20 MB.', 'error');
-      input.value = '';
-      return;
-    }
-
-    mensaje(`Subiendo ${archivo.name}...`, 'ok');
-
-    const formData = new FormData();
-    formData.append('archivo', archivo);
-
-    try {
-      const resp = await fetch(
-        `/expedientes/${codigo}/documentos/${encodeURIComponent(carpeta)}/subir`,
-        {
-          method: 'POST',
-          headers: cabecerasApi(),
-          credentials: 'same-origin',
-          body: formData,
-        }
-      );
-      const data = await resp.json();
-
-      if (data.ok) {
-        mensaje(`✔ ${data.archivo_nombre} subido correctamente.`, 'ok');
-        await cargarExpediente();
-      } else {
-        mensaje(data.mensaje || 'Error al subir el archivo.', 'error');
-      }
-    } catch (err) {
-      mensaje('Error de red al subir el archivo.', 'error');
-    } finally {
-      input.value = '';
-    }
-  }
-
-  document.getElementById('btnZip').addEventListener('click', async () => {
-    try {
-      const resp = await fetch(`/expedientes/${codigo}/descargar-todo`, {
-        headers: cabecerasApi(),
-        credentials: 'same-origin'
-      });
-      if (!resp.ok) {
-        mensaje('No se pudo descargar el expediente.', 'error');
-        return;
-      }
-      const blob = await resp.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = codigo + '_completo.zip';
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      mensaje('Error al descargar el ZIP.', 'error');
-    }
-  });
-
-  document.getElementById('btnPdf').addEventListener('click', async () => {
-    try {
-      const d = await apiFetch('/expedientes/' + codigo);
-      const e = d.expediente;
-      const docs = d.documentos;
-
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(18);
-      doc.text("Resumen de Expediente", 20, 25);
-      
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "normal");
-      
-      doc.text("Codigo: " + e.codigo, 20, 40);
-      doc.text("Proyecto: " + e.proyecto, 20, 50);
-      doc.text("Promotor: " + e.promotor, 20, 60);
-      doc.text("Categoria: " + e.categoria, 20, 70);
-      doc.text("Estado: " + textoEstado(e.estado), 20, 80);
-      doc.text("Fecha de Ingreso: " + e.fecha_ingreso, 20, 90);
-
-      doc.setFont("helvetica", "bold");
-      doc.text("Documentos del expediente:", 20, 105);
-      
-      doc.setFont("helvetica", "normal");
-      let y = 115;
-      docs.forEach(docItem => {
-        const estadoDoc = docItem.estado === 'recibido' ? "Recibido" : "Pendiente";
-        doc.text("- " + docItem.carpeta + ": " + estadoDoc, 20, y);
-        y += 10;
-      });
-
-      doc.save(e.codigo + '-resumen.pdf');
-    } catch (err) {
-      mensaje('Error al generar el PDF.', 'error');
-    }
-  });
-
-  const btnAprobar = document.getElementById('btnAprobar');
-  if (btnAprobar) {
-    btnAprobar.addEventListener('click', async () => {
-      const motivo = document.getElementById('input-motivo').value.trim();
-      if (!motivo) { mostrarToast('Escribe un motivo.', 'error'); return; }
-      const r = await apiFetch(`/expedientes/${codigo}/aprobar`, {
-        method: 'POST',
-        body: JSON.stringify({ motivo })
-      });
-      if (r.ok) {
-        mostrarToast('Expediente aprobado internamente.', 'exito');
-        setTimeout(() => location.reload(), 1500);
-      } else {
-        mostrarToast(r.mensaje || 'Error al aprobar.', 'error');
-      }
-    });
-  }
-
-  const btnSometer = document.getElementById('btnSometer');
-  if (btnSometer) {
-    btnSometer.addEventListener('click', async () => {
-      if (!confirm('¿Confirmas que quieres someter este expediente a MiAmbiente?')) return;
-      const r = await apiFetch(`/expedientes/${codigo}/someter`, {
-        method: 'POST',
-        body: JSON.stringify({})
-      });
-      if (r.ok) {
-        mostrarToast('Expediente sometido a MiAmbiente.', 'exito');
-        setTimeout(() => location.reload(), 1500);
-      } else {
-        mostrarToast(r.mensaje || 'Error al someter.', 'error');
-      }
-    });
-  }
-
-  const btnSimularMiAmbiente = document.getElementById('btnSimularMiAmbiente');
-  if (btnSimularMiAmbiente) {
-    btnSimularMiAmbiente.addEventListener('click', async () => {
-      if (!confirm('¿Simular que MiAmbiente aprobó el expediente?')) return;
-      const r = await apiFetch(`/expedientes/${codigo}/aprobar-miambiente`, {
-        method: 'POST',
-        body: JSON.stringify({})
-      });
-      if (r.ok) {
-        mostrarToast('Expediente aprobado por MiAmbiente.', 'exito');
-        setTimeout(() => location.reload(), 1500);
-      } else {
-        mostrarToast(r.mensaje || 'Error al aprobar.', 'error');
-      }
-    });
-  }
-
-  cargarExpediente();
-}
-</script>
+<script src="js/pag-expediente-detalle.js"></script>
 </body>
 </html>

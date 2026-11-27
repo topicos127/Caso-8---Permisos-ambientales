@@ -6,8 +6,9 @@
 <title>Panel — Permisos Ambientales</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/estilos.css">
+<script src="js/interaccion.js"></script>
 </head>
 <body>
 <div class="shell">
@@ -21,7 +22,7 @@
           <circle cx="20" cy="20" r="2.2" fill="currentColor" stroke="none"/>
         </svg>
       </div>
-      <div><b>Permisos<br>Ambientales</b><span>Caso 8 · MiAmbiente</span></div>
+      <div><b>Permisos Ambientales</b><span>Expedientes ambientales</span></div>
     </div>
     <nav>
       <a href="dashboard.html" class="active">
@@ -40,12 +41,16 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
         Historial
       </a>
+      <a href="equipo.html" id="nav-equipo" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9.5" r="2.4"/><path d="M15.8 14.2c2.3.2 4 1.8 4.6 4.8"/></svg>
+        Equipo
+      </a>
       <a href="consulta-publica.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M19.5 19.5 15 15"/></svg>
         Consulta pública
       </a>
     </nav>
-    <div class="rail-foot">SEMESTRE II · 2026<br>Sprint 8</div>
+    <div class="rail-foot">© 2026 Permisos Ambientales</div>
   </aside>
 
   <div class="main">
@@ -56,70 +61,96 @@
 
     <div class="content">
       <div class="content-head">
-        <h2>Panel principal</h2>
+        <div>
+          <span class="eyebrow" id="fecha-hoy"></span>
+          <h2 id="saludo">Panel principal</h2>
+          <p class="sub">Esto es lo que necesita atención hoy.</p>
+        </div>
+        <a href="expediente-nuevo.html" class="btn" id="btn-nuevo-panel">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          Nuevo expediente
+        </a>
+      </div>
+
+      <!-- Guia de primeros pasos: se oculta sola cuando todo esta hecho. -->
+      <div class="panel primeros-pasos" id="panel-primeros-pasos" hidden>
+        <div class="panel-head">
+          <div>
+            <h3>Primeros pasos</h3>
+            <p class="panel-note" style="margin:0;" id="pasos-resumen"></p>
+          </div>
+          <button type="button" class="btn btn-ghost" id="btn-ocultar-pasos" style="border:1.5px solid var(--line);">Ocultar guía</button>
+        </div>
+        <ol id="lista-pasos"></ol>
       </div>
 
       <div class="stat-row">
-        <div class="stat"><div class="num">—</div><div class="lbl">Expedientes activos</div></div>
-        <div class="stat"><div class="num">—</div><div class="lbl">Pendiente de documentos</div></div>
-        <div class="stat"><div class="num">—</div><div class="lbl">Alertas próximas</div></div>
-        <div class="stat"><div class="num">—</div><div class="lbl">Aprobados por MiAmbiente</div></div>
+        <div class="stat"><div class="top"><span class="lbl">Expedientes</span><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span></div><div class="num">—</div></div>
+        <div class="stat aviso"><div class="top"><span class="lbl">Pendientes de subsanación</span><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 7v5h5"/></svg></span></div><div class="num">—</div></div>
+        <div class="stat info" id="stat-alertas"><div class="top"><span class="lbl">Documentos por vencer</span><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 12v4M12 18.5h.01"/></svg></span></div><div class="num">—</div></div>
+        <div class="stat"><div class="top"><span class="lbl">Aprobados por MiAmbiente</span><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg></span></div><div class="num">—</div></div>
       </div>
 
-      <div class="panel">
-        <h3>Actividad reciente</h3>
-        <p class="panel-note">Últimos movimientos sobre tus expedientes.</p>
-        <ul class="reg-list" id="lista-recientes"></ul>
+      <div class="widgets" id="widgets" hidden></div>
+
+      <!-- Aviso en pantalla cuando un plazo entra en "por vencer" o vence. -->
+      <div class="panel" id="panel-avisos-plazo" style="display:none; border-color:#f2ddb5; background:#fffcf6;">
+        <div class="panel-head">
+          <div>
+            <h3>Avisos de plazo</h3>
+            <p class="panel-note" style="margin:0;">Expedientes cuyo plazo está por vencer o ya venció.</p>
+          </div>
+        </div>
+        <ul class="reg-list" id="lista-avisos-plazo" style="margin-top:8px;"></ul>
       </div>
 
-      <div class="panel">
-        <h3>Alertas próximas</h3>
-        <p class="panel-note">Documentos con vigencia por vencer.</p>
-        <ul class="reg-list" id="lista-alertas"></ul>
+      <div class="bento">
+        <div class="col-main">
+          <div class="panel" id="panel-prioridades" style="display:none; padding:0;">
+            <div class="panel-head" style="padding:20px 22px 14px;">
+              <div>
+                <h3>Dónde poner al equipo hoy</h3>
+                <p class="panel-note" style="margin:0;">Los expedientes menos preparados según el Índice de Preparación (IPE), de menor a mayor.</p>
+              </div>
+            </div>
+            <div style="overflow-x:auto;">
+              <table class="ledger tarjetas">
+                <thead><tr><th style="padding-left:22px;">Expediente</th><th>Preparación</th><th>Próxima acción</th><th></th></tr></thead>
+                <tbody id="lista-prioridades"></tbody>
+              </table>
+            </div>
+            <p class="small" style="padding:14px 22px; border-top:1px solid var(--line-soft);">IPE = 50% documentos + 30% plazo + 20% vigencia. Listo desde 80 · en riesgo por debajo de 50.</p>
+          </div>
+
+          <div class="panel">
+            <h3>Actividad reciente</h3>
+            <p class="panel-note">Últimos expedientes registrados.</p>
+            <ul class="reg-list" id="lista-recientes"></ul>
+          </div>
+        </div>
+
+        <div class="col-side">
+          <div class="panel" id="panel-urgente" style="display:none;">
+            <div class="panel-head"><h3>El más urgente</h3><span class="chip">IPE</span></div>
+            <div id="urgente-medidor" style="margin-top:10px;"></div>
+            <div class="consejo bad" style="margin-top:16px;">
+              <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 8v5M12 16.5h.01"/><circle cx="12" cy="12" r="9"/></svg></span>
+              <span id="urgente-texto"></span>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>Documentos por vencer</h3>
+            <p class="panel-note" id="nota-vencimiento">Según la fecha de vencimiento de cada documento (o un año desde que se subió). <a href="cuenta.html">Cambiar el aviso</a></p>
+            <ul class="reg-list" id="lista-alertas"></ul>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
 <script src="js/api.js"></script>
-<script>
-const usuario = requireAuth();
-if (usuario) {
-  pintarTopbar();
-
-  apiFetch('/dashboard').then(d => {
-    const nums = document.querySelectorAll('.stat .num');
-    if (d.metricas && nums.length >= 4) {
-      nums[0].textContent = d.metricas.activos;
-      nums[1].textContent = d.metricas.pendientes;
-      nums[2].textContent = d.metricas.alertas;
-      nums[3].textContent = d.metricas.aprobados;
-    }
-
-    const ulR = document.getElementById('lista-recientes');
-    ulR.innerHTML = '';
-    if (d.recientes && d.recientes.length) {
-      d.recientes.forEach(r => {
-        ulR.innerHTML += `<li><span><span class="code">${esc(r.codigo)}</span>${esc(r.proyecto)}</span> <span class="${claseEstado(r.estado)}">${textoEstado(r.estado)}</span></li>`;
-      });
-    } else {
-      ulR.innerHTML = '<li style="color:var(--ink-faint);">Sin expedientes registrados.</li>';
-    }
-
-       const ulA = document.getElementById('lista-alertas');
-    ulA.innerHTML = '';
-    if (d.alertas && d.alertas.length) {
-      d.alertas.forEach(a => {
-        ulA.innerHTML += `<li>
-          <span><span class="code">${esc(a.codigo)}</span> ${esc(a.descripcion)}</span> 
-          <a href="expediente-detalle.html?codigo=${encodeURIComponent(a.codigo)}">Ver</a>
-        </li>`;
-      });
-    } else {
-      ulA.innerHTML = '<li style="color:var(--ink-faint);">Sin alertas próximas en este momento.</li>';
-    }
-  }).catch(console.error);
-}
-</script>
+<script src="js/pag-dashboard.js"></script>
 </body>
 </html>
