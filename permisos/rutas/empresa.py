@@ -380,7 +380,7 @@ def ver_auditoria():
     return jsonify({
         "eventos": [{"fecha": _fecha(f["fecha"]), "tipo": f["tipo"], "texto": auditoria.TIPOS.get(f["tipo"], f["tipo"]),
                      "detalle": f["detalle"], "ip": f["ip"], "quien": f["nombre"] or f["email"] or "—"} for f in filas],
-        "tipos": [{"clave": k, "texto": t} for k, t in auditoria.TIPOS.items()],
+        "tipos": [{"clave": k, "texto": t} for k, t in auditoria.TIPOS.items() if not k.startswith("admin_")],
         "paginacion": {"total": total, "pagina": pagina, "paginas": max(1, -(-total // por_pagina))},
     }), 200
 

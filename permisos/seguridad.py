@@ -11,6 +11,7 @@ from functools import wraps
 from flask import g, request, session
 
 from .bd import _esquema, col_activo, col_cambio_clave, col_org, col_sesion, cursor
+from . import config
 from .config import ROL_ADMIN, RUTAS_SIN_CABECERA
 from .errores import ApiError, respuesta_error
 
@@ -57,8 +58,11 @@ def usuario_sesion():
     session["ult"] = ahora_s
     u["debe_cambiar_clave"] = bool(u["debe_cambiar_clave"])
     # Politica de la empresa: dos pasos obligatorios para consultores y directores.
-    u["debe_activar_2fa"] = bool(politica.get("exigir_2fa")) and u["rol"] in ("consultor", "jefe") \
-        and not u.get("totp_activo")
+    sin_2fa = not u.get("totp_activo")
+    u["debe_activar_2fa"] = sin_2fa and (
+        (bool(politica.get("exigir_2fa")) and u["rol"] in ("consultor", "jefe"))
+        # Administradores de la plataforma: obligatorio en produccion (config.ADMIN_EXIGE_2FA).
+        or (config.ADMIN_EXIGE_2FA and u["rol"] == ROL_ADMIN and _esquema["totp"]))
     u.pop("totp_activo", None)
     del u["activo"]
     u.pop("sesion_version", None)

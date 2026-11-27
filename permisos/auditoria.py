@@ -32,6 +32,12 @@ TIPOS = {
     "codigos_regenerados": "Códigos de recuperación nuevos",
     "titular_transferido": "Titularidad transferida",
     "rol_cambiado": "Rol cambiado",
+    "admin_invitacion_creada": "Invitación de administrador creada",
+    "admin_invitacion_revocada": "Invitación de administrador revocada",
+    "admin_alta": "Administrador dado de alta",
+    "admin_desactivado": "Administrador desactivado",
+    "admin_activado": "Administrador reactivado",
+    "admin_clave_restablecida": "Acceso de un administrador restablecido",
 }
 
 
