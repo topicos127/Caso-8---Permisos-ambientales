@@ -132,9 +132,18 @@ class ContrasenaTemporal(unittest.TestCase):
     def setUp(self):
         self.original = seguridad.usuario_sesion
         self.cliente = app.test_client()
+        # /sesion lee la empresa de la base: aqui no hay ninguna (ni debe haberla).
+        self.cursor_real, self.empresa_real = auth.cursor, auth.datos_empresa
+
+        @contextmanager
+        def _sin_base():
+            yield None
+        auth.cursor = _sin_base
+        auth.datos_empresa = lambda cur, org_id: None
 
     def tearDown(self):
         seguridad.usuario_sesion = self.original
+        auth.cursor, auth.datos_empresa = self.cursor_real, self.empresa_real
 
     def como(self, debe_cambiar):
         seguridad.usuario_sesion = lambda: {"id": 7, "email": "p@ejemplo.com", "rol": "promotor",

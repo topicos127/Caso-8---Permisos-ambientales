@@ -28,6 +28,19 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 with redirect_stdout(io.StringIO()):
     from app import app  # noqa: E402
 from permisos import bd, reglas, seguridad  # noqa: E402
+
+# Estas pruebas reemplazan usuario_sesion y el cursor de cada modulo sin devolverlos. Se guardan los
+# reales al importar (antes de correr nada) y se restauran al terminar el archivo, para no contaminar
+# a las pruebas que corren despues (el CI las ejecuta en otro orden que `discover`).
+_USUARIO_SESION_REAL = seguridad.usuario_sesion
+_CURSORES_REALES = {n: m for n, m in sys.modules.items() if n.startswith("permisos") and hasattr(m, "cursor")}
+_CURSORES_REALES = {n: m.cursor for n, m in _CURSORES_REALES.items()}
+
+
+def tearDownModule():
+    seguridad.usuario_sesion = _USUARIO_SESION_REAL
+    for nombre, cursor_real in _CURSORES_REALES.items():
+        sys.modules[nombre].cursor = cursor_real
 from permisos.inspeccion import problema_cartografia  # noqa: E402
 from permisos.reglas import (_domingo_de_pascua, calcular_ipe, calcular_semaforo, dias_habiles_entre,  # noqa: E402
                              documentos_por_vencer, es_dia_habil, feriados_panama, hoy, sumar_dias_habiles,
