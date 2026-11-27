@@ -6,12 +6,15 @@ Library           RequestsLibrary
 Library           Collections
 Library           ayudas.py
 Resource          ../recursos/sesion.resource
+Suite Setup       Preparar La Suite
 
 *** Variables ***
 ${BASE_URL}       http://localhost:5000
 ${CODIGO_A}       SP-A8-2026-001
 ${CODIGO_B}       SP-A8-2026-201
 ${CLAVE}          Clave12345
+${SUFIJO}         ${EMPTY}
+${CABECERA}       ${EMPTY}
 
 *** Test Cases ***
 # ---------------------------------------------------------------- Aislamiento entre empresas
@@ -572,6 +575,138 @@ ${CLAVE}          Clave12345
     ${r}=    GET On Session    admin    /plataforma/respaldos/respaldo-1-2.zip    expected_status=any
     Status Should Be    404    ${r}
 
+# ---------------------------------------------------------------- Administradores de la plataforma
+34 - Un administrador invita a otro, que se une por el enlace y entra por /admin
+    ${correo}=    Set Variable    admin.nuevo.${SUFIJO}@ejemplo.com
+    ${token}=    Invitar Administrador    ${correo}
+    # La pantalla de registro pregunta a que se une la persona: a la administracion, no a una empresa.
+    Create Session    anonimo    ${BASE_URL}
+    ${v}=    GET On Session    anonimo    /invitaciones/validar    params=token=${token}
+    Should Be Equal    ${v.json()['rol']}    admin
+    Should Contain    ${v.json()['empresa']}    administración
+    ${r}=    Registrar Con Invitacion    ${correo}    ${token}
+    Status Should Be    201    ${r}
+    Should Be True    ${r.json()['administrador']}
+    Iniciar Sesion De Administrador    admin_nuevo    ${correo}    ${CLAVE}
+    ${s}=    GET On Session    admin_nuevo    /sesion
+    Should Be Equal    ${s.json()['rol']}    admin
+    # Y por la puerta de las consultoras no entra.
+    ${datos}=    Create Dictionary    email=${correo}    password=${CLAVE}
+    ${r}=    POST On Session    anonimo    /login    json=${datos}    expected_status=any
+    Should Not Be Equal As Integers    ${r.status_code}    200
+
+35 - La invitacion de administrador se usa una sola vez y se puede revocar
+    ${correo}=    Set Variable    admin.una.vez.${SUFIJO}@ejemplo.com
+    ${token}=    Invitar Administrador    ${correo}
+    ${r}=    Registrar Con Invitacion    ${correo}    ${token}
+    Status Should Be    201    ${r}
+    ${r}=    Registrar Con Invitacion    otro.${correo}    ${token}
+    Status Should Be    400    ${r}
+    # Una revocada tampoco sirve
+    Iniciar Sesion Como Administrador    admin
+    ${otro}=    Set Variable    admin.revocada.${SUFIJO}@ejemplo.com
+    ${datos}=    Create Dictionary    email=${otro}
+    ${i}=    POST On Session    admin    /plataforma/administradores/invitaciones    json=${datos}
+    ${lista}=    GET On Session    admin    /plataforma/administradores
+    ${id}=    Evaluate    [x['id'] for x in $lista.json()['invitaciones'] if x['email'] == $otro][0]
+    ${r}=    DELETE On Session    admin    /plataforma/administradores/invitaciones/${id}
+    Status Should Be    200    ${r}
+    ${r}=    Registrar Con Invitacion    ${otro}    ${i.json()['token']}
+    Status Should Be    400    ${r}
+
+36 - Un director o un consultor no ven ni gestionan administradores
+    Iniciar Sesion Como Jefe    jefe
+    ${vacio}=    Create Dictionary
+    ${r}=    GET On Session    jefe    /plataforma/administradores    expected_status=any
+    Status Should Be    403    ${r}
+    ${r}=    POST On Session    jefe    /plataforma/administradores/invitaciones    json=${vacio}    expected_status=any
+    Status Should Be    403    ${r}
+    Iniciar Sesion Como Consultor    consultor
+    ${r}=    GET On Session    consultor    /plataforma/administradores    expected_status=any
+    Status Should Be    403    ${r}
+    ${r}=    POST On Session    consultor    /plataforma/administradores/1/restablecer    json=${vacio}    expected_status=any
+    Status Should Be    403    ${r}
+    # Y el director no puede usar la invitacion de administrador para crear uno por la puerta de su empresa.
+    ${r}=    GET On Session    jefe    /invitaciones
+    ${roles}=    Evaluate    {i['rol'] for i in $r.json()['invitaciones']}
+    Should Not Contain    ${roles}    admin
+
+37 - Nadie se desactiva a si mismo ni se restablece su propio acceso
+    Iniciar Sesion Como Administrador    admin
+    ${yo}=    Id Del Administrador    admin    ${ADMIN_EMAIL}
+    ${apagar}=    Create Dictionary    activo=${False}
+    ${r}=    POST On Session    admin    /plataforma/administradores/${yo}/activo    json=${apagar}    expected_status=any
+    Status Should Be    409    ${r}
+    ${vacio}=    Create Dictionary
+    ${r}=    POST On Session    admin    /plataforma/administradores/${yo}/restablecer    json=${vacio}    expected_status=any
+    Status Should Be    409    ${r}
+    # Sigue pudiendo entrar
+    ${s}=    GET On Session    admin    /sesion
+    Should Be Equal    ${s.json()['rol']}    admin
+
+38 - Un administrador desactivado no entra, su sesion se cierra y al reactivarlo vuelve
+    ${correo}=    Set Variable    admin.baja.${SUFIJO}@ejemplo.com
+    ${token}=    Invitar Administrador    ${correo}
+    Registrar Con Invitacion    ${correo}    ${token}
+    Iniciar Sesion De Administrador    admin_baja    ${correo}    ${CLAVE}
+    Iniciar Sesion Como Administrador    admin
+    ${id}=    Id Del Administrador    admin    ${correo}
+    ${apagar}=    Create Dictionary    activo=${False}
+    ${r}=    POST On Session    admin    /plataforma/administradores/${id}/activo    json=${apagar}
+    Status Should Be    200    ${r}
+    # Su sesion abierta deja de valer
+    ${s}=    GET On Session    admin_baja    /sesion    expected_status=any
+    Status Should Be    401    ${s}
+    # Y no puede volver a entrar
+    Create Session    puerta    ${BASE_URL}    headers=${CABECERA}
+    ${datos}=    Create Dictionary    email=${correo}    password=${CLAVE}
+    ${r}=    POST On Session    puerta    /admin/login    json=${datos}    expected_status=any
+    Status Should Be    403    ${r}
+    Should Contain    ${r.json()['mensaje']}    desactivada
+    ${encender}=    Create Dictionary    activo=${True}
+    ${r}=    POST On Session    admin    /plataforma/administradores/${id}/activo    json=${encender}
+    Status Should Be    200    ${r}
+    Iniciar Sesion De Administrador    admin_baja2    ${correo}    ${CLAVE}
+
+39 - El administrador restablece el acceso de otro: clave temporal, sesiones cerradas y la anterior deja de valer
+    ${correo}=    Set Variable    admin.reset.${SUFIJO}@ejemplo.com
+    ${token}=    Invitar Administrador    ${correo}
+    Registrar Con Invitacion    ${correo}    ${token}
+    Iniciar Sesion De Administrador    admin_reset    ${correo}    ${CLAVE}
+    Iniciar Sesion Como Administrador    admin
+    ${id}=    Id Del Administrador    admin    ${correo}
+    ${vacio}=    Create Dictionary
+    ${r}=    POST On Session    admin    /plataforma/administradores/${id}/restablecer    json=${vacio}
+    ${temporal}=    Set Variable    ${r.json()['password_temporal']}
+    ${s}=    GET On Session    admin_reset    /sesion    expected_status=any
+    Status Should Be    401    ${s}
+    Create Session    puerta    ${BASE_URL}    headers=${CABECERA}
+    ${viejo}=    Create Dictionary    email=${correo}    password=${CLAVE}
+    ${r}=    POST On Session    puerta    /admin/login    json=${viejo}    expected_status=any
+    Status Should Be    401    ${r}
+    ${nuevo}=    Create Dictionary    email=${correo}    password=${temporal}
+    ${r}=    POST On Session    puerta    /admin/login    json=${nuevo}
+    Should Be True    ${r.json()['debe_cambiar_clave']}
+    # Solo funciona con administradores: un director de proyectos responde 404
+    ${e}=    GET On Session    admin    /plataforma/empresas
+    ${jefe}=    Evaluate    [x['jefe_id'] for x in $e.json()['empresas'] if x['jefe_email'] == 'jefe1@ejemplo.com'][0]
+    ${r}=    POST On Session    admin    /plataforma/administradores/${jefe}/restablecer    json=${vacio}    expected_status=any
+    Status Should Be    404    ${r}
+
+40 - El alta, la invitacion y la baja de un administrador quedan en la actividad de la administracion
+    Iniciar Sesion Como Administrador    admin
+    ${r}=    GET On Session    admin    /plataforma/administradores
+    ${tipos}=    Evaluate    {e['tipo'] for e in $r.json()['eventos']}
+    Should Contain    ${tipos}    admin_invitacion_creada
+    Should Contain    ${tipos}    admin_alta
+    Should Contain    ${tipos}    admin_desactivado
+    # Esa actividad no aparece en el registro de ninguna empresa
+    Iniciar Sesion Como Jefe    jefe
+    ${a}=    GET On Session    jefe    /organizacion/auditoria    expected_status=any
+    ${tipos_empresa}=    Evaluate    {e['tipo'] for e in ($a.json().get('eventos') or [])}
+    Should Not Contain    ${tipos_empresa}    admin_alta
+    Should Not Contain    ${tipos_empresa}    admin_desactivado
+
 *** Keywords ***
 Id De Usuario
     [Documentation]    Id de un usuario, leido con la cuenta de administracion de la propia consulta del jefe.
@@ -615,3 +750,31 @@ Crear Cuenta Nueva
     ${token}=    Invitar Como Jefe    ${correo}
     ${r}=    Registrar Con Invitacion    ${correo}    ${token}
     Status Should Be    201    ${r}
+
+Invitar Administrador
+    [Arguments]    ${correo}
+    Iniciar Sesion Como Administrador    admin_invita
+    ${datos}=    Create Dictionary    email=${correo}
+    ${r}=    POST On Session    admin_invita    /plataforma/administradores/invitaciones    json=${datos}
+    RETURN    ${r.json()['token']}
+
+Iniciar Sesion De Administrador
+    [Arguments]    ${alias}    ${correo}    ${clave}
+    ${headers}=    Create Dictionary    X-Requested-With=fetch
+    Create Session    ${alias}    ${BASE_URL}    headers=${headers}
+    ${datos}=    Create Dictionary    email=${correo}    password=${clave}
+    ${r}=    POST On Session    ${alias}    /admin/login    json=${datos}
+    Status Should Be    200    ${r}
+    Should Be True    ${r.json()['acceso']}
+
+Id Del Administrador
+    [Arguments]    ${alias}    ${correo}
+    ${r}=    GET On Session    ${alias}    /plataforma/administradores
+    ${id}=    Evaluate    [a['id'] for a in $r.json()['administradores'] if a['email'] == $correo][0]
+    RETURN    ${id}
+
+Preparar La Suite
+    ${s}=    Sufijo Unico
+    Set Suite Variable    ${SUFIJO}    ${s}
+    ${h}=    Create Dictionary    X-Requested-With=fetch
+    Set Suite Variable    ${CABECERA}    ${h}

@@ -8,7 +8,7 @@ if (usuario) {
     let empresas = [];
 
     // ---------- Pestañas ----------
-    const pestanas = ['resumen', 'empresas', 'respaldos', 'servicio'];
+    const pestanas = ['resumen', 'empresas', 'administradores', 'respaldos', 'servicio'];
     function abrirPestana(nombre) {
       pestanas.forEach(p => {
         document.getElementById('tab-' + p).setAttribute('aria-selected', String(p === nombre));
@@ -16,6 +16,7 @@ if (usuario) {
       });
       if (nombre === 'resumen') cargarResumen().catch(console.error);
       if (nombre === 'empresas') cargarEmpresas().catch(console.error);
+      if (nombre === 'administradores') cargarAdministradores().catch(console.error);
       if (nombre === 'respaldos') cargarRespaldos().catch(console.error);
       if (nombre === 'servicio') cargarServicio().catch(console.error);
       history.replaceState(null, '', window.location.pathname + '#' + nombre);
@@ -84,6 +85,98 @@ if (usuario) {
         if (!(await confirmar('Restablecer el acceso del director',
           `Se genera una contraseña temporal para ${b.dataset.nombre}, se cierran sus sesiones y se quitan sus dos pasos. La verá una sola vez.`, 'Restablecer'))) return;
         const r = await apiFetch(`/plataforma/jefes/${b.dataset.restablecer}/restablecer`, { method: 'POST', body: '{}' });
+        if (!r.ok) { mostrarToast(r.mensaje || 'No se pudo restablecer.', 'error'); return; }
+        abrirModal({
+          titulo: 'Contraseña temporal',
+          html: `<p class="aviso-unico">Entréguela por un canal seguro. No se vuelve a mostrar.</p>
+            <p style="margin-top:12px;">${esc(r.email)}</p><code class="clave-manual">${esc(r.password_temporal)}</code>`,
+          cerrable: false,
+          acciones: [
+            { texto: 'Copiar', clase: 'btn btn-ghost', alHacerClic: () => { copiarTexto(r.password_temporal, 'Contraseña copiada.'); return false; } },
+            { texto: 'Listo', clase: 'btn btn-brass' },
+          ],
+        });
+      }
+    });
+
+    // ---------- Administradores ----------
+    const ESTADO_INVITACION = { pendiente: ['status status-info', 'Pendiente'], usada: ['status status-ok', 'Usada'],
+      vencida: ['status status-warn', 'Vencida'], revocada: ['status status-bad', 'Revocada'] };
+    const BOTON = 'btn btn-ghost';
+
+    async function cargarAdministradores() {
+      const d = await apiFetch('/plataforma/administradores');
+      const sin2fa = d.administradores.filter(a => a.activo && !a.totp_activo);
+      document.getElementById('adm-avisos').innerHTML = sin2fa.length
+        ? `<div class="panel" style="margin-bottom:20px;"><p style="margin:0;"><span class="status status-warn">Para atender</span> &nbsp;${sin2fa.length === 1 ? 'Un administrador no tiene' : sin2fa.length + ' administradores no tienen'} los dos pasos activos: ${sin2fa.map(a => esc(a.nombre)).join(', ')}. Estas cuentas pueden restaurar respaldos y ver todas las empresas.</p></div>`
+        : '';
+      document.getElementById('tabla-administradores').innerHTML = d.administradores.map(a => `
+        <tr>
+          <td data-label="Administrador" style="padding-left:24px;"><b>${esc(a.nombre)}</b>${a.es_usted ? ' <span class="status status-neutral">Usted</span>' : ''}<br><small style="color:var(--text-faint);">${esc(a.email)} · desde el ${esc(a.fecha_creacion)}</small></td>
+          <td data-label="Estado"><span class="${a.activo ? 'status status-ok' : 'status status-bad'}">${a.activo ? 'Activo' : 'Desactivado'}</span></td>
+          <td data-label="Dos pasos"><span class="${a.totp_activo ? 'status status-ok' : 'status status-warn'}">${a.totp_activo ? 'Activados' : 'Sin activar'}</span></td>
+          <td data-label="Último acceso">${esc(a.ultimo_acceso || 'Sin accesos')}</td>
+          <td data-label="Acciones"><div class="acciones">${a.es_usted ? '<small style="color:var(--text-faint);">Su cuenta se gestiona en «Mi perfil»</small>' : `
+            <button type="button" class="${BOTON}" style="border:1.5px solid var(--line);" data-restablecer="${a.id}" data-nombre="${esc(a.email)}">Restablecer acceso</button>
+            <button type="button" class="${BOTON}" style="border:1.5px solid var(--line);" data-activo="${a.id}" data-valor="${a.activo ? 'no' : 'si'}" data-nombre="${esc(a.nombre)}">${a.activo ? 'Desactivar' : 'Reactivar'}</button>`}
+          </div></td>
+        </tr>`).join('');
+      document.getElementById('tabla-admin-invitaciones').innerHTML = d.invitaciones.length ? d.invitaciones.map(i => {
+        const [clase, texto] = ESTADO_INVITACION[i.estado] || ESTADO_INVITACION.pendiente;
+        return `<tr>
+          <td data-label="Correo" style="padding-left:22px;">${i.email ? esc(i.email) : '<span style="color:var(--text-faint);">Cualquiera con el enlace</span>'}</td>
+          <td data-label="Creada por">${esc(i.creada_por)}<br><small style="color:var(--text-faint);">${esc(i.fecha_creacion)}</small></td>
+          <td data-label="Vence">${esc(i.expira)}</td>
+          <td data-label="Estado"><span class="${clase}">${texto}</span></td>
+          <td data-label="Acciones">${i.estado === 'pendiente' ? `<button type="button" class="${BOTON}" style="border:1.5px solid var(--line);" data-revocar="${i.id}">Revocar</button>` : ''}</td>
+        </tr>`;
+      }).join('') : '<tr><td colspan="5" class="sin-etiqueta" data-label="" style="padding:24px; text-align:center; color:var(--text-faint);">Todavía no hay invitaciones.</td></tr>';
+      document.getElementById('adm-eventos').innerHTML = d.eventos.length ? `<ul class="lista-simple">${d.eventos.map(e => `
+        <li><span><b>${esc(e.texto)}</b>${e.nombre || e.email ? ' · ' + esc(e.nombre || e.email) : ''}${e.detalle ? ` <small style="display:inline; color:var(--text-faint);">(${esc(e.detalle)})</small>` : ''}</span>
+          <small style="display:inline; color:var(--text-faint);">${esc(e.fecha)}${e.ip ? ' · ' + esc(e.ip) : ''}</small></li>`).join('')}</ul>`
+        : '<p class="panel-note" style="margin:0;">Todavía no hay actividad registrada.</p>';
+    }
+
+    document.getElementById('form-admin').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('adm-email').value.trim();
+      const btn = document.getElementById('btn-admin');
+      btn.disabled = true;
+      try {
+        const d = await apiFetch('/plataforma/administradores/invitaciones', { method: 'POST', body: JSON.stringify(email ? { email } : {}) });
+        if (!d.ok) { mostrarToast(d.mensaje || 'No se pudo crear la invitación.', 'error'); return; }
+        document.getElementById('adm-resultado').innerHTML = `
+          <div class="aviso-unico" style="margin-top:14px;">Copie el enlace ahora: no se vuelve a mostrar. Vence el ${esc(d.expira)}.</div>
+          <div class="enlace-unico"><input type="text" readonly id="adm-enlace" value="${esc(d.enlace)}" aria-label="Enlace de invitación del administrador">
+          <button type="button" class="btn btn-brass" id="btn-copiar-adm">Copiar enlace</button></div>`;
+        document.getElementById('adm-enlace').select();
+        document.getElementById('btn-copiar-adm').addEventListener('click', () => copiarTexto(d.enlace, 'Enlace copiado.'));
+        document.getElementById('form-admin').reset();
+        mostrarToast('Invitación creada.', 'exito');
+        await cargarAdministradores();
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    document.getElementById('sec-administradores').addEventListener('click', async (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      if (b.dataset.revocar) {
+        if (!(await confirmar('Revocar la invitación', 'El enlace dejará de funcionar.', 'Revocar', true))) return;
+        const r = await apiFetch(`/plataforma/administradores/invitaciones/${b.dataset.revocar}`, { method: 'DELETE' });
+        mostrarToast(r.mensaje || 'Listo.', r.ok ? 'exito' : 'error');
+        await cargarAdministradores();
+      } else if (b.dataset.activo) {
+        const apagar = b.dataset.valor === 'no';
+        if (apagar && !(await confirmar('Desactivar al administrador', `${b.dataset.nombre} no podrá entrar a la administración y se cierran sus sesiones abiertas. Se puede reactivar.`, 'Desactivar', true))) return;
+        const r = await apiFetch(`/plataforma/administradores/${b.dataset.activo}/activo`, { method: 'POST', body: JSON.stringify({ activo: !apagar }) });
+        mostrarToast(r.mensaje || 'Listo.', r.ok ? 'exito' : 'error');
+        await cargarAdministradores();
+      } else if (b.dataset.restablecer) {
+        if (!(await confirmar('Restablecer el acceso del administrador',
+          `Se genera una contraseña temporal para ${b.dataset.nombre}, se cierran sus sesiones y se quitan sus dos pasos. La verá una sola vez.`, 'Restablecer'))) return;
+        const r = await apiFetch(`/plataforma/administradores/${b.dataset.restablecer}/restablecer`, { method: 'POST', body: '{}' });
         if (!r.ok) { mostrarToast(r.mensaje || 'No se pudo restablecer.', 'error'); return; }
         abrirModal({
           titulo: 'Contraseña temporal',

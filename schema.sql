@@ -169,7 +169,8 @@ CREATE TABLE IF NOT EXISTS observaciones (
 CREATE TABLE IF NOT EXISTS invitaciones (
     id INT NOT NULL AUTO_INCREMENT,
     token_hash CHAR(64) NOT NULL,
-    organizacion_id INT NOT NULL,
+    -- NULL en la invitacion de un administrador de la plataforma (no pertenece a ninguna empresa).
+    organizacion_id INT NULL,
     rol VARCHAR(20) NOT NULL,
     email VARCHAR(255) NULL,
     creada_por INT NOT NULL,

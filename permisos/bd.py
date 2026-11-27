@@ -157,7 +157,7 @@ DDL_EMPRESAS = [
     """CREATE TABLE IF NOT EXISTS invitaciones (
         id INT NOT NULL AUTO_INCREMENT,
         token_hash CHAR(64) NOT NULL,
-        organizacion_id INT NOT NULL,
+        organizacion_id INT NULL,
         rol VARCHAR(20) NOT NULL,
         email VARCHAR(255) NULL,
         creada_por INT NOT NULL,
@@ -343,6 +343,21 @@ def _asegurar_columna_cambio_clave(cur):
     _esquema["cambio_clave"] = True
 
 
+def _invitaciones_sin_empresa():
+    """Las bases anteriores exigian empresa en toda invitacion; la de un administrador no la tiene."""
+    try:
+        with cursor() as cur:
+            cur.execute("SELECT IS_NULLABLE AS n FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() "
+                        "AND TABLE_NAME='invitaciones' AND COLUMN_NAME='organizacion_id'")
+            fila = cur.fetchone()
+            if fila and fila["n"] == "NO":
+                cur.execute("ALTER TABLE invitaciones MODIFY organizacion_id INT NULL")
+                print("Invitaciones: organizacion_id ahora admite NULL (administradores de la plataforma).", flush=True)
+    except pymysql.MySQLError as e:
+        print(f"AVISO: no se pudo permitir invitaciones sin empresa ({e!r}); "
+              "no se podran invitar administradores hasta corregirlo.", flush=True)
+
+
 def inicializar_bd():
     """Crea lo que los Sprints 8 y 9 necesitan si no existe. Se puede correr
     muchas veces: no cambia nada si ya esta."""
@@ -356,6 +371,7 @@ def inicializar_bd():
         cur.execute(DDL_OBSERVACIONES)
         for ddl in DDL_EMPRESAS:
             cur.execute(ddl)
+    _invitaciones_sin_empresa()
     for tabla, columna, definicion, clave in COLUMNAS_SPRINT10:
         try:
             with cursor() as cur:

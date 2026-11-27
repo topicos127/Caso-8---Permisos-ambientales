@@ -144,10 +144,13 @@ def validar():
         raise ApiError(429, "Demasiados intentos. Espere un minuto.")
     with cursor() as cur:
         cur.execute("""SELECT i.rol, i.email, i.expira, i.usada_en, i.revocada, o.nombre AS empresa, o.activa
-                       FROM invitaciones i JOIN organizaciones o ON o.id = i.organizacion_id
+                       FROM invitaciones i LEFT JOIN organizaciones o ON o.id = i.organizacion_id
                        WHERE i.token_hash=%s""", (hash_token(token),))
         i = token and cur.fetchone()
-    if not i or i["usada_en"] or i["revocada"] or i["expira"] < ahora() or not i["activa"]:
+    # La invitacion de un administrador no tiene empresa (o.activa llega NULL).
+    sin_empresa_activa = i and i["rol"] != ROL_ADMIN and not i["activa"]
+    if not i or i["usada_en"] or i["revocada"] or i["expira"] < ahora() or sin_empresa_activa:
         limitador.anotar_fallo(clave)
         raise ApiError(404, "La invitación no es válida, ya se usó o venció.")
-    return jsonify({"ok": True, "empresa": i["empresa"], "rol": i["rol"], "email": i["email"]}), 200
+    return jsonify({"ok": True, "empresa": i["empresa"] or "la administración de la plataforma", "rol": i["rol"],
+                    "email": i["email"]}), 200

@@ -20,7 +20,7 @@ async function validarInvitacion() {
     const r = await fetch('/invitaciones/validar?token=' + encodeURIComponent(token));
     const d = await r.json();
     if (!r.ok || !d.ok) { sinInvitacion(d.mensaje || 'La invitación no es válida, ya se usó o venció.'); return; }
-    const rol = d.rol === 'jefe' ? 'director de proyectos' : 'consultor ambiental';
+    const rol = d.rol === 'jefe' ? 'director de proyectos' : d.rol === 'admin' ? 'administrador' : 'consultor ambiental';
     lede.innerHTML = '';
     lede.append('Se une a ');
     const negrita = document.createElement('b');
@@ -61,7 +61,7 @@ formulario.addEventListener('submit', async (e) => {
     const data = await resp.json();
     if (data.ok) {
       aviso('Cuenta creada. Redirigiendo para iniciar sesión…', true);
-      setTimeout(() => window.location.href = 'login.html', 1400);
+      setTimeout(() => window.location.href = data.administrador ? '/admin' : 'login.html', 1400);
     } else {
       aviso(data.mensaje || 'No se pudo crear la cuenta.', false);
     }

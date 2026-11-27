@@ -23,6 +23,7 @@ if (usuario) {
     ],
     admin: [
       ['Cree una empresa', 'En «Plataforma» → «Empresas» cree la consultora; el sistema genera el enlace de invitación para su director de proyectos.'],
+      ['Sume a otros administradores', 'En «Administradores» genere un enlace de invitación para cada persona del equipo: es de un solo uso y cada una elige su contraseña.'],
       ['Verifique los respaldos', 'En «Respaldos» compruebe que hay uno reciente y, de vez en cuando, descárguelo y pruebe «Verificar».'],
       ['Vigile el servicio', 'En «Servicio y errores» vea el estado de la base de datos, los archivos y los últimos errores.'],
     ],
@@ -59,6 +60,10 @@ if (usuario) {
       'En «Mi consultora» → «Mis datos» → «Descargar todo». Recibe un ZIP con la cartera en Excel, el historial, los comentarios, el equipo y todos los documentos con su índice de huellas. Puede pedir una exportación cada dos minutos.'],
     ['¿Dónde veo quién entró a la cuenta o qué cambió?', ['jefe'],
       'En «Mi consultora» → «Accesos»: inicios de sesión, intentos fallidos y cambios de configuración, con fecha, persona y dirección IP. No incluye el contenido de los expedientes. Se puede descargar en CSV.'],
+    ['¿Cómo agrego a otro administrador de la plataforma?', ['admin'],
+      'En «Plataforma» → «Administradores» escriba el correo (opcional) y genere el enlace. Cópielo y entréguelo por un canal seguro: es de un solo uso y vence en 72 horas. La persona se registra, entra por la dirección /admin y, en producción, activa sus dos pasos en el primer ingreso.'],
+    ['¿Qué pasa si un administrador pierde su teléfono o su contraseña?', ['admin'],
+      'Otro administrador abre «Administradores» y pulsa «Restablecer acceso»: se genera una contraseña temporal (se muestra una sola vez), se cierran sus sesiones y se quitan sus dos pasos para que los configure de nuevo. Nadie puede restablecer su propia cuenta de este modo ni desactivarse a sí mismo, y la plataforma siempre conserva al menos un administrador activo.'],
     ['Veo un error con un código, ¿qué hago?', ['jefe', 'consultor', 'promotor', 'admin'],
       'Anote el código que aparece (por ejemplo, 3f9a1c2e) y envíelo al administrador de la plataforma: con él se encuentra el error exacto.'],
   ];

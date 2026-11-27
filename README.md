@@ -50,7 +50,8 @@ Los documentos del proyecto (plan de los Sprints 9 y 10, guía del PO) están en
 | `SESSION_COOKIE_SECURE` | `true` solo en el despliegue con HTTPS |
 | `JEFE_EMAIL` / `JEFE_PASSWORD` / `JEFE_NOMBRE` | Usuario jefe que se crea al arrancar si no existe (opcional; por defecto `jefe1@ejemplo.com` / `Jefe2026*`). En Railway conviene poner una contraseña propia |
 | `SEED_DEMO` | `true` solo para cargar los datos de prueba con `scripts/init_db.py` (una vez) |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_NOMBRE` | Administrador de la plataforma, que se crea al arrancar si no existe (por defecto `admin@ejemplo.com` / `Admin2026*`). **En el despliegue, definir una contraseña propia** |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_NOMBRE` | Primer administrador de la plataforma, que se crea al arrancar si no existe (por defecto `admin@ejemplo.com` / `Admin2026*`). **En el despliegue, definir una contraseña propia** y, si se quiere, `ADMIN_NOMBRE` con su nombre. Los demás administradores se invitan desde `/admin` → «Administradores» |
+| `ADMIN_EXIGE_2FA` | Obliga a los administradores a activar los dos pasos al entrar. Por defecto `true` en producción (`SESSION_COOKIE_SECURE=true`) y `false` en local |
 | `ORG_POR_DEFECTO` | Nombre de la empresa que recibe los datos anteriores a la separación por empresa (por defecto `Consultora Demo`) |
 | `SESION_MINUTOS` | Minutos de inactividad antes de cerrar la sesión (120) |
 | `INVITACION_HORAS` | Vigencia de un enlace de invitación (72) |
@@ -87,7 +88,13 @@ configura desde el panel.
    | `PROXY_SALTOS` | `1` (la IP real del cliente llega en `X-Forwarded-For`; sin esto el límite de intentos y el registro de accesos usarían la IP del proxy) |
    | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | el administrador de la plataforma, con contraseña propia |
 
-   En producción la app crea **solo al administrador**. Las empresas y sus directores de proyectos
+   En producción la app crea **solo al primer administrador**; los demás (por ejemplo, un equipo de tres)
+   se invitan desde `/admin` → «Administradores» con un enlace de un solo uso. Todos tienen los mismos
+   permisos, nadie puede desactivarse a sí mismo y la plataforma nunca se queda sin un administrador activo.
+   En producción cada administrador debe activar los **dos pasos en su primer ingreso**: tenga a mano
+   una app de autenticación y guarde los códigos de recuperación que se muestran una vez.
+   Si un administrador pierde el acceso, otro puede «Restablecer acceso» desde la misma pestaña.
+   Las empresas y sus directores de proyectos
    se crean desde `/admin` (cada empresa genera un enlace de invitación para su director, que a su
    vez invita a su equipo). `JEFE_EMAIL`, `JEFE_PASSWORD` y `ORG_POR_DEFECTO` no se usan salvo que se
    fuerce `JEFE_INICIAL=true` (pensado para local y pruebas).

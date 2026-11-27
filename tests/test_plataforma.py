@@ -393,6 +393,31 @@ class PoliticaDeLaEmpresa(unittest.TestCase):
                    "organizacion_id": 1, "sesion_version": 0, "totp_activo": totp_activo}
         self.filas[:] = [usuario, dict({"activa": 1, "exigir_2fa": 0, "sesion_minutos": None}, **politica)]
 
+    def _admin(self, totp_activo):
+        self.filas[:] = [{"id": 1, "email": "a@x.com", "rol": "admin", "nombre": "A", "debe_cambiar_clave": 0,
+                          "activo": 1, "organizacion_id": None, "sesion_version": 0, "totp_activo": totp_activo}]
+
+    def test_administrador_sin_dos_pasos_debe_activarlos_si_se_exige(self):
+        with self.app.test_request_context(), mock.patch.object(config, "ADMIN_EXIGE_2FA", True):
+            from flask import session
+            session.update({"uid": 1, "sv": 0})
+            self._admin(totp_activo=0)
+            self.assertTrue(seguridad.usuario_sesion()["debe_activar_2fa"])
+
+    def test_administrador_con_dos_pasos_no_debe_activarlos(self):
+        with self.app.test_request_context(), mock.patch.object(config, "ADMIN_EXIGE_2FA", True):
+            from flask import session
+            session.update({"uid": 1, "sv": 0})
+            self._admin(totp_activo=1)
+            self.assertFalse(seguridad.usuario_sesion()["debe_activar_2fa"])
+
+    def test_sin_la_exigencia_el_administrador_no_los_necesita(self):
+        with self.app.test_request_context(), mock.patch.object(config, "ADMIN_EXIGE_2FA", False):
+            from flask import session
+            session.update({"uid": 1, "sv": 0})
+            self._admin(totp_activo=0)
+            self.assertFalse(seguridad.usuario_sesion()["debe_activar_2fa"])
+
     def test_la_sesion_vence_por_inactividad_segun_la_empresa(self):
         with self.app.test_request_context():
             from flask import session
@@ -561,6 +586,90 @@ class EmpresaPorDefecto(unittest.TestCase):
         org, sentencias = self._correr(jefe_inicial=False, sin_empresa=0, hay_empresa=True)
         self.assertEqual(org, 3)
         self.assertFalse(any(s.startswith("INSERT") for s in sentencias))
+
+
+class GestionDeAdministradores(unittest.TestCase):
+    """La plataforma nunca se queda sin un administrador activo y nadie se desactiva a si mismo."""
+
+    def setUp(self):
+        from contextlib import contextmanager
+
+        from flask import Flask, g
+
+        from permisos.rutas import administradores as adm
+        self.adm = adm
+        self.app = Flask("prueba")
+        self.app.secret_key = "pruebas"
+        self.sentencias = []
+        yo = self
+
+        class Falso:
+            def execute(self, sql, params=None):
+                yo.sentencias.append(sql)
+                self.ultimo = sql
+
+            def fetchone(self):
+                if "COUNT(*)" in self.ultimo:
+                    return {"n": yo.activos}
+                return yo.objetivo
+
+        @contextmanager
+        def _cursor():
+            yield Falso()
+        self.cursor = adm.cursor
+        adm.cursor = _cursor
+        self.esquema = dict(bd._esquema)
+        bd._esquema.update(activo=True, sesion=True, cambio_clave=True, totp=True)
+        self.activos = 3
+        self.objetivo = {"id": 9, "nombre": "Otra Persona", "email": "o@x.com", "rol": "admin", "activo": 1}
+        self.g = g
+
+    def tearDown(self):
+        self.adm.cursor = self.cursor
+        bd._esquema.clear()
+        bd._esquema.update(self.esquema)
+
+    def _llamar(self, funcion, usuario_id, cuerpo, yo=1):
+        # requiere_admin consulta la sesion: se salta llamando a la funcion sin decorar
+        original = getattr(funcion, "__wrapped__", funcion)
+        with self.app.test_request_context(json=cuerpo):
+            self.g.usuario = {"id": yo, "rol": "admin"}
+            return original(usuario_id)
+
+    def test_no_se_puede_desactivar_a_uno_mismo(self):
+        with self.assertRaises(ApiError) as e:
+            self._llamar(self.adm.cambiar_estado, 1, {"activo": False}, yo=1)
+        self.assertEqual(e.exception.status, 409)
+
+    def test_no_se_puede_dejar_la_plataforma_sin_administradores_activos(self):
+        self.activos = 1
+        with self.assertRaises(ApiError) as e:
+            self._llamar(self.adm.cambiar_estado, 9, {"activo": False})
+        self.assertEqual(e.exception.status, 409)
+        self.assertIn("sin un administrador activo", e.exception.mensaje)
+
+    def test_con_otros_activos_se_puede_desactivar(self):
+        r, codigo = self._llamar(self.adm.cambiar_estado, 9, {"activo": False})
+        self.assertEqual(codigo, 200)
+        self.assertTrue(any(s.strip().startswith("UPDATE usuarios SET activo") for s in self.sentencias))
+
+    def test_solo_actua_sobre_administradores(self):
+        self.objetivo = {"id": 9, "nombre": "Director", "email": "d@x.com", "rol": "jefe", "activo": 1}
+        for funcion, cuerpo in ((self.adm.cambiar_estado, {"activo": False}), (self.adm.restablecer, {})):
+            with self.subTest(funcion=funcion.__name__):
+                with self.assertRaises(ApiError) as e:
+                    self._llamar(funcion, 9, cuerpo)
+                self.assertEqual(e.exception.status, 404)
+
+    def test_no_se_restablece_el_acceso_propio(self):
+        with self.assertRaises(ApiError) as e:
+            self._llamar(self.adm.restablecer, 1, {}, yo=1)
+        self.assertEqual(e.exception.status, 409)
+
+    def test_el_valor_de_activo_debe_ser_booleano(self):
+        with self.assertRaises(ApiError) as e:
+            self._llamar(self.adm.cambiar_estado, 9, {"activo": "no"})
+        self.assertEqual(e.exception.status, 400)
 
 
 if __name__ == "__main__":

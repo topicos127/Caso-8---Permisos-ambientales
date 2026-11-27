@@ -75,7 +75,9 @@ def _acceso(solo_admin):
             # La cuenta existe y la clave es correcta, pero el jefe la desactivo.
             limitador.limpiar(clave)
             return jsonify({"acceso": False,
-                            "mensaje": "Tu cuenta está desactivada. Habla con el director de proyectos."}), 403
+                            "mensaje": "Su cuenta de administración está desactivada. Hable con otro administrador."
+                            if u["rol"] == ROL_ADMIN else
+                            "Tu cuenta está desactivada. Habla con el director de proyectos."}), 403
         if empresa is not None and not empresa["activa"]:
             return jsonify({"acceso": False, "mensaje": "La cuenta de su empresa está desactivada. "
                                                        "Comuníquese con el administrador de la plataforma."}), 403
@@ -212,10 +214,11 @@ def registro():
                                                         "Pida una nueva."}), 400
             if inv["email"] and inv["email"].lower() != email:
                 return jsonify({"ok": False, "mensaje": "Esta invitación es para otro correo."}), 400
-            cur.execute("SELECT activa FROM organizaciones WHERE id=%s", (inv["organizacion_id"],))
-            org = cur.fetchone()
-            if not org or not org["activa"]:
-                return jsonify({"ok": False, "mensaje": "La empresa de esta invitación está desactivada."}), 400
+            if inv["organizacion_id"] is not None:
+                cur.execute("SELECT activa FROM organizaciones WHERE id=%s", (inv["organizacion_id"],))
+                org = cur.fetchone()
+                if not org or not org["activa"]:
+                    return jsonify({"ok": False, "mensaje": "La empresa de esta invitación está desactivada."}), 400
             cur.execute("SELECT id FROM usuarios WHERE email=%s", (email,))
             if cur.fetchone():
                 return jsonify({"ok": False, "mensaje": "Ese correo ya esta registrado."}), 409
@@ -232,12 +235,14 @@ def registro():
                 # El primer director de una empresa nueva es su titular.
                 cur.execute("UPDATE organizaciones SET titular_id=%s WHERE id=%s AND titular_id IS NULL",
                             (nuevo, inv["organizacion_id"]))
-            if _esquema["org_politica"] and _esquema["aviso"]:
+            if _esquema["org_politica"] and _esquema["aviso"] and inv["organizacion_id"] is not None:
                 cur.execute("UPDATE usuarios SET aviso_vencimiento_dias = "
                             "(SELECT aviso_defecto FROM organizaciones WHERE id=%s) WHERE id=%s AND "
                             "(SELECT aviso_defecto FROM organizaciones WHERE id=%s) IS NOT NULL",
                             (inv["organizacion_id"], nuevo, inv["organizacion_id"]))
-            auditoria.registrar(cur, inv["organizacion_id"], nuevo, "alta_por_invitacion", f"rol {inv['rol']}", email=email)
+            auditoria.registrar(cur, inv["organizacion_id"], nuevo,
+                                "admin_alta" if inv["rol"] == ROL_ADMIN else "alta_por_invitacion",
+                                f"rol {inv['rol']}", email=email)
             usadas = cur.execute("UPDATE invitaciones SET usada_en=%s, usada_por=%s WHERE id=%s AND usada_en IS NULL",
                                  (ahora(), nuevo, inv["id"]))
             if usadas != 1:
@@ -245,7 +250,8 @@ def registro():
     except pymysql.err.IntegrityError:
         return jsonify({"ok": False, "mensaje": "Ese correo ya esta registrado."}), 409
 
-    return jsonify({"ok": True, "mensaje": "Cuenta creada. Ya puede iniciar sesión."}), 201
+    return jsonify({"ok": True, "administrador": inv["rol"] == ROL_ADMIN,
+                    "mensaje": "Cuenta creada. Ya puede iniciar sesión."}), 201
 
 
 @bp.route("/cuenta/contrasena", methods=["POST"])
