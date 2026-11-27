@@ -106,6 +106,9 @@ if (usuario) {
 
     async function cargarAdministradores() {
       const d = await apiFetch('/plataforma/administradores');
+      const nota = document.getElementById('adm-dominio');
+      nota.hidden = !(d.dominios && d.dominios.length);
+      if (!nota.hidden) nota.textContent = 'Solo se aceptan correos ' + d.dominios.map(x => '@' + x).join(' o ') + '.';
       const sin2fa = d.administradores.filter(a => a.activo && !a.totp_activo);
       document.getElementById('adm-avisos').innerHTML = sin2fa.length
         ? `<div class="panel" style="margin-bottom:20px;"><p style="margin:0;"><span class="status status-warn">Para atender</span> &nbsp;${sin2fa.length === 1 ? 'Un administrador no tiene' : sin2fa.length + ' administradores no tienen'} los dos pasos activos: ${sin2fa.map(a => esc(a.nombre)).join(', ')}. Estas cuentas pueden restaurar respaldos y ver todas las empresas.</p></div>`

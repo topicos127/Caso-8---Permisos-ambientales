@@ -51,6 +51,7 @@ Los documentos del proyecto (plan de los Sprints 9 y 10, guía del PO) están en
 | `JEFE_EMAIL` / `JEFE_PASSWORD` / `JEFE_NOMBRE` | Usuario jefe que se crea al arrancar si no existe (opcional; por defecto `jefe1@ejemplo.com` / `Jefe2026*`). En Railway conviene poner una contraseña propia |
 | `SEED_DEMO` | `true` solo para cargar los datos de prueba con `scripts/init_db.py` (una vez) |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_NOMBRE` | Primer administrador de la plataforma, que se crea al arrancar si no existe (por defecto `admin@ejemplo.com` / `Admin2026*`). **En el despliegue, definir una contraseña propia** y, si se quiere, `ADMIN_NOMBRE` con su nombre. Los demás administradores se invitan desde `/admin` → «Administradores» |
+| `ADMIN_DOMINIOS` | Dominios de correo permitidos para los administradores de la plataforma, separados por coma (por ejemplo `apto.com.pa`). Vacío = cualquiera. Rige al crear el primero (`ADMIN_EMAIL`), al invitar, al registrarse y al entrar por `/admin`; en producción la app no arranca si `ADMIN_EMAIL` no cumple |
 | `ADMIN_EXIGE_2FA` | Obliga a los administradores a activar los dos pasos al entrar. Por defecto `true` en producción (`SESSION_COOKIE_SECURE=true`) y `false` en local |
 | `ORG_POR_DEFECTO` | Nombre de la empresa que recibe los datos anteriores a la separación por empresa (por defecto `Consultora Demo`) |
 | `SESION_MINUTOS` | Minutos de inactividad antes de cerrar la sesión (120) |
