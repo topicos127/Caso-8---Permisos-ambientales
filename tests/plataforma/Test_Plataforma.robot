@@ -608,7 +608,7 @@ ${CABECERA}       ${EMPTY}
     ${datos}=    Create Dictionary    email=${otro}
     ${i}=    POST On Session    admin    /plataforma/administradores/invitaciones    json=${datos}
     ${lista}=    GET On Session    admin    /plataforma/administradores
-    ${id}=    Evaluate    [x['id'] for x in $lista.json()['invitaciones'] if x['email'] == $otro][0]
+    ${id}=    Evaluate    [x['id'] for x in $lista.json()['invitaciones'] if x['email'] == '${otro}'][0]
     ${r}=    DELETE On Session    admin    /plataforma/administradores/invitaciones/${id}
     Status Should Be    200    ${r}
     ${r}=    Registrar Con Invitacion    ${otro}    ${i.json()['token']}
@@ -770,7 +770,7 @@ Iniciar Sesion De Administrador
 Id Del Administrador
     [Arguments]    ${alias}    ${correo}
     ${r}=    GET On Session    ${alias}    /plataforma/administradores
-    ${id}=    Evaluate    [a['id'] for a in $r.json()['administradores'] if a['email'] == $correo][0]
+    ${id}=    Evaluate    [a['id'] for a in $r.json()['administradores'] if a['email'] == '${correo}'][0]
     RETURN    ${id}
 
 Preparar La Suite
