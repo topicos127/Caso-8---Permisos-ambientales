@@ -437,7 +437,8 @@ class PoliticaDeLaEmpresa(unittest.TestCase):
 class ArranqueEnProduccion(unittest.TestCase):
     """Con HTTPS (produccion) no se arranca con claves de prueba ni sin SECRET_KEY."""
 
-    BUENA = {"secure": True, "secret": "x" * 40, "admin_password": "Una-Clave-Propia-1", "jefe_password": "Otra-Clave-Propia-2"}
+    BUENA = {"secure": True, "secret": "x" * 40, "admin_password": "Una-Clave-Propia-1", "jefe_password": "Otra-Clave-Propia-2",
+             "jefe_inicial": True}
 
     def test_en_local_no_se_exige_nada(self):
         self.assertEqual(config.problemas_de_produccion(secure=False, secret=None,
@@ -462,8 +463,27 @@ class ArranqueEnProduccion(unittest.TestCase):
 
     def test_todo_mal_lista_todos_los_problemas(self):
         p = config.problemas_de_produccion(secure=True, secret=None, admin_password=config.ADMIN_PASSWORD_DEFECTO,
-                                           jefe_password=config.JEFE_PASSWORD_DEFECTO)
+                                           jefe_password=config.JEFE_PASSWORD_DEFECTO, jefe_inicial=True)
         self.assertEqual(len(p), 3)
+
+    def test_sin_director_inicial_no_se_pide_su_contrasena(self):
+        # En produccion los directores los crea el administrador: JEFE_PASSWORD no se usa.
+        p = config.problemas_de_produccion(**{**self.BUENA, "jefe_inicial": False,
+                                              "jefe_password": config.JEFE_PASSWORD_DEFECTO})
+        self.assertEqual(p, [])
+
+    def test_en_produccion_el_director_inicial_va_apagado_por_defecto(self):
+        import importlib
+        entorno = {"SESSION_COOKIE_SECURE": "true"}
+        with mock.patch.dict(os.environ, entorno):
+            os.environ.pop("JEFE_INICIAL", None)
+            self.assertFalse(importlib.reload(config).JEFE_INICIAL)
+            os.environ["JEFE_INICIAL"] = "true"
+            self.assertTrue(importlib.reload(config).JEFE_INICIAL)
+        with mock.patch.dict(os.environ, {"SESSION_COOKIE_SECURE": "false"}):
+            os.environ.pop("JEFE_INICIAL", None)
+            self.assertTrue(importlib.reload(config).JEFE_INICIAL)
+        importlib.reload(config)
 
     def test_la_app_se_niega_a_arrancar_en_produccion_con_claves_de_prueba(self):
         from permisos import create_app
@@ -496,6 +516,51 @@ class DetrasDeUnProxy(unittest.TestCase):
     def test_un_cliente_no_puede_falsificar_su_ip(self):
         # el proxy anade la IP real al final: lo que el cliente puso antes no cuenta
         self.assertEqual(self._ip(1, "1.2.3.4, 203.0.113.9"), "203.0.113.9")
+
+
+class EmpresaPorDefecto(unittest.TestCase):
+    """En una base nueva de produccion no se crea ninguna empresa: las crea el administrador."""
+
+    def _correr(self, jefe_inicial, sin_empresa, hay_empresa=False):
+        from contextlib import contextmanager
+        sentencias = []
+
+        class Falso:
+            lastrowid = 9
+
+            def execute(self, sql, params=None):
+                sentencias.append(sql.strip().split()[0] + " " + " ".join(sql.split()[1:4]))
+                self.ultimo = sql
+
+            def fetchone(self):
+                if "FROM organizaciones ORDER BY" in self.ultimo:
+                    return {"id": 3} if hay_empresa else None
+                return {"n": sin_empresa}
+
+        @contextmanager
+        def _cursor():
+            yield Falso()
+        with mock.patch.object(bd, "cursor", _cursor), mock.patch.object(bd, "JEFE_INICIAL", jefe_inicial),                 mock.patch.dict(bd._esquema, {"org": True}):
+            return bd._preparar_empresa_por_defecto(), sentencias
+
+    def test_base_nueva_en_produccion_no_crea_empresa(self):
+        org, sentencias = self._correr(jefe_inicial=False, sin_empresa=0)
+        self.assertIsNone(org)
+        self.assertFalse(any(s.startswith("INSERT") for s in sentencias))
+
+    def test_con_datos_antiguos_si_se_crea_para_no_dejarlos_huerfanos(self):
+        org, sentencias = self._correr(jefe_inicial=False, sin_empresa=4)
+        self.assertEqual(org, 9)
+        self.assertTrue(any(s.startswith("INSERT") for s in sentencias))
+
+    def test_en_local_se_crea_siempre(self):
+        org, _ = self._correr(jefe_inicial=True, sin_empresa=0)
+        self.assertEqual(org, 9)
+
+    def test_si_ya_hay_empresa_se_usa_esa(self):
+        org, sentencias = self._correr(jefe_inicial=False, sin_empresa=0, hay_empresa=True)
+        self.assertEqual(org, 3)
+        self.assertFalse(any(s.startswith("INSERT") for s in sentencias))
 
 
 if __name__ == "__main__":

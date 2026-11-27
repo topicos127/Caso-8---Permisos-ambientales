@@ -5,8 +5,8 @@ from contextlib import contextmanager
 import pymysql
 from werkzeug.security import generate_password_hash
 
-from .config import (ADMIN_EMAIL, ADMIN_NOMBRE, ADMIN_PASSWORD, DB_CONFIG, JEFE_EMAIL, JEFE_NOMBRE, JEFE_PASSWORD,
-                     ORG_POR_DEFECTO)
+from .config import (ADMIN_EMAIL, ADMIN_NOMBRE, ADMIN_PASSWORD, DB_CONFIG, JEFE_EMAIL, JEFE_INICIAL, JEFE_NOMBRE,
+                     JEFE_PASSWORD, ORG_POR_DEFECTO)
 from .errores import ApiError
 from .reglas import ahora, problema_de_password
 
@@ -346,7 +346,7 @@ def _asegurar_columna_cambio_clave(cur):
 def inicializar_bd():
     """Crea lo que los Sprints 8 y 9 necesitan si no existe. Se puede correr
     muchas veces: no cambia nada si ya esta."""
-    problema = problema_de_password(JEFE_PASSWORD)
+    problema = problema_de_password(JEFE_PASSWORD) if JEFE_INICIAL else None
     if problema:
         raise ValueError(f"JEFE_PASSWORD no cumple la politica: {problema}")
     with cursor() as cur:
@@ -394,7 +394,7 @@ def inicializar_bd():
                         "WHERE u.organizacion_id = o.id AND u.rol = 'jefe') WHERE o.titular_id IS NULL")
     with cursor() as cur:
         cur.execute("SELECT id FROM usuarios WHERE email=%s", (JEFE_EMAIL,))
-        if not cur.fetchone():
+        if JEFE_INICIAL and not cur.fetchone():
             try:
                 columna, marca, valor = (", organizacion_id", ", %s", (org_defecto,)) if org_defecto else ("", "", ())
                 cur.execute(f"INSERT INTO usuarios (nombre, email, password_hash, rol{columna}) "
@@ -404,6 +404,13 @@ def inicializar_bd():
             except pymysql.err.IntegrityError:
                 pass  # otro proceso lo creo al mismo tiempo
     _crear_administrador()
+
+
+def _hay_datos_sin_empresa(cur):
+    """Hay usuarios (salvo el administrador) o expedientes de antes de la separacion por empresa."""
+    cur.execute("SELECT (SELECT COUNT(*) FROM usuarios WHERE rol <> 'admin' AND organizacion_id IS NULL) + "
+                "(SELECT COUNT(*) FROM expedientes WHERE organizacion_id IS NULL) AS n")
+    return (cur.fetchone()["n"] or 0) > 0
 
 
 def _preparar_empresa_por_defecto():
@@ -417,6 +424,8 @@ def _preparar_empresa_por_defecto():
         if fila:
             org_id = fila["id"]
         else:
+            if not JEFE_INICIAL and not _hay_datos_sin_empresa(cur):
+                return None  # base nueva en produccion: las empresas las crea el administrador
             cur.execute("INSERT INTO organizaciones (nombre) VALUES (%s)", (ORG_POR_DEFECTO,))
             org_id = cur.lastrowid
             print(f"Empresa por defecto creada: {ORG_POR_DEFECTO}.", flush=True)

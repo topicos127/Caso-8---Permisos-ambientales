@@ -86,10 +86,14 @@ configura desde el panel.
    | `SESSION_COOKIE_SECURE` | `true` |
    | `PROXY_SALTOS` | `1` (la IP real del cliente llega en `X-Forwarded-For`; sin esto el límite de intentos y el registro de accesos usarían la IP del proxy) |
    | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | el administrador de la plataforma, con contraseña propia |
-   | `JEFE_EMAIL`, `JEFE_NOMBRE`, `JEFE_PASSWORD`, `ORG_POR_DEFECTO` | el primer director de proyectos y el nombre de su consultora |
+
+   En producción la app crea **solo al administrador**. Las empresas y sus directores de proyectos
+   se crean desde `/admin` (cada empresa genera un enlace de invitación para su director, que a su
+   vez invita a su equipo). `JEFE_EMAIL`, `JEFE_PASSWORD` y `ORG_POR_DEFECTO` no se usan salvo que se
+   fuerce `JEFE_INICIAL=true` (pensado para local y pruebas).
 
    Con `SESSION_COOKIE_SECURE=true` la app **se niega a arrancar** si `SECRET_KEY` es corta o
-   si `ADMIN_PASSWORD` / `JEFE_PASSWORD` siguen con las contraseñas de prueba.
+   si `ADMIN_PASSWORD` sigue con la contraseña de prueba.
    **No use `SEED_DEMO=true` en producción:** crearía las cuentas de prueba.
 3. **Archivos y respaldos.** Un servicio de Railway admite un solo volumen, así que no se montan
    dos. Elegir una opción:
@@ -105,8 +109,9 @@ configura desde el panel.
 7. **Settings → Networking → Generate Domain** para la URL pública. El administrador entra por
    `/admin`.
 
-Después del primer despliegue: abrir `/estado`, entrar a `/admin`, crear la primera empresa o
-entrar con el director, subir un documento, y en «Respaldos» hacer uno y pulsar «Verificar».
+Después del primer despliegue: abrir `/estado`, entrar a `/admin`, crear la primera empresa y
+usar su enlace de invitación para registrar al director de proyectos; con esa cuenta invitar al
+equipo, subir un documento, y en «Respaldos» (administrador) hacer uno y pulsar «Verificar».
 
 ## Cómo bajar los cambios más recientes
 
