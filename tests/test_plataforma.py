@@ -672,5 +672,150 @@ class GestionDeAdministradores(unittest.TestCase):
         self.assertEqual(e.exception.status, 400)
 
 
+class DominioDeAdministradores(unittest.TestCase):
+    """Los administradores de la plataforma solo pueden usar correos de los dominios autorizados."""
+
+    DOMINIOS = ("apto.com.pa",)
+
+    def test_lee_la_lista_de_dominios(self):
+        self.assertEqual(config.dominios_de("apto.com.pa, @Otro.com ; x.org"), ("apto.com.pa", "otro.com", "x.org"))
+        self.assertEqual(config.dominios_de(""), ())
+        self.assertEqual(config.dominios_de(None), ())
+
+    def test_sin_dominios_no_hay_restriccion(self):
+        self.assertTrue(config.correo_en_dominios("cualquiera@gmail.com", ()))
+
+    def test_solo_el_dominio_exacto_cuenta(self):
+        validos = ("helio@apto.com.pa", "HELIO@APTO.COM.PA", "  a@apto.com.pa ")
+        invalidos = ("helio@gmail.com", "helio@mail.apto.com.pa", "helio@apto.com.pa.evil.com",
+                     "helio@evilapto.com.pa", "apto.com.pa", "", None)
+        for correo in validos:
+            self.assertTrue(config.correo_en_dominios(correo, self.DOMINIOS), correo)
+        for correo in invalidos:
+            self.assertFalse(config.correo_en_dominios(correo, self.DOMINIOS), correo)
+
+    def test_en_produccion_no_arranca_con_un_correo_de_otro_dominio(self):
+        buena = {"secure": True, "secret": "x" * 40, "admin_password": "Una-Clave-Propia-1", "jefe_inicial": False}
+        p = config.problemas_de_produccion(**buena, admin_email="helio@gmail.com", admin_dominios=self.DOMINIOS)
+        self.assertEqual(len(p), 1)
+        self.assertIn("ADMIN_EMAIL", p[0])
+        self.assertIn("@apto.com.pa", p[0])
+        self.assertEqual(config.problemas_de_produccion(**buena, admin_email="helio@apto.com.pa",
+                                                        admin_dominios=self.DOMINIOS), [])
+        self.assertEqual(config.problemas_de_produccion(**buena, admin_email="helio@gmail.com", admin_dominios=()), [])
+
+    # --- invitar
+    def test_no_se_invita_a_un_correo_de_otro_dominio(self):
+        from contextlib import contextmanager
+
+        from flask import Flask, g
+
+        from permisos.rutas import administradores as adm
+
+        class Falso:
+            def execute(self, sql, params=None):
+                self.ultimo = sql
+
+            def fetchone(self):
+                return None
+
+        @contextmanager
+        def _cursor():
+            yield Falso()
+        app = Flask("prueba")
+        original = adm.cursor
+        adm.cursor = _cursor
+        try:
+            with mock.patch.object(adm, "ADMIN_DOMINIOS", self.DOMINIOS):
+                invitar = getattr(adm.invitar, "__wrapped__", adm.invitar)
+                with app.test_request_context(json={"email": "persona@gmail.com"}):
+                    g.usuario = {"id": 1, "rol": "admin"}
+                    with self.assertRaises(ApiError) as e:
+                        invitar()
+                self.assertEqual(e.exception.status, 400)
+                self.assertIn("@apto.com.pa", e.exception.mensaje)
+                with app.test_request_context(json={"email": "persona@apto.com.pa"}):
+                    g.usuario = {"id": 1, "rol": "admin"}
+                    _, codigo = invitar()
+                self.assertEqual(codigo, 201)
+        finally:
+            adm.cursor = original
+
+    # --- registro y login de administracion
+    def _app_auth(self, fila):
+        from contextlib import contextmanager
+
+        from flask import Flask
+
+        from permisos.rutas import auth
+
+        class Falso:
+            def execute(self, sql, params=None):
+                self.ultimo = sql
+
+            def fetchone(self):
+                if isinstance(fila, list):
+                    return fila.pop(0) if len(fila) > 1 else fila[0]
+                return fila
+
+        @contextmanager
+        def _cursor():
+            yield Falso()
+        app = Flask("prueba")
+        app.secret_key = "pruebas"
+        app.register_blueprint(auth.bp)
+        self.addCleanup(setattr, auth, "cursor", auth.cursor)
+        self.addCleanup(bd._esquema.update, dict(bd._esquema))
+        auth.cursor = _cursor
+        bd._esquema.update({k: False for k in bd._esquema})
+        return app, auth
+
+    def test_el_registro_por_invitacion_de_administrador_exige_el_dominio(self):
+        from datetime import timedelta
+
+        from permisos.reglas import ahora
+        inv = {"id": 1, "organizacion_id": None, "rol": "admin", "email": None, "expira": ahora() + timedelta(hours=1),
+               "usada_en": None, "revocada": 0}
+        app, auth = self._app_auth(inv)
+        cuerpo = {"nombre": "Persona", "email": "persona@gmail.com", "password": "Clave-Larga-Admin-91!",
+                  "invitacion": "tokencualquiera", "acepto_terminos": True}
+        with mock.patch.object(auth, "ADMIN_DOMINIOS", self.DOMINIOS):
+            r = app.test_client().post("/registro", json=cuerpo)
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("@apto.com.pa", r.get_json()["mensaje"])
+
+    def test_la_invitacion_de_una_consultora_no_exige_ese_dominio(self):
+        # La regla es solo de los administradores; "el resto" se decide aparte.
+        from datetime import timedelta
+
+        from permisos.reglas import ahora
+        inv = {"id": 1, "organizacion_id": 3, "rol": "consultor", "email": None, "expira": ahora() + timedelta(hours=1),
+               "usada_en": None, "revocada": 0}
+        # invitacion, empresa activa y "ese correo ya existe" (asi se corta sin tocar mas la base)
+        app, auth = self._app_auth([inv, {"activa": 1}, {"id": 5}])
+        cuerpo = {"nombre": "Persona", "email": "persona@gmail.com", "password": "Clave-Larga-Admin-91!",
+                  "invitacion": "tokencualquiera", "acepto_terminos": True}
+        with mock.patch.object(auth, "ADMIN_DOMINIOS", self.DOMINIOS):
+            r = app.test_client().post("/registro", json=cuerpo)
+        self.assertEqual(r.status_code, 409)
+        self.assertNotIn("apto.com.pa", r.get_json()["mensaje"])
+
+    def test_el_login_de_administracion_rechaza_una_cuenta_de_otro_dominio(self):
+        from werkzeug.security import generate_password_hash
+        fila = {"id": 1, "email": "viejo@gmail.com", "password_hash": generate_password_hash("Clave-Larga-1!"),
+                "rol": "admin", "nombre": "V", "debe_cambiar_clave": 0, "activo": 1, "organizacion_id": None,
+                "sesion_version": 0, "totp_activo": 0}
+        app, auth = self._app_auth(fila)
+        with mock.patch.object(auth, "ADMIN_DOMINIOS", self.DOMINIOS):
+            r = app.test_client().post("/admin/login", json={"email": "viejo@gmail.com", "password": "Clave-Larga-1!"})
+            self.assertEqual(r.status_code, 403)
+            self.assertFalse(r.get_json()["acceso"])
+            self.assertIn("@apto.com.pa", r.get_json()["mensaje"])
+            fila["email"] = "nuevo@apto.com.pa"
+            r = app.test_client().post("/admin/login", json={"email": "nuevo@apto.com.pa", "password": "Clave-Larga-1!"})
+            self.assertEqual(r.status_code, 200)
+            self.assertTrue(r.get_json()["acceso"])
+
+
 if __name__ == "__main__":
     unittest.main()

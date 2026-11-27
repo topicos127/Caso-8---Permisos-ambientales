@@ -106,7 +106,7 @@
           <h3>Invitar a otro administrador</h3>
           <p class="panel-note">Genera un enlace de un solo uso que vence en 72 horas. La persona elige su propia contraseña y entra por <b>/admin</b>. Todos los administradores tienen los mismos permisos: invítelos solo a personas de confianza.</p>
           <form id="form-admin" class="form-alta" novalidate>
-            <div class="campo"><label for="adm-email">Correo (opcional)</label><input type="email" id="adm-email" maxlength="255" placeholder="Si lo escribe, el enlace solo servirá para ese correo"></div>
+            <div class="campo"><label for="adm-email">Correo (opcional)</label><input type="email" id="adm-email" maxlength="255" placeholder="Si lo escribe, el enlace solo servirá para ese correo"><small id="adm-dominio" class="panel-note" hidden></small></div>
             <div style="grid-column:1 / -1;"><button type="submit" class="btn btn-brass" id="btn-admin">Generar enlace de invitación</button></div>
           </form>
           <div id="adm-resultado" aria-live="polite"></div>

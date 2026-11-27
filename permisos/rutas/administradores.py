@@ -12,7 +12,7 @@ from werkzeug.security import generate_password_hash
 
 from .. import auditoria
 from ..bd import _esquema, col_activo, cursor
-from ..config import EMAIL_RE, INVITACION_HORAS, ROL_ADMIN
+from ..config import ADMIN_DOMINIOS, EMAIL_RE, INVITACION_HORAS, ROL_ADMIN, correo_en_dominios, mensaje_dominios
 from ..errores import ApiError
 from ..reglas import ahora
 from ..seguridad import requiere_admin
@@ -81,7 +81,7 @@ def listar():
         e["texto"] = auditoria.TIPOS.get(e["tipo"], e["tipo"])
         e["fecha"] = _fecha(e["fecha"])
     return jsonify({"administradores": admins, "invitaciones": invitaciones, "eventos": eventos,
-                    "activos": sum(1 for a in admins if a["activo"])}), 200
+                    "activos": sum(1 for a in admins if a["activo"]), "dominios": list(ADMIN_DOMINIOS)}), 200
 
 
 @bp.route("/plataforma/administradores/invitaciones", methods=["POST"])
@@ -91,6 +91,8 @@ def invitar():
     email = texto(data, "email", 255, obligatorio=False).lower()
     if email and not EMAIL_RE.match(email):
         raise ApiError(400, "El correo no es válido.")
+    if email and not correo_en_dominios(email, ADMIN_DOMINIOS):
+        raise ApiError(400, mensaje_dominios(ADMIN_DOMINIOS))
     with cursor() as cur:
         if email:
             cur.execute("SELECT id FROM usuarios WHERE email=%s", (email,))

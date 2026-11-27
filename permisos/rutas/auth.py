@@ -9,7 +9,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from .. import limitador, totp
 from .. import auditoria
 from ..bd import _esquema, col_activo, col_aviso, col_cambio_clave, col_org, col_sesion, col_sometimiento, col_totp, cursor
-from ..config import EMAIL_RE, LOGIN_MAX_FALLOS, ROL_ADMIN, ROLES_REGISTRO
+from ..config import (ADMIN_DOMINIOS, EMAIL_RE, LOGIN_MAX_FALLOS, ROL_ADMIN, ROLES_REGISTRO, correo_en_dominios,
+                      mensaje_dominios)
 from ..empresas import datos_empresa
 from ..errores import ApiError
 from ..limitador import _fallos  # noqa: F401  (las pruebas limpian auth._fallos)
@@ -78,6 +79,9 @@ def _acceso(solo_admin):
                             "mensaje": "Su cuenta de administración está desactivada. Hable con otro administrador."
                             if u["rol"] == ROL_ADMIN else
                             "Tu cuenta está desactivada. Habla con el director de proyectos."}), 403
+        if solo_admin and not correo_en_dominios(u["email"], ADMIN_DOMINIOS):
+            # Clave correcta, pero la cuenta no es de un dominio autorizado para administrar la plataforma.
+            return jsonify({"acceso": False, "mensaje": mensaje_dominios(ADMIN_DOMINIOS) + " Hable con otro administrador."}), 403
         if empresa is not None and not empresa["activa"]:
             return jsonify({"acceso": False, "mensaje": "La cuenta de su empresa está desactivada. "
                                                        "Comuníquese con el administrador de la plataforma."}), 403
@@ -214,6 +218,8 @@ def registro():
                                                         "Pida una nueva."}), 400
             if inv["email"] and inv["email"].lower() != email:
                 return jsonify({"ok": False, "mensaje": "Esta invitación es para otro correo."}), 400
+            if inv["rol"] == ROL_ADMIN and not correo_en_dominios(email, ADMIN_DOMINIOS):
+                return jsonify({"ok": False, "mensaje": mensaje_dominios(ADMIN_DOMINIOS)}), 400
             if inv["organizacion_id"] is not None:
                 cur.execute("SELECT activa FROM organizaciones WHERE id=%s", (inv["organizacion_id"],))
                 org = cur.fetchone()

@@ -103,6 +103,30 @@ ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@ejemplo.com").strip().lower()
 ADMIN_NOMBRE = os.environ.get("ADMIN_NOMBRE", "Administración de la plataforma")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "Admin2026*")
 
+
+def dominios_de(texto):
+    """'apto.com.pa, @otro.com' -> ('apto.com.pa', 'otro.com'). Vacio = sin restriccion."""
+    return tuple(d.strip().lower().lstrip("@") for d in (texto or "").replace(";", ",").replace(" ", ",").split(",")
+                 if d.strip())
+
+
+def correo_en_dominios(email, dominios):
+    """True si no hay restriccion o si el dominio del correo es uno de los permitidos (exacto, sin subdominios)."""
+    if not dominios:
+        return True
+    email = (email or "").strip().lower()
+    return "@" in email and email.rsplit("@", 1)[1] in dominios
+
+
+def mensaje_dominios(dominios, quienes="Los administradores"):
+    lista = " o ".join(f"@{d}" for d in dominios)
+    return f"{quienes} deben usar un correo {lista}."
+
+
+# Dominios de correo permitidos para los administradores de la plataforma (por ejemplo, apto.com.pa).
+# Vacio = cualquiera (local y pruebas). Solo cuenta el dominio: la plataforma no envia correos.
+ADMIN_DOMINIOS = dominios_de(os.environ.get("ADMIN_DOMINIOS", ""))
+
 # ---------- Archivos y respaldos ----------
 
 # local: disco (UPLOADS_DIR). s3: cualquier servicio compatible (R2, Backblaze, MinIO, AWS).
@@ -155,7 +179,8 @@ _DEL_ENTORNO = object()
 
 
 def problemas_de_produccion(secure=_DEL_ENTORNO, secret=_DEL_ENTORNO, admin_password=_DEL_ENTORNO,
-                            jefe_password=_DEL_ENTORNO, jefe_inicial=_DEL_ENTORNO):
+                            jefe_password=_DEL_ENTORNO, jefe_inicial=_DEL_ENTORNO, admin_email=_DEL_ENTORNO,
+                            admin_dominios=_DEL_ENTORNO):
     """Lo que impide arrancar con SESSION_COOKIE_SECURE=true (es decir, en produccion, con HTTPS):
     claves de prueba o una SECRET_KEY ausente. Devuelve la lista de problemas (vacia si todo esta bien).
     Sin esto, un despliegue olvidado dejaria al administrador con una contrasena que esta en el README."""
@@ -165,12 +190,17 @@ def problemas_de_produccion(secure=_DEL_ENTORNO, secret=_DEL_ENTORNO, admin_pass
     admin_password = ADMIN_PASSWORD if admin_password is _DEL_ENTORNO else admin_password
     jefe_password = JEFE_PASSWORD if jefe_password is _DEL_ENTORNO else jefe_password
     jefe_inicial = JEFE_INICIAL if jefe_inicial is _DEL_ENTORNO else jefe_inicial
+    admin_email = ADMIN_EMAIL if admin_email is _DEL_ENTORNO else admin_email
+    admin_dominios = ADMIN_DOMINIOS if admin_dominios is _DEL_ENTORNO else admin_dominios
     problemas = []
     if not secret or len(secret) < 32:
         problemas.append("SECRET_KEY: defina un texto aleatorio de al menos 32 caracteres "
                          "(si falta, las sesiones se pierden al reiniciar).")
     if admin_password == ADMIN_PASSWORD_DEFECTO:
         problemas.append("ADMIN_PASSWORD: sigue la contrasena de prueba; defina una propia.")
+    if not correo_en_dominios(admin_email, admin_dominios):
+        problemas.append(f"ADMIN_EMAIL ({admin_email}): {mensaje_dominios(admin_dominios)} "
+                         "Cambie el correo o ADMIN_DOMINIOS.")
     if jefe_inicial and jefe_password == JEFE_PASSWORD_DEFECTO:
         problemas.append("JEFE_PASSWORD: sigue la contrasena de prueba; defina una propia "
                          "(con JEFE_INICIAL=true se crea ese director al arrancar).")

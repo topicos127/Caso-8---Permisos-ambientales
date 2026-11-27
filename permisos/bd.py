@@ -5,8 +5,8 @@ from contextlib import contextmanager
 import pymysql
 from werkzeug.security import generate_password_hash
 
-from .config import (ADMIN_EMAIL, ADMIN_NOMBRE, ADMIN_PASSWORD, DB_CONFIG, JEFE_EMAIL, JEFE_INICIAL, JEFE_NOMBRE,
-                     JEFE_PASSWORD, ORG_POR_DEFECTO)
+from .config import (ADMIN_DOMINIOS, ADMIN_EMAIL, ADMIN_NOMBRE, ADMIN_PASSWORD, DB_CONFIG, JEFE_EMAIL, JEFE_INICIAL,
+                     JEFE_NOMBRE, JEFE_PASSWORD, ORG_POR_DEFECTO, correo_en_dominios)
 from .errores import ApiError
 from .reglas import ahora, problema_de_password
 
@@ -451,6 +451,10 @@ def _preparar_empresa_por_defecto():
 
 
 def _crear_administrador():
+    if not correo_en_dominios(ADMIN_EMAIL, ADMIN_DOMINIOS):
+        print(f"AVISO: ADMIN_EMAIL ({ADMIN_EMAIL}) no es de un dominio permitido ({', '.join(ADMIN_DOMINIOS)}); "
+              "no se crea el administrador inicial.", flush=True)
+        return
     problema = problema_de_password(ADMIN_PASSWORD)
     if problema:
         raise ValueError(f"ADMIN_PASSWORD no cumple la politica: {problema}")
