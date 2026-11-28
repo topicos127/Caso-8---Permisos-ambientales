@@ -283,6 +283,7 @@ img, svg { max-width: 100%; }
 .doc-msg.show { display: block; }
 .doc-msg.ok { background: var(--status-ok-bg); color: var(--status-ok); }
 .doc-msg.error { background: var(--status-bad-bg); color: var(--status-bad); }
+.doc-msg.info { background: var(--status-info-bg); color: var(--status-info); }
 
 /* ============================================================
    APP — tarjeta blanca sobre el lienzo, menu lateral claro

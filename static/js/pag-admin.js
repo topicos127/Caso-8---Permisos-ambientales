@@ -12,7 +12,7 @@ const entradaCodigo = document.getElementById('codigo');
 
 function aviso(texto, ok) {
   msg.textContent = texto;
-  msg.className = 'doc-msg show ' + (ok ? 'ok' : 'error');
+  msg.className = 'doc-msg show ' + (ok === 'info' ? 'info' : ok ? 'ok' : 'error');
 }
 
 form.addEventListener('submit', async (e) => {
@@ -34,9 +34,12 @@ form.addEventListener('submit', async (e) => {
     });
     const d = await r.json();
     if (d.requiere_2fa) {
+      // La primera vez no es un error: la contraseña estaba bien y falta el código. Si ya se pidió, el código falló.
+      const yaPedido = !campoCodigo.hidden;
       campoCodigo.hidden = false;
+      if (yaPedido) entradaCodigo.value = '';
       entradaCodigo.focus();
-      aviso(d.mensaje, false);
+      aviso(d.mensaje, yaPedido ? false : 'info');
       return;
     }
     aviso(d.mensaje, d.acceso === true);
@@ -55,6 +58,6 @@ form.addEventListener('submit', async (e) => {
     aviso('No se pudo conectar con el servidor.', false);
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Entrar';
+    btn.textContent = campoCodigo.hidden ? 'Entrar' : 'Verificar y entrar';
   }
 });
