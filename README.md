@@ -121,6 +121,30 @@ Después del primer despliegue: abrir `/estado`, entrar a `/admin`, crear la pri
 usar su enlace de invitación para registrar al director de proyectos; con esa cuenta invitar al
 equipo, subir un documento, y en «Respaldos» (administrador) hacer uno y pulsar «Verificar».
 
+## Datos de demostración (para presentar Apto)
+
+`scripts/demo_produccion.py` carga **dos consultoras ficticias** con todo lo necesario para mostrar la
+plataforma: *Consultora Ambiental Istmo* (12 expedientes, 3 clientes) y *EcoGestión del Pacífico*
+(8 expedientes, 2 clientes, con otro color y logo). Cada una tiene 2 directores de proyectos y 3 consultores.
+Hay expedientes en los cinco estados y en las tres categorías, con plazos vencidos, por vencer y en plazo,
+documentos reales descargables (con versiones y huella), historial, comentarios internos, una devolución con
+observaciones y un rastro de accesos.
+
+En Railway, en la pestaña **Console** del servicio de la app:
+
+```
+DEMO_PASSWORD='SuClaveDeDemo1' python scripts/demo_produccion.py
+```
+
+- Todas las cuentas usan la contraseña de `DEMO_PASSWORD` (mínimo 8 caracteres, con mayúscula y número); no
+  queda escrita en el repositorio. Los correos son `direccion@istmo.demo`, `consultor1@istmo.demo`,
+  `cliente1@istmo.demo`, `direccion@pacifico.demo`… (el script imprime la lista completa).
+- Volver a ejecutarlo **rehace** los datos con fechas nuevas (conviene antes de cada presentación).
+- `python scripts/demo_produccion.py --borrar` elimina las dos empresas y todo lo suyo, archivos incluidos.
+- Solo toca empresas con RUC `DEMO-…`: nunca datos reales. Si ya existe una empresa real con ese nombre, no hace nada.
+- Mientras no presente, desactive las dos empresas desde **Empresas** (bloquea el acceso sin borrar nada) o bórrelas.
+- Es distinto de `SEED_DEMO=true`, que crea cuentas con contraseñas conocidas y **no debe usarse en producción**.
+
 ## Cómo bajar los cambios más recientes
 
 1. `git pull`
