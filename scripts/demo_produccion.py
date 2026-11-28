@@ -138,7 +138,7 @@ def pdf_demo(empresa, proyecto, codigo, carpeta, version):
 
 def zip_cartografia(proyecto):
     """ZIP con un shapefile minimo (.shp, .shx y .dbf), suficiente para la validacion de la carpeta Cartografia."""
-    base = hashlib.sha1(proyecto.encode("utf-8")).hexdigest()[:8]
+    base = hashlib.sha1(proyecto.encode("utf-8"), usedforsecurity=False).hexdigest()[:8]
     cabecera = b"\x00\x00\x27\x0a" + b"\x00" * 20 + struct.pack(">i", 50) + struct.pack("<ii", 1000, 1) + b"\x00" * 64
     salida = io.BytesIO()
     with zipfile.ZipFile(salida, "w", zipfile.ZIP_DEFLATED) as z:
