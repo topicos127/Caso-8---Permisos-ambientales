@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seguridad y datos — Apto</title>
+<meta name="description" content="Cada consultora en su propio espacio, con acceso protegido y evidencia que no se altera.">
+<link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilos.css">
+<script src="js/interaccion.js"></script>
+</head>
+<body>
+
+<div class="landing-wrap">
+
+  <header class="l-header">
+    <div class="wrap">
+      <a class="l-brand" href="index.html" style="text-decoration:none;">
+        <span class="seal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19c9 0 14-6 14-14-8 0-14 5-14 14z"/><path d="M5 19l7-7"/></svg></span>
+        Apto
+      </a>
+      <nav class="l-nav" aria-label="Páginas">
+        <a href="index.html">Inicio</a>
+        <a href="producto.html">Producto</a>
+        <a href="planes.html">Planes</a>
+        <a href="seguridad.html" class="activo" aria-current="page">Seguridad</a>
+        <a href="consultar.html">Consultar un estudio</a>
+        <a href="preguntas.html">Preguntas</a>
+      </nav>
+      <div class="l-acciones">
+        <a class="btn-texto" href="login.html">Entrar</a>
+        <a class="btn" href="#acceso">Obtener acceso</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="pagina-cabecera" aria-labelledby="t-pagina">
+    <div class="wrap">
+      <span class="eyebrow-chip oscuro">Seguridad y datos</span>
+      <h1 id="t-pagina">Su información, protegida y verificable</h1>
+      <p class="lead">Cada consultora trabaja en su propio espacio, con acceso protegido y evidencia que no se altera.</p>
+    </div>
+  </section>
+
+  <section id="seguridad" class="wrap seccion revelar" aria-labelledby="t-seg">
+    <div class="caja-seguridad">
+      <div class="seccion-titulo" style="margin:0;">
+        <span class="kicker">Seguridad y transparencia</span>
+        <h2 id="t-seg" style="font-size:clamp(24px,2.6vw,30px);">Pensado para expedientes que deben resistir una revisión</h2>
+      </div>
+      <div class="lista-check">
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Se rechazan PDF con JavaScript y ZIP con ejecutables o rutas inseguras.</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Los documentos no se eliminan; cada versión conserva su huella SHA-256.</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Tras 5 intentos fallidos por minuto, el acceso se pausa.</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>El cliente cambia su contraseña temporal al primer ingreso.</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Historial de solo lectura, guardado junto con cada acción.</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>La consulta pública nunca muestra documentos ni datos personales.</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Cada consultora ve solo lo suyo: los datos están separados por empresa.</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Las cuentas se crean por invitación de un solo uso; no hay registro abierto.</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Verificación en dos pasos opcional y sesiones que vencen por inactividad.</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Respaldos diarios de la base y los documentos, con restauración y verificación.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="empresa" class="wrap seccion revelar" aria-labelledby="t-empresa">
+    <div class="seccion-titulo centrado">
+      <span class="kicker">Para su consultora</span>
+      <h2 id="t-empresa">Cada consultora trabaja en su propio espacio</h2>
+      <p class="small">Su equipo, su marca y sus expedientes, separados de los de cualquier otra empresa.</p>
+    </div>
+    <div class="pronto tres">
+      <div><b>Sus datos, solo suyos</b><span>Nadie de otra consultora puede abrir sus expedientes, ni siquiera sabiendo el código.</span></div>
+      <div><b>Su marca</b><span>Nombre, color y logo de su consultora en el menú de todo el equipo, en el resumen PDF y en la consulta pública.</span></div>
+      <div><b>Su equipo, por invitación</b><span>Cada persona entra con un enlace de un solo uso y elige su propia contraseña. No hay registro abierto.</span></div>
+      <div><b>Un responsable por expediente</b><span>Sepa quién lleva cada estudio, cámbielo cuando haga falta y deje comentarios internos que el cliente no ve.</span></div>
+      <div><b>Acceso protegido</b><span>Verificación en dos pasos con su aplicación autenticadora y cierre de sesión en los demás dispositivos.</span></div>
+      <div><b>Si olvida su contraseña</b><span>Códigos de recuperación o una contraseña temporal que genera su director de proyectos. Sin depender del correo.</span></div>
+    </div>
+  </section>
+
+  <section class="cierre revelar" id="acceso" aria-labelledby="t-cierre">
+    <div class="cierre-brillo" aria-hidden="true"></div>
+    <div class="wrap cierre-centro">
+      <span class="eyebrow-chip oscuro">Empiece hoy</span>
+      <h2 id="t-cierre">Ponga orden en su consultora desde hoy</h2>
+      <p>Plazos bajo control, expedientes completos y clientes informados. Su consultora se da de alta con la administración de la plataforma y, desde ahí, invita a cada persona de su equipo con un enlace de un solo uso.</p>
+      <div class="btn-row" style="justify-content:center;">
+        <a class="btn" href="login.html">Entrar a la plataforma</a>
+        <a class="btn btn-borde" href="producto.html#como">Ver cómo funciona</a>
+      </div>
+      <div class="cierre-tarjetas">
+        <div><b>Para el director de proyectos</b><span>Toda la cartera, ordenada por urgencia</span></div>
+        <div><b>Para el consultor</b><span>Expedientes completos, sin perseguir archivos</span></div>
+        <div><b>Para su cliente</b><span>Su trámite, a la vista y sin llamar</span></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="l-footer">
+    <div class="wrap">
+      <span>Apto · la plataforma de las consultoras ambientales.</span>
+      <span><a href="terminos.html">Términos</a> · <a href="privacidad.html">Privacidad</a> · <a href="estado.html">Estado del servicio</a> · © 2026 Apto</span>
+    </div>
+  </footer>
+</div>
+
+<script src="js/landing.js"></script>
+</body>
+</html>

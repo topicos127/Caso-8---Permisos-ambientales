@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Producto — Apto</title>
+<meta name="description" content="Recorra Apto por dentro: el panel, el expediente, los plazos legales y lo que ve su cliente.">
+<link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilos.css">
+<script src="js/interaccion.js"></script>
+</head>
+<body>
+
+<div class="landing-wrap">
+
+  <header class="l-header">
+    <div class="wrap">
+      <a class="l-brand" href="index.html" style="text-decoration:none;">
+        <span class="seal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19c9 0 14-6 14-14-8 0-14 5-14 14z"/><path d="M5 19l7-7"/></svg></span>
+        Apto
+      </a>
+      <nav class="l-nav" aria-label="Páginas">
+        <a href="index.html">Inicio</a>
+        <a href="producto.html" class="activo" aria-current="page">Producto</a>
+        <a href="planes.html">Planes</a>
+        <a href="seguridad.html">Seguridad</a>
+        <a href="consultar.html">Consultar un estudio</a>
+        <a href="preguntas.html">Preguntas</a>
+      </nav>
+      <div class="l-acciones">
+        <a class="btn-texto" href="login.html">Entrar</a>
+        <a class="btn" href="#acceso">Obtener acceso</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="pagina-cabecera" aria-labelledby="t-pagina">
+    <div class="wrap">
+      <span class="eyebrow-chip oscuro">Producto</span>
+      <h1 id="t-pagina">Conozca Apto por dentro</h1>
+      <p class="lead">El panel, el expediente, los plazos y lo que ve su cliente, con capturas reales del sistema.</p>
+    </div>
+  </section>
+
+  <section id="producto" class="seccion carrusel-seccion revelar" aria-labelledby="t-producto">
+    <div class="wrap">
+      <div class="seccion-titulo centrado">
+        <span class="kicker">El producto por dentro</span>
+        <h2 id="t-producto">Así trabaja una consultora en la plataforma</h2>
+        <p class="small">Capturas reales del sistema con expedientes de demostración.</p>
+      </div>
+      <div class="carrusel" aria-roledescription="carrusel" aria-label="Funcionalidades de la plataforma">
+        <div class="carrusel-puntos" role="tablist" aria-label="Elegir funcionalidad"><button type="button" class="carrusel-punto" role="tab" aria-controls="diapositiva-0" aria-selected="true"><span>Panel</span></button><button type="button" class="carrusel-punto" role="tab" aria-controls="diapositiva-1" aria-selected="false"><span>Expediente</span></button><button type="button" class="carrusel-punto" role="tab" aria-controls="diapositiva-2" aria-selected="false"><span>Índice</span></button><button type="button" class="carrusel-punto" role="tab" aria-controls="diapositiva-3" aria-selected="false"><span>Plazos</span></button><button type="button" class="carrusel-punto" role="tab" aria-controls="diapositiva-4" aria-selected="false"><span>Vistas</span></button><button type="button" class="carrusel-punto" role="tab" aria-controls="diapositiva-5" aria-selected="false"><span>Cliente</span></button></div>
+        <div class="carrusel-marco">
+          <div class="carrusel-pista">
+          <article class="diapositiva" id="diapositiva-0" role="group" aria-roledescription="diapositiva" aria-label="1 de 6: Sepa a qué expediente dedicarle el día">
+            <div class="diap-img"><figure class="marco"><div class="marco-barra" aria-hidden="true"><i></i><i></i><i></i><span>apto / panel</span></div><img src="img/landing/prioridades.webp" width="1500" height="938" alt="Panel con gráficos de estado, plazos y preparación, y los expedientes ordenados por prioridad" loading="lazy" decoding="async"></figure></div>
+            <div class="diap-texto">
+              <span class="kicker">Panel del director</span>
+              <h3>Sepa a qué expediente dedicarle el día</h3>
+              <p>Cada expediente abierto recibe un Índice de Preparación de 0 a 100. El panel los ordena del menos preparado al más listo y dice cuál es la siguiente acción en cada uno.</p>
+              <ul class="tour-lista"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>El más urgente aparece primero, con su motivo.</span></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>La próxima acción es concreta: qué documento subir o qué plazo vigilar.</span></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>No hace falta abrir expediente por expediente.</span></li></ul>
+            </div>
+          </article>
+          <article class="diapositiva" id="diapositiva-1" role="group" aria-roledescription="diapositiva" aria-label="2 de 6: Cada estudio, completo y con evidencia">
+            <div class="diap-img"><figure class="marco"><div class="marco-barra" aria-hidden="true"><i></i><i></i><i></i><span>apto / expediente</span></div><img src="img/landing/detalle.webp" width="1500" height="938" alt="Detalle de un expediente con etapas, documentos obligatorios y versiones" loading="lazy" decoding="async"></figure></div>
+            <div class="diap-texto">
+              <span class="kicker">Detalle del expediente</span>
+              <h3>Cada estudio, completo y con evidencia</h3>
+              <p>La plataforma arma la lista de documentos que exige la categoría del proyecto y revisa cada archivo antes de guardarlo.</p>
+              <ul class="tour-lista"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Documentos por categoría: 3, 4 o 5 según el impacto.</span></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Cada subida es una versión con código de trazabilidad y huella SHA-256.</span></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Se rechazan PDF con scripts, ZIP con ejecutables y cartografía sin shapefile completo.</span></li></ul>
+            </div>
+          </article>
+          <article class="diapositiva" id="diapositiva-2" role="group" aria-roledescription="diapositiva" aria-label="3 de 6: Un puntaje que explica de dónde sale">
+            <div class="diap-img"><figure class="marco marco-angosto"><img src="img/landing/ipe.webp" width="482" height="844" alt="Índice de Preparación con su medidor, los tres factores y las próximas acciones" loading="lazy" decoding="async"></figure></div>
+            <div class="diap-texto">
+              <span class="kicker">Índice de Preparación</span>
+              <h3>Un puntaje que explica de dónde sale</h3>
+              <p>El índice no es una caja negra: muestra cuánto aporta cada factor y qué hacer para subirlo.</p>
+              <ul class="tour-lista"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>50% documentos, 30% plazo y 20% vigencia.</span></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Listo desde 80, en preparación de 50 a 79 y en riesgo por debajo de 50.</span></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Las próximas acciones salen de las mismas reglas del cálculo.</span></li></ul>
+            </div>
+          </article>
+          <article class="diapositiva" id="diapositiva-3" role="group" aria-roledescription="diapositiva" aria-label="4 de 6: Los plazos se cuentan solos">
+            <div class="diap-img"><figure class="marco"><div class="marco-barra" aria-hidden="true"><i></i><i></i><i></i><span>apto / cronograma</span></div><img src="img/landing/plazo.webp" width="1500" height="938" alt="Cronograma de plazos por responsable, con la línea de hoy y los vencidos en rojo" loading="lazy" decoding="async"></figure></div>
+            <div class="diap-texto">
+              <span class="kicker">Plazos legales</span>
+              <h3>Los plazos se cuentan solos</h3>
+              <p>Desde que el expediente se somete, el plazo legal de respuesta corre en días hábiles, sin fines de semana ni feriados de Panamá.</p>
+              <ul class="tour-lista"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>20, 40 u 80 días según la categoría.</span></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Aviso de «por vencer» en el último 25% del plazo.</span></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>El límite legal y los vencimientos se descargan a Google Calendar u Outlook.</span></li></ul>
+            </div>
+          </article>
+          <article class="diapositiva" id="diapositiva-4" role="group" aria-roledescription="diapositiva" aria-label="5 de 6: La cartera, en la vista que prefiera">
+            <div class="diap-img"><figure class="marco"><div class="marco-barra" aria-hidden="true"><i></i><i></i><i></i><span>apto / expedientes</span></div><img src="img/landing/expedientes.webp" width="1600" height="1000" alt="Lista de expedientes agrupada por estado, con responsable, plazo e índice de preparación" loading="lazy" decoding="async"></figure></div>
+            <div class="diap-texto">
+              <span class="kicker">Toda la cartera</span>
+              <h3>La cartera, en la vista que prefiera</h3>
+              <p>Lista, tablero, tabla, cronograma y calendario de los mismos expedientes. El director de proyectos ve toda la consultora; cada consultor, solo lo suyo. Filtre, agrupe y guarde sus vistas favoritas.</p>
+              <ul class="tour-lista"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Estado del trámite, semáforo e índice en cada fila.</span></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>El candado marca lo que no está en la consulta pública.</span></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Ordenar por índice pone primero lo que necesita al equipo.</span></li></ul>
+            </div>
+          </article>
+          <article class="diapositiva" id="diapositiva-5" role="group" aria-roledescription="diapositiva" aria-label="6 de 6: Su cliente, informado desde el celular">
+            <div class="diap-img"><figure class="marco-movil"><img src="img/landing/movil.webp" width="600" height="1298" alt="Panel del cliente en el celular con sus trámites y avisos de plazo" loading="lazy" decoding="async"></figure></div>
+            <div class="diap-texto">
+              <span class="kicker">Para el cliente</span>
+              <h3>Su cliente, informado desde el celular</h3>
+              <p>El cliente entra con la cuenta que le crea su consultor y ve solo los trámites de su empresa, con los avisos de plazo.</p>
+              <ul class="tour-lista"><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Estado de cada trámite sin llamar a la consultora.</span></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Avisos cuando un plazo está por vencer.</span></li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Las pantallas se adaptan al teléfono.</span></li></ul>
+            </div>
+          </article>
+          </div>
+        </div>
+        <div class="carrusel-controles">
+          <button type="button" class="carrusel-boton carrusel-anterior" aria-label="Funcionalidad anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+          <button type="button" class="carrusel-boton carrusel-pausa" aria-pressed="false" aria-label="Pausar el carrusel"><svg class="ico-pausa" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="7" y="5" width="3.5" height="14" rx="1"/><rect x="13.5" y="5" width="3.5" height="14" rx="1"/></svg><svg class="ico-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg></button>
+          <button type="button" class="carrusel-boton carrusel-siguiente" aria-label="Funcionalidad siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+        </div>
+        <p class="carrusel-vivo sr-only" aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="campo" class="wrap seccion revelar" aria-labelledby="t-campo">
+    <div class="mosaico-fila">
+      <div class="mosaico-texto">
+        <span class="kicker">Del campo al expediente</span>
+        <h2 id="t-campo">Hecha para consultoras que trabajan en campo</h2>
+        <p>Línea base, foro público, cartografía: el estudio se arma afuera y se entrega adentro. La plataforma junta todo en un solo expediente, con su plazo y su evidencia.</p>
+        <ul class="tour-lista">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Sube PDF y ZIP desde la oficina o el celular.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Cada consultor ve solo sus expedientes; el director de proyectos, todos.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>El cliente sigue su trámite sin llamar.</span></li>
+        </ul>
+        <a class="btn" href="#acceso">Cómo obtener acceso</a>
+      </div>
+      <!-- Fotos: poner la ruta en data-foto de cada espacio (por ejemplo img/landing/campo-1.webp). -->
+      <div class="mosaico">
+        <figure class="foto-espacio alta" data-foto="img/landing/campo-1.webp" role="img" aria-label="Equipo ambiental en campo revisando datos en una tablet junto a un río"><div class="foto-aviso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 8"/></svg><b>Foto vertical</b><span>Proyecto en campo · 800×1100 px</span></div></figure>
+        <figure class="foto-espacio" data-foto="img/landing/campo-2.webp" role="img" aria-label="Equipo de la consultora revisando un estudio de impacto ambiental en la oficina"><div class="foto-aviso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 8"/></svg><b>Foto cuadrada</b><span>Equipo revisando un estudio · 800×800 px</span></div></figure>
+        <figure class="foto-espacio" data-foto="img/landing/campo-3.webp" role="img" aria-label="Toma de muestras de suelo en un proyecto de construcción en Ciudad de Panamá"><div class="foto-aviso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 8"/></svg><b>Foto cuadrada</b><span>Paisaje o proyecto de Panamá · 800×800 px</span></div></figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="como" class="banda-gris revelar" aria-labelledby="t-como">
+    <div class="wrap seccion">
+      <div class="seccion-titulo centrado">
+        <span class="kicker">Cómo funciona</span>
+        <h2 id="t-como">Del registro al sometimiento, en cuatro pasos</h2>
+      </div>
+      <ol class="pasos-linea">
+        <li><span class="paso-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10v6M9 13h6"/></svg><i>1</i></span><b>Registrar el expediente</b><span>El consultor crea el proyecto y elige su categoría. El sistema arma la lista de documentos.</span></li>
+        <li><span class="paso-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M12 16V5M7 10l5-5 5 5M5 19h14"/></svg><i>2</i></span><b>Completar los documentos</b><span>Sube PDF y ZIP. El índice sube con cada documento y le dice qué falta.</span></li>
+        <li><span class="paso-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg><i>3</i></span><b>Aprobación interna</b><span>Con todo completo, el director de proyectos aprueba y deja el motivo por escrito.</span></li>
+        <li><span class="paso-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg><i>4</i></span><b>Someter y dar seguimiento</b><span>El plazo legal corre en días hábiles y su cliente sigue el estado desde su cuenta.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="wrap seccion revelar" aria-labelledby="t-pronto">
+    <div class="seccion-titulo" style="margin-bottom:18px;">
+      <span class="kicker">Nuevo en esta versión</span>
+      <h2 id="t-pronto" style="font-size:clamp(22px,2.4vw,26px);">Lo que acaba de llegar</h2>
+    </div>
+    <div class="pronto tres">
+      <div><b>Varias consultoras, cada una aparte</b><span>Aislamiento total entre empresas, con su propio equipo, marca y administrador.</span></div>
+      <div><b>Invitaciones y dos pasos</b><span>Cuentas por enlace de un solo uso y verificación en dos pasos opcional.</span></div>
+      <div><b>Respaldos y estado del servicio</b><span>Respaldo diario con restauración, y una página pública con el estado de la plataforma.</span></div>
+      <div><b>Búsqueda con Ctrl + K</b><span>Encuentre un expediente, una persona o una acción en un segundo, desde cualquier pantalla.</span></div>
+      <div><b>Reportes a Excel y CSV</b><span>La cartera completa para gerencia y el historial de acciones para auditoría.</span></div>
+      <div><b>Comentarios y vistas guardadas</b><span>Conversación interna en cada expediente y sus filtros favoritos a un clic.</span></div>
+      <div><b>Calendario de plazos</b><span>Descargue el límite legal y los vencimientos a Google Calendar u Outlook.</span></div>
+      <div><b>Plazo en días hábiles</b><span>Contado desde el sometimiento, sin fines de semana ni feriados.</span></div>
+      <div><b>Vencimiento real de documentos</b><span>Fecha de cada documento y aviso con la anticipación que usted elija.</span></div>
+    </div>
+  </section>
+
+  <section class="cierre revelar" id="acceso" aria-labelledby="t-cierre">
+    <div class="cierre-brillo" aria-hidden="true"></div>
+    <div class="wrap cierre-centro">
+      <span class="eyebrow-chip oscuro">Empiece hoy</span>
+      <h2 id="t-cierre">Ponga orden en su consultora desde hoy</h2>
+      <p>Plazos bajo control, expedientes completos y clientes informados. Su consultora se da de alta con la administración de la plataforma y, desde ahí, invita a cada persona de su equipo con un enlace de un solo uso.</p>
+      <div class="btn-row" style="justify-content:center;">
+        <a class="btn" href="login.html">Entrar a la plataforma</a>
+        <a class="btn btn-borde" href="#como">Ver cómo funciona</a>
+      </div>
+      <div class="cierre-tarjetas">
+        <div><b>Para el director de proyectos</b><span>Toda la cartera, ordenada por urgencia</span></div>
+        <div><b>Para el consultor</b><span>Expedientes completos, sin perseguir archivos</span></div>
+        <div><b>Para su cliente</b><span>Su trámite, a la vista y sin llamar</span></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="l-footer">
+    <div class="wrap">
+      <span>Apto · la plataforma de las consultoras ambientales.</span>
+      <span><a href="terminos.html">Términos</a> · <a href="privacidad.html">Privacidad</a> · <a href="estado.html">Estado del servicio</a> · © 2026 Apto</span>
+    </div>
+  </footer>
+</div>
+
+<script src="js/landing.js"></script>
+</body>
+</html>
