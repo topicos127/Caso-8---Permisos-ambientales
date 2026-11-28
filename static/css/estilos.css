@@ -2298,3 +2298,10 @@ html, body {
   body.menu-oculto .shell { grid-template-columns: minmax(0, 1fr); }
 }
 
+
+/* ---------- Menu lateral y barra superior fijos: solo se mueve el contenido ---------- */
+/* .shell tenia overflow:hidden (de cuando era una tarjeta con esquinas): eso impide que algo quede fijo. */
+.shell { overflow: visible; }
+@media (min-width: 821px) {
+  .shell > .rail { position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; }
+}
