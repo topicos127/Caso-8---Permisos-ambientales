@@ -700,19 +700,63 @@ function graficoDona(partes, centro, sub) {
     <ul class="dona-leyenda">${partes.map(p => `<li><i style="background:${p.color};"></i><span>${esc(p.etiqueta)}</span><b>${esc(p.valor)}</b></li>`).join('')}</ul></div>`;
 }
 
-// graficoBarrasDia([{ dia, n }]) -> barras verticales con el valor encima.
-function graficoBarrasDia(serie, ariaTexto) {
-  const max = Math.max(1, ...serie.map(p => p.n));
-  const ancho = 520, alto = 150, base = 120, paso = ancho / serie.length, barra = paso * 0.6;
-  const barras = serie.map((p, i) => {
-    const h = Math.round((p.n / max) * (base - 20));
-    const x = i * paso + (paso - barra) / 2;
-    return `<g><title>${esc(p.dia)}: ${esc(p.n)}</title>
-      <rect x="${x.toFixed(1)}" y="${base - h}" width="${barra.toFixed(1)}" height="${Math.max(h, 2)}" rx="3.5" fill="var(--brand)" opacity="${p.n ? 1 : 0.22}"/>
-      ${p.n ? `<text x="${(x + barra / 2).toFixed(1)}" y="${base - h - 5}" text-anchor="middle" font-size="10.5" fill="var(--text-soft)">${esc(p.n)}</text>` : ''}
-      <text x="${(x + barra / 2).toFixed(1)}" y="${base + 16}" text-anchor="middle" font-size="10" fill="var(--text-faint)">${i % 2 === 0 ? esc(p.dia) : ''}</text></g>`;
+// Grafico de area suave con la tendencia diaria: graficoAreaDia([{ dia: '15/11', n: 2 }, ...], texto para lectores de pantalla).
+// La curva no se sale de los datos (interpolacion monotona); el pico lleva su valor y el ultimo dia se marca como «hoy».
+function trazoSuave(p) {
+  const n = p.length;
+  if (n < 2) return `M${p[0][0].toFixed(1)} ${p[0][1].toFixed(1)}`;
+  const dx = [], m = [], t = [];
+  for (let i = 0; i < n - 1; i++) { dx[i] = p[i + 1][0] - p[i][0]; m[i] = (p[i + 1][1] - p[i][1]) / dx[i]; }
+  t[0] = m[0]; t[n - 1] = m[n - 2];
+  for (let i = 1; i < n - 1; i++) t[i] = m[i - 1] * m[i] <= 0 ? 0 : (m[i - 1] + m[i]) / 2;
+  for (let i = 0; i < n - 1; i++) {
+    if (m[i] === 0) { t[i] = 0; t[i + 1] = 0; continue; }
+    const a = t[i] / m[i], b = t[i + 1] / m[i], q = a * a + b * b;
+    if (q > 9) { const k = 3 / Math.sqrt(q); t[i] = k * a * m[i]; t[i + 1] = k * b * m[i]; }
+  }
+  let d = `M${p[0][0].toFixed(1)} ${p[0][1].toFixed(1)}`;
+  for (let i = 0; i < n - 1; i++) {
+    const x1 = p[i][0] + dx[i] / 3, y1 = p[i][1] + t[i] * dx[i] / 3;
+    const x2 = p[i + 1][0] - dx[i] / 3, y2 = p[i + 1][1] - t[i + 1] * dx[i] / 3;
+    d += ` C${x1.toFixed(1)} ${y1.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)} ${p[i + 1][0].toFixed(1)} ${p[i + 1][1].toFixed(1)}`;
+  }
+  return d;
+}
+
+function graficoAreaDia(serie, ariaTexto) {
+  const ancho = 560, alto = 205, izq = 30, der = 14, arriba = 24, base = 165;
+  const max = Math.max(0, ...serie.map(p => p.n));
+  const tope = max <= 4 ? 4 : Math.ceil(max / 4) * 4;
+  const paso = (ancho - izq - der) / Math.max(1, serie.length - 1);
+  const y = (n) => base - (n / tope) * (base - arriba);
+  const pts = serie.map((p, i) => [izq + i * paso, y(p.n)]);
+  const id = 'ga' + Math.random().toString(36).slice(2, 8);
+  const rejilla = [0, 1, 2, 3, 4].map(k => {
+    const yy = base - (k / 4) * (base - arriba);
+    return `<line x1="${izq}" y1="${yy.toFixed(1)}" x2="${ancho - der}" y2="${yy.toFixed(1)}" stroke="var(--line)"${k ? ' stroke-dasharray="3 5"' : ''}/>`
+      + (k % 2 === 0 ? `<text x="${izq - 8}" y="${(yy + 3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--text-faint)">${Math.round(tope * k / 4)}</text>` : '');
   }).join('');
-  return `<svg viewBox="0 0 ${ancho} ${alto}" width="100%" role="img" aria-label="${esc(ariaTexto || '')}"><line x1="0" y1="${base}" x2="${ancho}" y2="${base}" stroke="var(--line-strong)"/>${barras}</svg>`;
+  const etiquetas = serie.map((p, i) => ((serie.length - 1 - i) % 3 === 0)
+    ? `<text x="${pts[i][0].toFixed(1)}" y="${base + 20}" text-anchor="middle" font-size="10.5" fill="${i === serie.length - 1 ? 'var(--brand-dark)' : 'var(--text-faint)'}" font-weight="${i === serie.length - 1 ? 700 : 400}">${i === serie.length - 1 ? 'hoy' : esc(p.dia)}</text>` : '').join('');
+  const puntos = serie.map((p, i) => `<g><circle cx="${pts[i][0].toFixed(1)}" cy="${pts[i][1].toFixed(1)}" r="13" fill="transparent"><title>${esc(p.dia)}: ${esc(p.n)} ${p.n === 1 ? 'acción' : 'acciones'}</title></circle>`
+    + (p.n ? `<circle cx="${pts[i][0].toFixed(1)}" cy="${pts[i][1].toFixed(1)}" r="4.5" fill="#fff" stroke="var(--brand)" stroke-width="2.5" pointer-events="none"/>` : '') + '</g>').join('');
+  let pico = '';
+  if (max > 0) {
+    const i = serie.findIndex(p => p.n === max);
+    const [px, py] = pts[i];
+    const cx = Math.min(Math.max(px, izq + 14), ancho - der - 14);
+    pico = `<g pointer-events="none"><rect x="${(cx - 14).toFixed(1)}" y="${(py - 32).toFixed(1)}" width="28" height="20" rx="10" fill="var(--brand-dark)"/>`
+      + `<text x="${cx.toFixed(1)}" y="${(py - 18).toFixed(1)}" text-anchor="middle" font-size="11.5" font-weight="700" fill="#fff">${esc(max)}</text></g>`;
+  }
+  const curva = trazoSuave(pts);
+  const area = `${curva} L${pts[pts.length - 1][0].toFixed(1)} ${base} L${pts[0][0].toFixed(1)} ${base} Z`;
+  const vacio = max === 0
+    ? `<text x="${ancho / 2}" y="${(base - 36).toFixed(1)}" text-anchor="middle" font-size="12.5" fill="var(--text-faint)">Sin actividad en este período</text>` : '';
+  return `<svg viewBox="0 0 ${ancho} ${alto}" width="100%" role="img" aria-label="${esc(ariaTexto || '')}">`
+    + `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--brand);stop-opacity:0.34"/><stop offset="1" style="stop-color:var(--brand);stop-opacity:0.02"/></linearGradient></defs>`
+    + rejilla + `<path d="${area}" fill="url(#${id})"/>`
+    + `<path d="${curva}" fill="none" stroke="var(--brand)" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"/>`
+    + vacio + puntos + pico + etiquetas + '</svg>';
 }
 
 // ============== TOUR DE BIENVENIDA ==============

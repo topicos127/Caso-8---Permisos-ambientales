@@ -303,19 +303,8 @@ if (usuario) {
     }
 
     function graficoActividad(serie) {
-      const max = Math.max(1, ...serie.map(p => p.n));
-      const ancho = 640, alto = 170, base = 140, paso = ancho / serie.length, barra = paso * 0.62;
       const total = serie.reduce((a, p) => a + p.n, 0);
-      const barras = serie.map((p, i) => {
-        const h = Math.round((p.n / max) * (base - 22));
-        const x = i * paso + (paso - barra) / 2;
-        return `<g><title>${esc(p.dia)}: ${esc(p.n)} acciones</title>
-          <rect x="${x.toFixed(1)}" y="${base - h}" width="${barra.toFixed(1)}" height="${Math.max(h, 2)}" rx="4" fill="var(--brand)" opacity="${p.n ? 1 : 0.25}"/>
-          ${p.n ? `<text x="${(x + barra / 2).toFixed(1)}" y="${base - h - 6}" text-anchor="middle" font-size="11" fill="var(--text-soft)">${esc(p.n)}</text>` : ''}
-          <text x="${(x + barra / 2).toFixed(1)}" y="${base + 18}" text-anchor="middle" font-size="10.5" fill="var(--text-faint)">${i % 2 === 0 ? esc(p.dia) : ''}</text></g>`;
-      }).join('');
-      return `<svg viewBox="0 0 ${ancho} ${alto}" width="100%" role="img" aria-label="Acciones por día en los últimos ${serie.length} días: ${total} en total">
-        <line x1="0" y1="${base}" x2="${ancho}" y2="${base}" stroke="var(--line-strong)"/>${barras}</svg>`;
+      return graficoAreaDia(serie, `Acciones por día en los últimos ${serie.length} días: ${total} en total`);
     }
 
     function barrasHorizontales(filas, total) {
