@@ -2,7 +2,7 @@
 # .\start.ps1 -Demo  ademas 7 expedientes de demostracion (todos los estados y plazos)
 param([switch]$Demo)
 
-Write-Host "=== Iniciando Sistema de Permisos Ambientales ===" -ForegroundColor Cyan
+Write-Host "=== Iniciando Apto ===" -ForegroundColor Cyan
 
 # 0. El .env tiene la contrasena de MySQL y la SECRET_KEY (no esta en GitHub).
 if (-not (Test-Path ".env")) {

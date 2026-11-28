@@ -21,7 +21,7 @@ from cryptography.fernet import Fernet, InvalidToken
 PASO = 30
 DIGITOS = 6
 VENTANA = 1  # tolera 30 s de desfase del reloj del telefono hacia cada lado
-EMISOR = "Permisos Ambientales"
+EMISOR = "Apto"
 ALFABETO_RECUPERACION = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"  # sin 0, 1, I, L, O
 
 

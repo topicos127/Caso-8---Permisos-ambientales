@@ -17,7 +17,7 @@ def index():
 
 @bp.route("/api", methods=["GET"])
 def api_info():
-    return jsonify({"servicio": "Permisos Ambientales - API", "version": VERSION, "estado": "activo"}), 200
+    return jsonify({"servicio": "Apto - API", "version": VERSION, "estado": "activo"}), 200
 
 
 @bp.route("/health", methods=["GET"])

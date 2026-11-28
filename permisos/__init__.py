@@ -1,4 +1,4 @@
-"""Sistema de Permisos Ambientales - API.
+"""Apto - API.
 
 Estructura (refactor del Sprint 9; antes todo vivia en app.py):
     config.py     variables de entorno y constantes del dominio

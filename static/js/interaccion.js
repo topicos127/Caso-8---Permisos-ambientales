@@ -14,6 +14,18 @@
     const u = JSON.parse(sessionStorage.getItem('usuario') || 'null');
     if (u && u.rol) document.documentElement.setAttribute('data-rol', u.rol);
   } catch (e) { /* sin sesion: queda el verde de la marca */ }
+  // Paginas publicas (estado, terminos, privacidad): quien llega desde dentro de la plataforma vuelve a su
+  // panel, no al landing. La administracion tiene su propio panel; el resto, el suyo.
+  document.addEventListener('DOMContentLoaded', () => {
+    try {
+      const u = JSON.parse(sessionStorage.getItem('usuario') || 'null');
+      if (!u || !u.rol) return;
+      document.querySelectorAll('a.volver').forEach((a) => {
+        a.setAttribute('href', u.rol === 'admin' ? '/admin/panel' : 'dashboard.html');
+        a.textContent = '← Volver al panel';
+      });
+    } catch (e) { /* sin sesion: sigue apuntando al inicio */ }
+  });
   const fetchOriginal = window.fetch.bind(window);
   const VENTANA_MS = 8000;  // un clic "reclama" la siguiente peticion por este tiempo
   let ultimoBoton = null;

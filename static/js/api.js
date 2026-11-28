@@ -401,7 +401,7 @@ function pintarRail() {
     const sello = e.logo
       ? `<div class="seal seal-logo"><img src="${esc(e.logo)}" alt=""></div>`
       : `<div class="seal seal-iniciales" aria-hidden="true">${esc(iniciales(e.nombre))}</div>`;
-    marca.innerHTML = `${sello}<div><b>${esc(e.nombre)}</b><span>Permisos Ambientales</span></div>`;
+    marca.innerHTML = `${sello}<div><b>${esc(e.nombre)}</b><span>Apto</span></div>`;
     marca.classList.add('con-empresa');
   } else if (u.rol === 'admin' && marca) {
     marca.innerHTML = marca.innerHTML.replace('Expedientes ambientales', 'Administración');

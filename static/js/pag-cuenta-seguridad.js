@@ -54,7 +54,7 @@
           texto: 'Descargar', clase: 'btn btn-ghost',
           alHacerClic: () => {
             const a = document.createElement('a');
-            a.href = URL.createObjectURL(new Blob([`Códigos de recuperación — Permisos Ambientales\n${usuario.email}\n\n${texto}\n`], { type: 'text/plain' }));
+            a.href = URL.createObjectURL(new Blob([`Códigos de recuperación — Apto\n${usuario.email}\n\n${texto}\n`], { type: 'text/plain' }));
             a.download = 'codigos-de-recuperacion.txt';
             a.click();
             URL.revokeObjectURL(a.href);

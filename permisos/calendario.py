@@ -13,7 +13,7 @@ from datetime import timedelta
 
 from .reglas import como_fecha, vencimiento_documento
 
-PRODID = "-//Permisos Ambientales//Calendario de plazos//ES"
+PRODID = "-//Apto//Calendario de plazos//ES"
 DOMINIO_UID = "permisos-ambientales"
 AVISO_PLAZO_DIAS = 3      # recordatorio antes del limite legal
 AVISO_DOCUMENTO_DIAS = 7  # recordatorio antes de que venza un documento
