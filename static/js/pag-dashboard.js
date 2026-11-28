@@ -56,7 +56,7 @@ if (usuario) {
 
     if (gr.actividad && gr.actividad.some(a => a.n)) {
       const suma = gr.actividad.reduce((a, p) => a + p.n, 0);
-      piezas.push(widget('Actividad de la consultora', `${suma} acciones en 14 días`, graficoBarrasDia(gr.actividad, `${suma} acciones en los últimos 14 días`), true));
+      piezas.push(widget('Actividad de la consultora', `${suma} acciones en 14 días`, graficoAreaDia(gr.actividad, `${suma} acciones en los últimos 14 días`), true));
     }
     cont.innerHTML = piezas.join('');
     cont.hidden = false;
