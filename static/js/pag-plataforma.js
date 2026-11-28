@@ -333,8 +333,8 @@ if (usuario) {
         doc: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/>',
       };
       document.getElementById('res-kpis').innerHTML =
-        kpi('Empresas activas', d.empresas.activas, `${esc(d.empresas.nuevas_30d)} nueva(s) en 30 días${d.empresas.desactivadas ? ` · ${esc(d.empresas.desactivadas)} desactivada(s)` : ''}`, ic.emp)
-        + kpi('Personas', d.usuarios.total, `${esc(d.usuarios.nuevos_30d)} nueva(s) en 30 días`, ic.per)
+        kpi('Empresas activas', d.empresas.activas, `${esc(d.empresas.nuevas_30d)} ${palabra(d.empresas.nuevas_30d, 'nueva', 'nuevas')} en 30 días${d.empresas.desactivadas ? ` · ${esc(d.empresas.desactivadas)} ${palabra(d.empresas.desactivadas, 'desactivada', 'desactivadas')}` : ''}`, ic.emp)
+        + kpi('Personas', d.usuarios.total, `${esc(d.usuarios.nuevos_30d)} ${palabra(d.usuarios.nuevos_30d, 'nueva', 'nuevas')} en 30 días`, ic.per)
         + kpi('Expedientes', d.expedientes.total, `${esc(d.expedientes.en_tramite)} en trámite · ${esc(d.expedientes.nuevos_30d)} nuevos en 30 días`, ic.exp)
         + kpi('Documentos', d.documentos.recibidos, `${esc(d.documentos.versiones)} versiones guardadas`, ic.doc);
 

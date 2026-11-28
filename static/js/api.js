@@ -5,6 +5,11 @@
 
 // Escapa texto antes de meterlo en innerHTML (evita XSS con nombres de
 // proyecto, promotores, motivos, etc.).
+// La palabra en singular si la cantidad es 1 y en plural en cualquier otro caso: palabra(n, 'día', 'días').
+function palabra(n, uno, varios) {
+  return Number(n) === 1 ? uno : varios;
+}
+
 function esc(valor) {
   return String(valor ?? '')
     .replace(/&/g, '&amp;')

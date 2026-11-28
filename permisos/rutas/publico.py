@@ -25,6 +25,12 @@ def health():
     return jsonify({"status": "ok"}), 200
 
 
+@bp.route("/favicon.ico", methods=["GET"])
+def favicon():
+    """Los navegadores lo piden por su cuenta aunque la pagina declare otro icono."""
+    return send_from_directory("static/img", "favicon.svg", mimetype="image/svg+xml")
+
+
 @bp.route("/consulta/<codigo>", methods=["GET"])
 def consulta_publica(codigo):
     """HU-09. Solo datos publicos y solo si la consultora habilito el acceso

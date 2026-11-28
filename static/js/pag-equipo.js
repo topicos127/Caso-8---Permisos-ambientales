@@ -140,7 +140,7 @@ if (usuario) {
       } else if (b.dataset.reasignar) {
         const sel = document.querySelector(`select[data-destino-de="${c.id}"]`);
         const destino = consultores.find(x => String(x.id) === sel.value);
-        if (!confirm(`¿Pasar los ${c.expedientes} expediente(s) de ${c.nombre} a ${destino.nombre}?`)) return;
+        if (!confirm(`¿Pasar ${c.expedientes === 1 ? 'el expediente' : `los ${c.expedientes} expedientes`} de ${c.nombre} a ${destino.nombre}?`)) return;
         await enviar(`/consultores/${c.id}/reasignar`, { destino_id: Number(sel.value) });
       }
     });

@@ -9,6 +9,7 @@ from ..bd import col_aviso, col_sometimiento, col_vencimiento, cursor, documento
 from ..config import ROLES_INTERNOS
 from ..reglas import AVISO_VENCIMIENTO_DIAS, ahora, calcular_ipe, calcular_semaforo, hoy, vencimiento_documento
 from ..seguridad import filtro_de, requiere_login
+from ..reglas import plural
 
 bp = Blueprint("dashboard", __name__)
 
@@ -106,8 +107,9 @@ def dashboard():
         vence = vencimiento_documento(d)
         dias_restantes = (vence - dia).days
         if dias_restantes < aviso:
-            texto = (f"{d['carpeta']} venció hace {abs(dias_restantes)} días" if dias_restantes < 0
-                     else f"{d['carpeta']} vence en {dias_restantes} días")
+            texto = (f"{d['carpeta']} venció hace {plural(abs(dias_restantes), 'día', 'días')}" if dias_restantes < 0
+                     else f"{d['carpeta']} vence hoy" if dias_restantes == 0
+                     else f"{d['carpeta']} vence en {plural(dias_restantes, 'día', 'días')}")
             proximas.append({
                 "codigo": d["codigo"],
                 "descripcion": texto,

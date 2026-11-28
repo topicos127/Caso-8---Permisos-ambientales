@@ -184,12 +184,12 @@ if (usuario) {
       const tarjeta = (titulo, valor, sub) => `<div class="stat"><div class="top"><span class="lbl">${esc(titulo)}</span></div><div class="num">${esc(valor)}</div><div class="kpi-sub">${sub}</div></div>`;
       const equipo = (p.jefe ? p.jefe.activos : 0) + (p.consultor ? p.consultor.activos : 0);
       document.getElementById('uso-tarjetas').innerHTML =
-        tarjeta('Equipo activo', num(equipo), `${num(p.jefe ? p.jefe.activos : 0)} director(es) y ${num(p.consultor ? p.consultor.activos : 0)} consultor(es)`)
+        tarjeta('Equipo activo', num(equipo), `${num(p.jefe ? p.jefe.activos : 0)} ${palabra(p.jefe ? p.jefe.activos : 0, 'director', 'directores')} y ${num(p.consultor ? p.consultor.activos : 0)} ${palabra(p.consultor ? p.consultor.activos : 0, 'consultor', 'consultores')}`)
         + tarjeta('Clientes con acceso', num(p.promotor ? p.promotor.total : 0), 'cuentas de cliente')
         + tarjeta('Expedientes', num(d.expedientes.total), `${num(d.expedientes.en_tramite)} en trámite`)
-        + tarjeta('Documentos', num(d.documentos.recibidos), `${num(d.documentos.versiones)} versiones guardadas`)
+        + tarjeta('Documentos', num(d.documentos.recibidos), `${num(d.documentos.versiones)} ${palabra(d.documentos.versiones, 'versión guardada', 'versiones guardadas')}`)
         + tarjeta('Almacenamiento', tamano(d.documentos.bytes), 'ocupado por los documentos')
-        + tarjeta('Comentarios internos', num(d.comentarios), `${num(d.invitaciones_pendientes)} invitación(es) pendiente(s)`);
+        + tarjeta('Comentarios internos', num(d.comentarios), `${num(d.invitaciones_pendientes)} ${palabra(d.invitaciones_pendientes, 'invitación pendiente', 'invitaciones pendientes')}`);
     }
 
     // ================= Mis datos (exportar) =================
@@ -229,7 +229,7 @@ if (usuario) {
           <td data-label="IP" style="font-family:var(--mono); font-size:12.5px;">${esc(ev.ip || '')}</td></tr>`).join('')
         : '<tr><td colspan="5" class="sin-etiqueta" data-label="" style="padding:22px; text-align:center; color:var(--text-faint);">Sin eventos.</td></tr>';
       const pg = d.paginacion;
-      document.getElementById('a-pie').textContent = `Página ${pg.pagina} de ${pg.paginas} · ${num(pg.total)} evento(s)`;
+      document.getElementById('a-pie').textContent = `Página ${pg.pagina} de ${pg.paginas} · ${num(pg.total)} ${palabra(pg.total, 'evento', 'eventos')}`;
       document.getElementById('a-ant').disabled = pg.pagina <= 1;
       document.getElementById('a-sig').disabled = pg.pagina >= pg.paginas;
     }
