@@ -53,7 +53,7 @@ def _ident(nombre):
 def volcar_sql():
     """Devuelve (texto_sql, {tabla: filas}). Cada sentencia termina en ';' + salto de linea y
     los textos escapan sus saltos de linea, asi que separar por ';\\n' es seguro."""
-    partes = ["-- Respaldo de Permisos Ambientales\n", "SET FOREIGN_KEY_CHECKS=0;\n", "SET NAMES utf8mb4;\n"]
+    partes = ["-- Respaldo de Apto\n", "SET FOREIGN_KEY_CHECKS=0;\n", "SET NAMES utf8mb4;\n"]
     conteo = {}
     conn = _conexion()
     try:

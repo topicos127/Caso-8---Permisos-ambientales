@@ -1,5 +1,5 @@
 """
-Sistema de Permisos Ambientales - Seed completo
+Apto - Seed completo
 
 Uso:
     python seed_usuarios.py          usuarios y 3 expedientes (CI y pruebas de Robot)

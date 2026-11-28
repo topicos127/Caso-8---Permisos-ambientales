@@ -1,4 +1,4 @@
--- Sistema de Permisos Ambientales — Esquema (plataforma multiempresa)
+-- Apto — Esquema (plataforma multiempresa)
 CREATE DATABASE IF NOT EXISTS permisos_ambientales;
 USE permisos_ambientales;
 

@@ -1,4 +1,4 @@
-# Tiltfile — Permisos Ambientales
+# Tiltfile — Apto
 
 k8s_yaml('k8s/uploads-pvc.yaml')
 k8s_yaml('k8s/login-deployment.yaml')

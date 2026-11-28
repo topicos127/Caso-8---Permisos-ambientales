@@ -1,6 +1,6 @@
-# Sistema de Permisos Ambientales
+# Apto
 
-Flask + MySQL, con frontend en HTML y JS. Se corre localmente con Docker Compose.
+Apto: plataforma web para que las consultoras ambientales gestionen sus expedientes de estudios de impacto ambiental. Flask + MySQL, con frontend en HTML y JS. Se corre localmente con Docker Compose.
 
 ## Requisitos
 

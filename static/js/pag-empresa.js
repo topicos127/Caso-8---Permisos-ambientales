@@ -83,7 +83,7 @@ if (usuario) {
         : `<div class="seal seal-iniciales" aria-hidden="true">${esc(iniciales(nombre))}</div>`;
       const vista = document.getElementById('vista-marca');
       vista.style.setProperty('--empresa', elegido);
-      vista.innerHTML = `${sello}<div><b>${esc(nombre)}</b><span>Permisos Ambientales</span></div>`;
+      vista.innerHTML = `${sello}<div><b>${esc(nombre)}</b><span>Apto</span></div>`;
     }
     async function cargarMarca() {
       const d = await apiFetch('/organizacion');
