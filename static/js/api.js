@@ -299,10 +299,10 @@ function mostrarToast(mensaje, tipo = 'exito') {
   }, 3000);
 }
 
-// ============== HU-12: menu lateral en el celular ==============
-// En pantallas de 820 px o menos el menu se oculta y se abre con el boton
-// "Menu" de la barra de arriba. Se cierra con el fondo, con Escape o al
-// elegir una opcion.
+// ============== Menu lateral: hamburguesa en celular y en escritorio ==============
+// En pantallas de 820 px o menos el menu se oculta y se abre con el boton de la barra de arriba; se cierra
+// con el fondo, con Escape o al elegir una opcion. En escritorio el mismo boton oculta o muestra el menu
+// y recuerda la eleccion en este navegador.
 function iniciarMenuMovil() {
   const rail = document.querySelector('.rail');
   const topbar = document.querySelector('.topbar');
@@ -313,10 +313,19 @@ function iniciarMenuMovil() {
   boton.type = 'button';
   boton.className = 'btn-menu';
   boton.setAttribute('aria-controls', rail.id);
-  boton.setAttribute('aria-expanded', 'false');
+  boton.setAttribute('aria-label', 'Mostrar u ocultar el menú');
   boton.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">'
-    + '<path d="M4 7h16M4 12h16M4 17h16"/></svg> Menú';
+    + '<path d="M4 7h16M4 12h16M4 17h16"/></svg><span class="btn-menu-texto">Menú</span>';
   topbar.insertBefore(boton, topbar.firstChild);
+
+  // Escritorio: menu visible u oculto, recordado entre pantallas y visitas (solo en este navegador).
+  const esEscritorio = () => window.innerWidth > 820;
+  const sincronizar = () => boton.setAttribute('aria-expanded',
+    esEscritorio() ? String(!document.body.classList.contains('menu-oculto')) : String(document.body.classList.contains('menu-abierto')));
+  let oculto = false;
+  try { oculto = localStorage.getItem('menu_oculto') === '1'; } catch (e) { /* sin almacenamiento: queda visible */ }
+  document.body.classList.toggle('menu-oculto', oculto);
+  sincronizar();
 
   const fondo = document.createElement('div');
   fondo.className = 'menu-fondo';
@@ -324,13 +333,19 @@ function iniciarMenuMovil() {
 
   const abrir = (si) => {
     document.body.classList.toggle('menu-abierto', si);
-    boton.setAttribute('aria-expanded', si ? 'true' : 'false');
+    sincronizar();
   };
-  boton.addEventListener('click', () => abrir(!document.body.classList.contains('menu-abierto')));
+  boton.addEventListener('click', () => {
+    if (!esEscritorio()) { abrir(!document.body.classList.contains('menu-abierto')); return; }
+    const ocultar = !document.body.classList.contains('menu-oculto');
+    document.body.classList.toggle('menu-oculto', ocultar);
+    try { localStorage.setItem('menu_oculto', ocultar ? '1' : '0'); } catch (e) { /* no se pudo recordar */ }
+    sincronizar();
+  });
   fondo.addEventListener('click', () => abrir(false));
   rail.querySelectorAll('a').forEach(a => a.addEventListener('click', () => abrir(false)));
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') abrir(false); });
-  window.addEventListener('resize', () => { if (window.innerWidth > 820) abrir(false); });
+  window.addEventListener('resize', () => { if (esEscritorio()) abrir(false); else sincronizar(); });
 }
 
 if (document.readyState === 'loading') {
@@ -703,7 +718,7 @@ function pasosDelTour(u) {
   const nav = (href) => [`.rail nav a[href="${href}"]`];
   const buscar = { sel: ['.btn-buscar'], titulo: 'Búsqueda rápida', texto: 'Pulse Ctrl + K (o la tecla /) desde cualquier pantalla para encontrar un expediente, una persona o una acción en un segundo.' };
   const perfil = { sel: ['.menu-usuario-boton'], titulo: 'Su cuenta', texto: 'Desde aquí abre «Mi perfil»: cambie su contraseña y active la verificación en dos pasos para proteger su acceso.' };
-  const menuMovil = { sel: ['.btn-menu'], titulo: 'Menú', texto: 'Abra el menú para moverse entre las secciones de la plataforma.' };
+  const menuMovil = { sel: ['.btn-menu'], titulo: 'Menú', texto: 'Con este botón muestra u oculta el menú para moverse entre las secciones de la plataforma.' };
   const fin = { centro: true, titulo: '¡Listo!', texto: 'Cuando quiera repetir este recorrido, lo encuentra en «Ayuda». Que le vaya muy bien.' };
   const intro = (texto) => ({ centro: true, titulo: nombre ? `¡Bienvenido, ${nombre}!` : '¡Bienvenido!', texto });
 
@@ -761,8 +776,14 @@ function elementoVisible(selectores) {
 function iniciarTour() {
   const u = getUsuario();
   if (!u || document.querySelector('.tour-fondo')) return false;
+  // Con el menu oculto en escritorio no habria nada que senalar: se muestra mientras dura el recorrido.
+  const menuEstabaOculto = document.body.classList.contains('menu-oculto');
+  if (menuEstabaOculto) document.body.classList.remove('menu-oculto');
   const pasos = pasosDelTour(u).map(p => ({ ...p, el: p.centro ? null : elementoVisible(p.sel) })).filter(p => p.centro || p.el);
-  if (pasos.length < 3) return false;
+  if (pasos.length < 3) {
+    if (menuEstabaOculto) document.body.classList.add('menu-oculto');
+    return false;
+  }
 
   const previo = document.activeElement;
   const fondo = document.createElement('div');
@@ -783,6 +804,7 @@ function iniciarTour() {
     document.removeEventListener('keydown', teclas, true);
     window.removeEventListener('resize', colocar);
     fondo.remove();
+    if (menuEstabaOculto) document.body.classList.add('menu-oculto');
     if (previo && previo.focus) previo.focus();
   };
 

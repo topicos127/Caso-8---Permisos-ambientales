@@ -2281,3 +2281,19 @@ html, body {
 .doc-sheet.split .doc-body { flex: 0 0 min(560px, 42vw); max-width: none; margin: 0; padding: 40px 56px; background: var(--surface); justify-content: center; }
 @media (max-width: 900px) { .doc-sheet.split { flex-wrap: wrap; } .doc-sheet.split > .auth-aside { flex: 1 1 100%; min-height: 0; } .doc-sheet.split .doc-body { flex: 1 1 100%; padding: 32px 20px; } }
 .shell { border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+
+/* ---------- Menu lateral con hamburguesa tambien en escritorio ---------- */
+@media (min-width: 821px) {
+  .topbar .btn-menu {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 38px; min-height: 38px; padding: 0; margin-right: 14px; flex: 0 0 auto;
+    border: 1px solid var(--line-strong); border-radius: 10px; background: var(--surface); color: var(--text); cursor: pointer;
+  }
+  .topbar .btn-menu svg { width: 18px; height: 18px; }
+  .topbar .btn-menu .btn-menu-texto { display: none; }
+  .topbar .btn-menu:hover { background: var(--surface-2); }
+  .topbar .btn-menu:focus-visible { outline: 2px solid rgba(var(--brand-rgb), 0.55); outline-offset: 2px; }
+  body.menu-oculto .shell > .rail { display: none; }
+  body.menu-oculto .shell { grid-template-columns: minmax(0, 1fr); }
+}
+
