@@ -179,7 +179,8 @@ if (usuario) {
           const aviso = dias != null && dias < 30;
           vence.style.color = dias != null && dias < 0 ? 'var(--status-bad)' : aviso ? 'var(--status-warn)' : 'var(--ink-faint)';
           vence.style.fontWeight = aviso ? '600' : '400';
-          const cuando = dias < 0 ? `venció hace ${-dias} días` : `vence el ${doc.vence} (en ${dias} días)`;
+          const cuando = dias < 0 ? `venció hace ${-dias} ${palabra(-dias, 'día', 'días')}`
+            : dias === 0 ? `vence hoy (${doc.vence})` : `vence el ${doc.vence} (en ${dias} ${palabra(dias, 'día', 'días')})`;
           vence.textContent = (doc.vencimiento_real ? 'Vigencia: ' : 'Vigencia estimada: ') + cuando;
           li.appendChild(vence);
         }
@@ -583,9 +584,9 @@ if (usuario) {
     const fmt = (iso) => iso ? iso.split('-').reverse().join('/') : '';
     const habiles = alertas.base_plazo === 'sometimiento';
     if (!resuelto) {
-      const unidad = habiles ? ' días hábiles' : ' días';
-      document.getElementById('plazo-transcurridos').textContent = alertas.dias_transcurridos + unidad;
-      document.getElementById('plazo-restantes').textContent = alertas.dias_restantes_legales + unidad;
+      const unidad = (n) => ' ' + (habiles ? palabra(n, 'día hábil', 'días hábiles') : palabra(n, 'día', 'días'));
+      document.getElementById('plazo-transcurridos').textContent = alertas.dias_transcurridos + unidad(alertas.dias_transcurridos);
+      document.getElementById('plazo-restantes').textContent = alertas.dias_restantes_legales + unidad(alertas.dias_restantes_legales);
     }
     document.getElementById('plazo-desde').textContent = habiles ? 'Sometimiento' : 'Ingreso';
     const linkCal = document.getElementById('link-calendario');

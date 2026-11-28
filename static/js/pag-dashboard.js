@@ -33,7 +33,7 @@ if (usuario) {
 
     const s = gr.por_semaforo || {};
     const abiertos = (s.en_plazo || 0) + (s.por_vencer || 0) + (s.vencido || 0);
-    piezas.push(widget('Plazos en trámite', abiertos ? `${abiertos} expediente(s) con plazo en curso` : 'Ninguno en curso',
+    piezas.push(widget('Plazos en trámite', abiertos ? `${abiertos} ${palabra(abiertos, 'expediente', 'expedientes')} con plazo en curso` : 'Ninguno en curso',
       graficoDona([{ etiqueta: 'En plazo', valor: s.en_plazo || 0, color: '#2fa66b' },
                    { etiqueta: 'Por vencer', valor: s.por_vencer || 0, color: '#f08a1c' },
                    { etiqueta: 'Vencidos', valor: s.vencido || 0, color: '#ef4444' }], String(abiertos), 'en curso')));

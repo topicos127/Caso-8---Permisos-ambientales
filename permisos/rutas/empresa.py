@@ -22,6 +22,7 @@ from ..config import EMAIL_RE, ZONA
 from ..errores import ApiError
 from ..seguridad import condicion_empresa, requiere_login
 from ..utiles import texto
+from ..reglas import plural
 from .colaboracion import _seguro, libro_cartera
 from .cuenta import _confirmar_clave
 
@@ -163,7 +164,7 @@ def guardar_politica():
         if data.get("aplicar_aviso") is True and data.get("aviso_defecto") is not None and _esquema["aviso"]:
             aplicados = cur.execute("UPDATE usuarios SET aviso_vencimiento_dias=%s WHERE organizacion_id=%s "
                                     "AND rol IN ('consultor', 'jefe')", (data["aviso_defecto"], u["organizacion_id"]))
-            cambios.append(f"aviso aplicado a {aplicados} persona(s)")
+            cambios.append(f"aviso aplicado a {plural(aplicados, 'persona', 'personas')}")
         auditoria.registrar(cur, u["organizacion_id"], u["id"], "politica", "; ".join(cambios))
     return jsonify({"ok": True, "aplicados": aplicados, "mensaje": "Política guardada."}), 200
 
@@ -205,9 +206,9 @@ def cerrar_sesiones_del_equipo():
         _confirmar_clave(cur, data.get("password"))
         n = cur.execute("UPDATE usuarios SET sesion_version = sesion_version + 1 WHERE organizacion_id=%s AND id<>%s",
                         (u["organizacion_id"], u["id"]))
-        auditoria.registrar(cur, u["organizacion_id"], u["id"], "sesiones_cerradas", f"{n} cuenta(s)")
+        auditoria.registrar(cur, u["organizacion_id"], u["id"], "sesiones_cerradas", plural(n, "cuenta", "cuentas"))
     return jsonify({"ok": True, "cuentas": n,
-                    "mensaje": f"Se cerraron las sesiones de {n} cuenta(s). Tendrán que iniciar sesión otra vez."}), 200
+                    "mensaje": f"Se cerraron las sesiones de {plural(n, 'cuenta', 'cuentas')}. Tendrán que iniciar sesión otra vez."}), 200
 
 
 # ---------- Uso ----------
@@ -292,7 +293,7 @@ def exportar_todo():
                        JOIN expedientes e ON e.id = d.expediente_id
                        WHERE e.organizacion_id=%s ORDER BY e.codigo, d.carpeta, v.version""", (org,))
         versiones = cur.fetchall()
-        auditoria.registrar(cur, org, u["id"], "exportacion", f"{len(versiones)} versión(es) de documentos")
+        auditoria.registrar(cur, org, u["id"], "exportacion", f"{plural(len(versiones), 'versión', 'versiones')} de documentos")
 
     total_bytes = sum(int(v["archivo_tamano"] or 0) for v in versiones)
     incluir_todo = total_bytes <= LIMITE_DOCUMENTOS_ZIP
@@ -344,7 +345,7 @@ def exportar_todo():
             "equipo.csv             las personas de la consultora\n"
             "indice_documentos.csv  cada versión de cada documento, con su huella SHA-256 y su código de trazabilidad\n"
             "documentos/            los archivos, por expediente y carpeta\n"
-            + (f"\n{nota}\n" if nota else "") + (f"\n{faltantes} archivo(s) no se encontraron en el almacenamiento.\n" if faltantes else "")))
+            + (f"\n{nota}\n" if nota else "") + (f"\n{plural(faltantes, 'archivo no se encontró', 'archivos no se encontraron')} en el almacenamiento.\n" if faltantes else "")))
     resp = send_file(ruta_zip, as_attachment=True, mimetype="application/zip",
                      download_name=f"datos-{_nombre_seguro(nombre_empresa).replace(' ', '-')}-{datetime.now(ZONA):%Y%m%d}.zip")
     resp.call_on_close(lambda: os.path.exists(ruta_zip) and os.remove(ruta_zip))

@@ -95,7 +95,7 @@
     }
     cod.innerHTML = `<h4>Códigos de recuperación</h4>
       <p class="panel-note" style="margin:0 0 10px;">${estado.codigos_restantes
-        ? `Le quedan <b>${estado.codigos_restantes}</b> código(s) sin usar.`
+        ? `${estado.codigos_restantes === 1 ? 'Le queda' : 'Le quedan'} <b>${estado.codigos_restantes}</b> ${palabra(estado.codigos_restantes, 'código', 'códigos')} sin usar.`
         : 'No tiene códigos guardados.'} Sirven para recuperar el acceso sin correo electrónico.</p>
       <button type="button" class="btn btn-ghost" id="btn-codigos" style="border:1.5px solid var(--line);">${estado.codigos_restantes ? 'Generar códigos nuevos' : 'Generar códigos'}</button>`;
     document.getElementById('btn-codigos').addEventListener('click', regenerarCodigos);

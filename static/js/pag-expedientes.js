@@ -237,7 +237,7 @@ function vistaCronograma(lista) {
         const siguiente = meses[i + 1] || new Date(fin.getTime() + 86400000);
         return `<span class="crono-mes" style="left:${pct(m).toFixed(2)}%; width:${(pct(siguiente) - pct(m)).toFixed(2)}%;">${MESES[m.getMonth()]} ${m.getFullYear()}</span>`;
       }).join('')}</div></div>${cuerpo}</div></div>
-    ${sinPlazo ? `<p class="panel-note" style="margin-top:10px;">${sinPlazo} expediente(s) ya resueltos no tienen un plazo en curso.</p>` : ''}`;
+    ${sinPlazo ? `<p class="panel-note" style="margin-top:10px;">${sinPlazo} ${sinPlazo === 1 ? 'expediente ya resuelto no tiene' : 'expedientes ya resueltos no tienen'} un plazo en curso.</p>` : ''}`;
 }
 
 // ---------- Vista: calendario ----------
@@ -283,7 +283,7 @@ function pintar() {
   } else {
     area.innerHTML = { lista: vistaLista, tablero: vistaTablero, tabla: vistaTabla, cronograma: vistaCronograma, calendario: vistaCalendario }[vista](lista);
   }
-  const mostrando = `${lista.length} de ${todos.length} expediente(s)`;
+  const mostrando = `${lista.length} de ${todos.length} ${palabra(todos.length, 'expediente', 'expedientes')}`;
   document.getElementById('pie-lista').textContent = totalServidor > todos.length
     ? `${mostrando}. Hay ${totalServidor} en total: se cargan los ${todos.length} más recientes; use los filtros para acotar.` : mostrando;
 }

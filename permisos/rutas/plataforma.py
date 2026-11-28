@@ -15,6 +15,7 @@ from ..config import VERSION
 from ..errores import ApiError
 from ..reglas import ahora
 from ..seguridad import requiere_admin
+from ..reglas import plural
 
 bp = Blueprint("plataforma", __name__)
 
@@ -171,21 +172,21 @@ def resumen():
     elif horas > 36:
         avisos.append({"nivel": "media", "texto": f"El último respaldo tiene {horas // 24} días.", "pestana": "respaldos"})
     if registro_errores.resumen()["errores"]:
-        avisos.append({"nivel": "media", "texto": f"Hubo {registro_errores.resumen()['errores']} error(es) desde el último arranque.",
+        avisos.append({"nivel": "media", "texto": f"Hubo {plural(registro_errores.resumen()['errores'], 'error', 'errores')} desde el último arranque.",
                        "pestana": "servicio"})
     sin_jefe = [r["nombre"] for r in ranking if r["activa"] and r["jefes"] == 0]
     if sin_jefe:
         avisos.append({"nivel": "media", "texto": "Sin director de proyectos todavía: " + ", ".join(sin_jefe[:3])
                        + ("…" if len(sin_jefe) > 3 else "") + ".", "pestana": "empresas"})
     if invitaciones["vencidas"]:
-        avisos.append({"nivel": "info", "texto": f"{invitaciones['vencidas']} invitación(es) vencida(s) sin usar.", "pestana": "empresas"})
+        avisos.append({"nivel": "info", "texto": f"{plural(invitaciones['vencidas'], 'invitación vencida', 'invitaciones vencidas')} sin usar.", "pestana": "empresas"})
     inactivas = [r["nombre"] for r in ranking if r["inactiva"] and r["jefes"] > 0]
     if inactivas:
         avisos.append({"nivel": "info", "texto": f"Sin actividad en {DIAS_INACTIVA} días: " + ", ".join(inactivas[:3])
                        + ("…" if len(inactivas) > 3 else "") + ".", "pestana": "empresas"})
     jefes = por_rol.get("jefe", {"total": 0, "con_2fa": 0})
     if _esquema["totp"] and jefes["total"] > jefes["con_2fa"]:
-        avisos.append({"nivel": "info", "texto": f"{jefes['total'] - jefes['con_2fa']} director(es) de proyectos sin verificación en dos pasos.",
+        avisos.append({"nivel": "info", "texto": f"{plural(jefes['total'] - jefes['con_2fa'], 'director de proyectos', 'directores de proyectos')} sin verificación en dos pasos.",
                        "pestana": "empresas"})
 
     return jsonify({

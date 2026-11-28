@@ -27,6 +27,7 @@ from ..errores import ApiError
 from ..reglas import problema_de_password
 from ..seguridad import condicion_empresa, requiere_login
 from ..utiles import texto
+from ..reglas import plural
 from .expedientes import contrasena_temporal
 
 bp = Blueprint("equipo", __name__)
@@ -185,7 +186,8 @@ def reasignar_expedientes(consultor_id):
                             f"{len(ids)} de {origen['nombre']} a {destino['nombre']}")
 
     return jsonify({"ok": True, "reasignados": len(ids),
-                    "mensaje": f"{len(ids)} expediente(s) de {origen['nombre']} pasaron a {destino['nombre']}."}), 200
+                    "mensaje": f"{plural(len(ids), 'expediente', 'expedientes')} de {origen['nombre']} "
+                               f"{'pasó' if len(ids) == 1 else 'pasaron'} a {destino['nombre']}."}), 200
 
 
 @bp.route("/consultores/<int:consultor_id>/restablecer-clave", methods=["POST"])

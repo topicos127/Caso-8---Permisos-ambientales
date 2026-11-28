@@ -105,6 +105,11 @@ def documentos_por_vencer(documentos, dia=None, aviso=AVISO_VENCIMIENTO_DIAS):
     return sorted(salida, key=lambda x: x[1])
 
 
+def plural(n, uno, varios):
+    """La cantidad con su palabra en singular o plural: plural(1, 'dia', 'dias') -> '1 dia'; plural(3, ...) -> '3 dias'."""
+    return f"{n} {uno if n == 1 else varios}"
+
+
 def _redondear(x):
     return int(math.floor(x + 0.5))  # mitades hacia arriba (round() de Python va al par)
 
@@ -146,12 +151,14 @@ def calcular_ipe(exp, documentos, dia=None):
             acciones.append({"tipo": "documento", "texto": f"Subir {carpeta}"})
         restantes = semaforo["dias_restantes_legales"]
         if semaforo["estado_semaforo"] == "vencido":
-            acciones.append({"tipo": "plazo", "texto": f"El plazo legal venció hace {abs(restantes)} días"})
+            acciones.append({"tipo": "plazo", "texto": f"El plazo legal venció hace {plural(abs(restantes), 'día', 'días')}"})
         elif semaforo["estado_semaforo"] == "por_vencer":
-            acciones.append({"tipo": "plazo", "texto": f"El plazo legal vence en {restantes} días"})
+            acciones.append({"tipo": "plazo", "texto": "El plazo legal vence hoy" if restantes == 0
+                             else f"El plazo legal vence en {plural(restantes, 'día', 'días')}"})
         for carpeta, restan in vencen:
-            texto = (f"{carpeta} venció hace {abs(restan)} días" if restan < 0
-                     else f"{carpeta} vence en {restan} días")
+            texto = (f"{carpeta} venció hace {plural(abs(restan), 'día', 'días')}" if restan < 0
+                     else f"{carpeta} vence hoy" if restan == 0
+                     else f"{carpeta} vence en {plural(restan, 'día', 'días')}")
             acciones.append({"tipo": "vigencia", "texto": texto})
         if exp["estado"] == "pendiente" and verif["puede_someter"]:
             acciones.append({"tipo": "flujo", "texto": "Pedir la aprobación interna al director de proyectos"})
