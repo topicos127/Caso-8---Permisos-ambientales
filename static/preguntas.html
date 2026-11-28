@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preguntas frecuentes — Apto</title>
+<meta name="description" content="Respuestas cortas sobre trámites, archivos, equipos y datos en Apto.">
+<link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilos.css">
+<script src="js/interaccion.js"></script>
+</head>
+<body>
+
+<div class="landing-wrap">
+
+  <header class="l-header">
+    <div class="wrap">
+      <a class="l-brand" href="index.html" style="text-decoration:none;">
+        <span class="seal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19c9 0 14-6 14-14-8 0-14 5-14 14z"/><path d="M5 19l7-7"/></svg></span>
+        Apto
+      </a>
+      <nav class="l-nav" aria-label="Páginas">
+        <a href="index.html">Inicio</a>
+        <a href="producto.html">Producto</a>
+        <a href="planes.html">Planes</a>
+        <a href="seguridad.html">Seguridad</a>
+        <a href="consultar.html">Consultar un estudio</a>
+        <a href="preguntas.html" class="activo" aria-current="page">Preguntas</a>
+      </nav>
+      <div class="l-acciones">
+        <a class="btn-texto" href="login.html">Entrar</a>
+        <a class="btn" href="#acceso">Obtener acceso</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="pagina-cabecera" aria-labelledby="t-pagina">
+    <div class="wrap">
+      <span class="eyebrow-chip oscuro">Preguntas frecuentes</span>
+      <h1 id="t-pagina">Respuestas rápidas</h1>
+      <p class="lead">Trámites, archivos, equipos y datos: lo que más nos preguntan las consultoras.</p>
+    </div>
+  </section>
+
+  <section class="wrap seccion" aria-labelledby="t-faq" style="display:flex; flex-wrap:wrap; gap:32px;">
+    <div class="seccion-titulo" style="flex:1 1 280px;">
+      <span class="kicker">Preguntas frecuentes</span>
+      <h2 id="t-faq" style="font-size:clamp(24px,2.6vw,30px);">Lo que suelen preguntarnos</h2>
+    </div>
+    <div style="flex:2 1 520px;">
+      <details class="faq" open><summary>¿Reemplaza el trámite ante MiAmbiente?</summary><p>No. La plataforma organiza el trabajo dentro de la consultora para que el estudio llegue completo. La evaluación y la resolución siguen siendo de MiAmbiente.</p></details>
+      <details class="faq"><summary>¿Qué archivos puedo subir?</summary><p>PDF y ZIP de hasta 20 MB. La cartografía va en ZIP.</p></details>
+      <details class="faq"><summary>¿Puedo borrar un documento que subí por error?</summary><p>No se borra: sube una versión nueva y la anterior queda como evidencia.</p></details>
+      <details class="faq"><summary>¿El cliente ve los expedientes de otros clientes?</summary><p>No. Solo ve los expedientes asociados a su correo.</p></details>
+      <details class="faq"><summary>¿Otra consultora puede ver mis expedientes?</summary><p>No. Cada consultora trabaja en su propio espacio: sus usuarios y expedientes están separados de los de cualquier otra empresa.</p></details>
+      <details class="faq"><summary>¿Cómo entra mi equipo?</summary><p>El director de proyectos genera un enlace de invitación de un solo uso (vence en 72 horas) y cada persona crea su cuenta y elige su contraseña.</p></details>
+      <details class="faq"><summary>¿Y si olvido mi contraseña?</summary><p>Con uno de sus códigos de recuperación puede fijar una nueva sin necesidad de correo. Si no los guardó, su director de proyectos le genera una contraseña temporal.</p></details>
+      <details class="faq"><summary>¿Puedo poner el logo de mi consultora?</summary><p>Sí. El director de proyectos elige el nombre, el color y el logo, que aparecen en el menú, en el resumen PDF y en la consulta pública.</p></details>
+      <details class="faq"><summary>¿Mis datos tienen respaldo?</summary><p>Sí. Se hace un respaldo diario de la base de datos y de los documentos, que el administrador de la plataforma puede verificar y restaurar.</p></details>
+    </div>
+  </section>
+
+  <section class="cierre revelar" id="acceso" aria-labelledby="t-cierre">
+    <div class="cierre-brillo" aria-hidden="true"></div>
+    <div class="wrap cierre-centro">
+      <span class="eyebrow-chip oscuro">Empiece hoy</span>
+      <h2 id="t-cierre">Ponga orden en su consultora desde hoy</h2>
+      <p>Plazos bajo control, expedientes completos y clientes informados. Su consultora se da de alta con la administración de la plataforma y, desde ahí, invita a cada persona de su equipo con un enlace de un solo uso.</p>
+      <div class="btn-row" style="justify-content:center;">
+        <a class="btn" href="login.html">Entrar a la plataforma</a>
+        <a class="btn btn-borde" href="producto.html#como">Ver cómo funciona</a>
+      </div>
+      <div class="cierre-tarjetas">
+        <div><b>Para el director de proyectos</b><span>Toda la cartera, ordenada por urgencia</span></div>
+        <div><b>Para el consultor</b><span>Expedientes completos, sin perseguir archivos</span></div>
+        <div><b>Para su cliente</b><span>Su trámite, a la vista y sin llamar</span></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="l-footer">
+    <div class="wrap">
+      <span>Apto · la plataforma de las consultoras ambientales.</span>
+      <span><a href="terminos.html">Términos</a> · <a href="privacidad.html">Privacidad</a> · <a href="estado.html">Estado del servicio</a> · © 2026 Apto</span>
+    </div>
+  </footer>
+</div>
+
+<script src="js/landing.js"></script>
+</body>
+</html>

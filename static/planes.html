@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planes y precios — Apto</title>
+<meta name="description" content="Planes de Apto por consultora: Inicio, Profesional y Empresa, con 14 días de prueba sin tarjeta.">
+<link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilos.css">
+<script src="js/interaccion.js"></script>
+</head>
+<body>
+
+<div class="landing-wrap">
+
+  <header class="l-header">
+    <div class="wrap">
+      <a class="l-brand" href="index.html" style="text-decoration:none;">
+        <span class="seal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19c9 0 14-6 14-14-8 0-14 5-14 14z"/><path d="M5 19l7-7"/></svg></span>
+        Apto
+      </a>
+      <nav class="l-nav" aria-label="Páginas">
+        <a href="index.html">Inicio</a>
+        <a href="producto.html">Producto</a>
+        <a href="planes.html" class="activo" aria-current="page">Planes</a>
+        <a href="seguridad.html">Seguridad</a>
+        <a href="consultar.html">Consultar un estudio</a>
+        <a href="preguntas.html">Preguntas</a>
+      </nav>
+      <div class="l-acciones">
+        <a class="btn-texto" href="login.html">Entrar</a>
+        <a class="btn" href="#acceso">Obtener acceso</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="pagina-cabecera" aria-labelledby="t-pagina">
+    <div class="wrap">
+      <span class="eyebrow-chip oscuro">Planes y precios</span>
+      <h1 id="t-pagina">Un plan para cada tamaño de consultora</h1>
+      <p class="lead">Se paga por su consultora, no por persona ni por cliente. Sus clientes acceden sin costo.</p>
+    </div>
+  </section>
+
+  <section class="wrap seccion revelar" aria-labelledby="t-precios">
+    <div class="seccion-titulo centrado">
+      <span class="kicker">Precios</span>
+      <h2 id="t-precios">Elija cómo pagar</h2>
+      <p class="small">Todos los planes incluyen 14 días de prueba con el plan Profesional completo, sin tarjeta.</p>
+    </div>
+    <div class="conmutador" role="group" aria-label="Periodo de cobro" data-conmutador>
+      <button type="button" data-periodo="mensual" aria-pressed="true">Mensual</button>
+      <button type="button" data-periodo="anual" aria-pressed="false">Anual <i>2 meses gratis</i></button>
+    </div>
+    <div class="planes">
+      <article class="plan">
+        
+        <h3>Inicio</h3>
+        <p class="plan-para">Para consultoras que empiezan a ordenar su cartera.</p>
+        <p class="plan-precio" data-plan="inicio" data-precio="49"><b>US$ 49</b><span>/mes</span></p>
+        <p class="plan-nota" data-nota>Facturado cada mes</p>
+        <ul>
+          <li>Hasta <b>3 personas</b> en el equipo</li>
+          <li><b>15 expedientes</b> activos</li>
+          <li>5 GB de documentos</li>
+          <li>Clientes con acceso, sin costo</li>
+          <li>Marca propia, respaldos e historial</li>
+          <li>Soporte por correo</li>
+        </ul>
+        <a class="btn btn-ghost" href="#acceso">Empezar prueba de 14 días</a>
+      </article>
+      <article class="plan destacado">
+        <span class="plan-etiqueta">Más elegido</span>
+        <h3>Profesional</h3>
+        <p class="plan-para">Para consultoras con varios proyectos en paralelo.</p>
+        <p class="plan-precio" data-plan="profesional" data-precio="99"><b>US$ 99</b><span>/mes</span></p>
+        <p class="plan-nota" data-nota>Facturado cada mes</p>
+        <ul>
+          <li>Hasta <b>10 personas</b> en el equipo</li>
+          <li><b>60 expedientes</b> activos</li>
+          <li>25 GB de documentos</li>
+          <li>Clientes con acceso, sin costo</li>
+          <li>Exportación de todos sus datos</li>
+          <li>Dos pasos obligatorios para el equipo</li>
+          <li>Soporte por correo</li>
+        </ul>
+        <a class="btn" href="#acceso">Empezar prueba de 14 días</a>
+      </article>
+      <article class="plan">
+        
+        <h3>Empresa</h3>
+        <p class="plan-para">Para consultoras con equipos grandes y mucha cartera.</p>
+        <p class="plan-precio" data-plan="empresa" data-precio="199"><b>US$ 199</b><span>/mes</span></p>
+        <p class="plan-nota" data-nota>Facturado cada mes</p>
+        <ul>
+          <li>Hasta <b>25 personas</b>, ampliable</li>
+          <li>Expedientes <b>sin límite</b> práctico</li>
+          <li>100 GB de documentos</li>
+          <li>Todo lo del plan Profesional</li>
+          <li>Soporte prioritario</li>
+          <li>Acompañamiento de arranque</li>
+        </ul>
+        <a class="btn btn-ghost" href="#acceso">Empezar prueba de 14 días</a>
+      </article>
+    </div>
+    <p class="plan-aviso"><b>Proyecto académico:</b> los precios son ilustrativos y no se realiza ningún cobro real. Código de lanzamiento <code>LANZAMIENTO20</code>: 20 % de descuento durante los primeros 12 meses, para las primeras 5 consultoras.</p>
+  </section>
+
+  <section class="wrap seccion revelar" aria-labelledby="t-comparar">
+    <div class="seccion-titulo centrado">
+      <span class="kicker">Comparación</span>
+      <h2 id="t-comparar">Qué incluye cada plan</h2>
+    </div>
+    <div class="tabla-planes">
+      <table>
+        <thead><tr><th scope="col">&nbsp;</th><th scope="col">Inicio</th><th scope="col" class="col-destacada">Profesional</th><th scope="col">Empresa</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Personas en el equipo</th><td>3</td><td>10</td><td>25, ampliable</td></tr>
+          <tr><th scope="row">Expedientes activos</th><td>15</td><td>60</td><td>Sin límite práctico</td></tr>
+          <tr><th scope="row">Documentos</th><td>5 GB</td><td>25 GB</td><td>100 GB</td></tr>
+          <tr><th scope="row">Clientes con acceso</th><td>Sin costo</td><td>Sin costo</td><td>Sin costo</td></tr>
+          <tr><th scope="row">Marca propia (nombre, color y logo)</th><td>Sí</td><td>Sí</td><td>Sí</td></tr>
+          <tr><th scope="row">Respaldos e historial de solo lectura</th><td>Sí</td><td>Sí</td><td>Sí</td></tr>
+          <tr><th scope="row">Exportación de todos los datos</th><td>—</td><td>Sí</td><td>Sí</td></tr>
+          <tr><th scope="row">Dos pasos obligatorios para el equipo</th><td>—</td><td>Sí</td><td>Sí</td></tr>
+          <tr><th scope="row">Soporte</th><td>Por correo</td><td>Por correo</td><td>Prioritario</td></tr>
+          <tr><th scope="row">Acompañamiento de arranque</th><td>—</td><td>—</td><td>Sí</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="wrap seccion revelar" aria-labelledby="t-cobro" style="display:flex; flex-wrap:wrap; gap:32px;">
+    <div class="seccion-titulo" style="flex:1 1 280px;">
+      <span class="kicker">Sobre el cobro</span>
+      <h2 id="t-cobro" style="font-size:clamp(24px,2.6vw,30px);">Lo que conviene saber</h2>
+    </div>
+    <div style="flex:2 1 520px;">
+      <details class="faq" open><summary>¿Cómo funciona la prueba de 14 días?</summary><p>Empieza con el plan Profesional completo y sin tarjeta. Al terminar elige un plan; si no lo hace, la cuenta queda en solo lectura. Nunca se borra nada.</p></details>
+      <details class="faq"><summary>¿Cobran a mis clientes?</summary><p>No. Los clientes de su consultora acceden a sus trámites sin costo y no cuentan en ningún límite.</p></details>
+      <details class="faq"><summary>¿Puedo cambiar de plan?</summary><p>Sí, en cualquier momento desde «Mi consultora». Al subir de plan el cambio es inmediato; al bajar, aplica en la siguiente renovación.</p></details>
+      <details class="faq"><summary>¿Qué pasa si un pago falla?</summary><p>Se le avisa y tiene 3 días de gracia para actualizar la tarjeta. Pasado ese plazo la cuenta queda en solo lectura hasta que se regularice.</p></details>
+      <details class="faq"><summary>¿Los pagos son reales?</summary><p>No. Apto es un proyecto académico: el cobro se simula con tarjetas de prueba y ninguna transacción es real.</p></details>
+    </div>
+  </section>
+
+  <section class="cierre revelar" id="acceso" aria-labelledby="t-cierre">
+    <div class="cierre-brillo" aria-hidden="true"></div>
+    <div class="wrap cierre-centro">
+      <span class="eyebrow-chip oscuro">Empiece hoy</span>
+      <h2 id="t-cierre">Ponga orden en su consultora desde hoy</h2>
+      <p>Plazos bajo control, expedientes completos y clientes informados. Su consultora se da de alta con la administración de la plataforma y, desde ahí, invita a cada persona de su equipo con un enlace de un solo uso.</p>
+      <div class="btn-row" style="justify-content:center;">
+        <a class="btn" href="login.html">Entrar a la plataforma</a>
+        <a class="btn btn-borde" href="producto.html#como">Ver cómo funciona</a>
+      </div>
+      <div class="cierre-tarjetas">
+        <div><b>Para el director de proyectos</b><span>Toda la cartera, ordenada por urgencia</span></div>
+        <div><b>Para el consultor</b><span>Expedientes completos, sin perseguir archivos</span></div>
+        <div><b>Para su cliente</b><span>Su trámite, a la vista y sin llamar</span></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="l-footer">
+    <div class="wrap">
+      <span>Apto · la plataforma de las consultoras ambientales.</span>
+      <span><a href="terminos.html">Términos</a> · <a href="privacidad.html">Privacidad</a> · <a href="estado.html">Estado del servicio</a> · © 2026 Apto</span>
+    </div>
+  </footer>
+</div>
+
+<script src="js/pag-planes.js"></script>
+<script src="js/landing.js"></script>
+</body>
+</html>

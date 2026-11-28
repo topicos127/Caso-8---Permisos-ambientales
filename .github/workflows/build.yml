@@ -89,7 +89,7 @@ jobs:
           UPLOADS_DIR: /tmp/uploads
           BACKUP_DIR: /tmp/respaldos
         run: |
-          python -m unittest tests/test_semaforo.py tests/test_sprint9.py tests/test_ipe.py tests/test_ipe_api.py tests/test_documentos.py tests/test_equipo.py tests/test_sprint10.py tests/test_plataforma.py tests/test_sigv4_botocore.py tests/test_demo_produccion.py tests/test_plurales.py
+          python -m unittest tests/test_semaforo.py tests/test_sprint9.py tests/test_ipe.py tests/test_ipe_api.py tests/test_documentos.py tests/test_equipo.py tests/test_sprint10.py tests/test_plataforma.py tests/test_sigv4_botocore.py tests/test_demo_produccion.py tests/test_plurales.py tests/test_sitio.py
 
       - name: Run Robot Framework tests (Login HU-11)
         run: |

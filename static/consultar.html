@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consultar un estudio — Apto</title>
+<meta name="description" content="Consulte sin cuenta el estado de un estudio de impacto ambiental con el código del expediente.">
+<link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilos.css">
+<script src="js/interaccion.js"></script>
+</head>
+<body>
+
+<div class="landing-wrap">
+
+  <header class="l-header">
+    <div class="wrap">
+      <a class="l-brand" href="index.html" style="text-decoration:none;">
+        <span class="seal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19c9 0 14-6 14-14-8 0-14 5-14 14z"/><path d="M5 19l7-7"/></svg></span>
+        Apto
+      </a>
+      <nav class="l-nav" aria-label="Páginas">
+        <a href="index.html">Inicio</a>
+        <a href="producto.html">Producto</a>
+        <a href="planes.html">Planes</a>
+        <a href="seguridad.html">Seguridad</a>
+        <a href="consultar.html" class="activo" aria-current="page">Consultar un estudio</a>
+        <a href="preguntas.html">Preguntas</a>
+      </nav>
+      <div class="l-acciones">
+        <a class="btn-texto" href="login.html">Entrar</a>
+        <a class="btn" href="#acceso">Obtener acceso</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="pagina-cabecera" aria-labelledby="t-pagina">
+    <div class="wrap">
+      <span class="eyebrow-chip oscuro">Consulta pública</span>
+      <h1 id="t-pagina">Siga un estudio sin crear una cuenta</h1>
+      <p class="lead">Escriba el código del expediente y vea en qué etapa está. Solo aparecen los proyectos que su consultora decidió publicar.</p>
+    </div>
+  </section>
+
+  <section id="consulta" class="wrap seccion revelar" aria-labelledby="t-consulta">
+    <div class="seccion-titulo">
+      <span class="kicker">Consulta pública · sin cuenta</span>
+      <h2 id="t-consulta">Consulte el estado de un estudio de impacto ambiental</h2>
+      <p class="small">Escriba el código del expediente. Solo se muestra información pública, sin documentos ni datos personales, conforme a la Ley 81 de 2019.</p>
+    </div>
+    <div class="consulta-caja">
+      <div class="search-row">
+        <label for="inputCodigo" class="sr-only">Código del expediente</label>
+        <input type="text" id="inputCodigo" placeholder="Ej. SP-A8-2026-001" class="mono">
+        <button class="btn" id="btnBuscar">Consultar</button>
+      </div>
+
+      <div id="panelResultado" style="display:none;">
+        <div style="display:flex; flex-wrap:wrap; justify-content:space-between; gap:14px; align-items:flex-start; margin-bottom:18px;">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <span class="case-tag" id="rCodigo" style="align-self:flex-start;"></span>
+            <h3 id="rProyecto" style="font-size:22px;"></h3>
+          </div>
+          <button type="button" id="btnPdf" class="btn btn-ghost">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+            Resumen ejecutivo (PDF)
+          </button>
+        </div>
+        <div style="background:var(--surface-2); border-radius:16px; padding:18px 20px; margin-bottom:18px;">
+          <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:14px;"><b style="font-size:14px;">Estado del trámite</b><span id="rEstado"></span></div>
+          <ol class="resultado-estados" id="rEtapas">
+            <li data-etapa="pendiente"><div class="linea"><span class="p"></span><span class="t"></span></div>Pendiente de subsanación</li>
+            <li data-etapa="evaluacion"><div class="linea"><span class="p"></span><span class="t"></span></div>En evaluación</li>
+            <li data-etapa="aprobado"><div class="linea"><span class="p"></span><span class="t"></span></div>Aprobado</li>
+          </ol>
+        </div>
+        <div class="fact-row">
+          <div class="fact"><span class="k">Promotor</span><span class="v" id="rPromotor"></span></div>
+          <div class="fact"><span class="k">Consultor responsable</span><span class="v" id="rConsultor"></span></div>
+          <div class="fact"><span class="k">Categoría</span><span id="rCategoria"></span></div>
+        </div>
+      </div>
+
+      <div id="panelNoEncontrado" class="doc-msg error show" style="display:none;">No se encontró ningún expediente con ese código.</div>
+      <div id="panelSinAcceso" class="consejo" style="display:none;">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+        <span><b style="color:var(--ink);">Este proyecto no está disponible para consulta pública.</b> La consultora responsable no ha habilitado su publicación.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="cierre revelar" id="acceso" aria-labelledby="t-cierre">
+    <div class="cierre-brillo" aria-hidden="true"></div>
+    <div class="wrap cierre-centro">
+      <span class="eyebrow-chip oscuro">Empiece hoy</span>
+      <h2 id="t-cierre">Ponga orden en su consultora desde hoy</h2>
+      <p>Plazos bajo control, expedientes completos y clientes informados. Su consultora se da de alta con la administración de la plataforma y, desde ahí, invita a cada persona de su equipo con un enlace de un solo uso.</p>
+      <div class="btn-row" style="justify-content:center;">
+        <a class="btn" href="login.html">Entrar a la plataforma</a>
+        <a class="btn btn-borde" href="producto.html#como">Ver cómo funciona</a>
+      </div>
+      <div class="cierre-tarjetas">
+        <div><b>Para el director de proyectos</b><span>Toda la cartera, ordenada por urgencia</span></div>
+        <div><b>Para el consultor</b><span>Expedientes completos, sin perseguir archivos</span></div>
+        <div><b>Para su cliente</b><span>Su trámite, a la vista y sin llamar</span></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="l-footer">
+    <div class="wrap">
+      <span>Apto · la plataforma de las consultoras ambientales.</span>
+      <span><a href="terminos.html">Términos</a> · <a href="privacidad.html">Privacidad</a> · <a href="estado.html">Estado del servicio</a> · © 2026 Apto</span>
+    </div>
+  </footer>
+</div>
+
+<script src="js/lib/jspdf.umd.min.js"></script>
+<script src="js/pag-index-1.js"></script>
+<script src="js/pag-index-2.js"></script>
+<script src="js/landing.js"></script>
+</body>
+</html>
