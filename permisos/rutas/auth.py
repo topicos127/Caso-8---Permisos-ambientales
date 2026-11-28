@@ -89,8 +89,9 @@ def _acceso(solo_admin):
         # Verificacion en dos pasos: sin el codigo no hay sesion (pero tampoco cuenta como fallo).
         if u.get("totp_activo"):
             if not codigo:
-                return jsonify({"acceso": False, "requiere_2fa": True,
-                                "mensaje": "Ingrese el código de su aplicación autenticadora."}), 401
+                return jsonify({"acceso": False, "requiere_2fa": True, "primer_paso": True,
+                                "mensaje": "Contraseña correcta. Para terminar, ingrese el código de 6 dígitos "
+                                           "de su aplicación autenticadora (o un código de recuperación)."}), 401
             if not _codigo_valido(u, codigo):
                 limitador.anotar_fallo(clave)
                 _evento(u, "acceso_fallido", "código de verificación incorrecto")

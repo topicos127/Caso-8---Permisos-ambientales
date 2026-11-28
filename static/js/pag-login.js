@@ -20,7 +20,7 @@ const entradaCodigo = document.getElementById('codigo');
 
 function showMessage(text, ok) {
   msg.textContent = text;
-  msg.className = 'doc-msg show ' + (ok ? 'ok' : 'error');
+  msg.className = 'doc-msg show ' + (ok === 'info' ? 'info' : ok ? 'ok' : 'error');
 }
 
 form.addEventListener('submit', async (e) => {
@@ -44,9 +44,12 @@ form.addEventListener('submit', async (e) => {
 
     // Segundo paso: la cuenta tiene verificación en dos pasos.
     if (data.requiere_2fa) {
+      // La primera vez no es un error: la contraseña estaba bien y falta el código. Si ya se pidió, el código falló.
+      const yaPedido = !campoCodigo.hidden;
       campoCodigo.hidden = false;
+      entradaCodigo.value = yaPedido ? '' : entradaCodigo.value;
       entradaCodigo.focus();
-      showMessage(data.mensaje, false);
+      showMessage(data.mensaje, yaPedido ? false : 'info');
       return;
     }
 
@@ -69,6 +72,6 @@ form.addEventListener('submit', async (e) => {
     showMessage('No se pudo conectar con el servidor.', false);
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Entrar';
+    btn.textContent = campoCodigo.hidden ? 'Entrar' : 'Verificar y entrar';
   }
 });
